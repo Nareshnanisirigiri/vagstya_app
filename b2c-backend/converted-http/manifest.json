@@ -1,0 +1,1047 @@
+{
+  "generatedAt": "2026-04-08T04:37:56.525Z",
+  "sourceRoot": "c:\\Users\\sirin\\OneDrive\\Desktop\\jewellry_main\\Http",
+  "totalPhpFiles": 260,
+  "files": [
+    {
+      "php": "Http/Controllers/Admin/AdController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/AdController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/Auth/LoginController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/Auth/LoginController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/BannerController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/BannerController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/BaseMetalController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/BaseMetalController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/BlogController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/BlogController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/BrandController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/BrandController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/BusinessSetupController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/BusinessSetupController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/CategoryController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/CategoryController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ColorController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ColorController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ContactUsController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ContactUsController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/CountyOriginController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/CountyOriginController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/CouponController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/CouponController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/CurrencyController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/CurrencyController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/CustomerController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/CustomerController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/CustomerNotificationController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/CustomerNotificationController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/DashboardController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/DashboardController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/DeliveryChargeController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/DeliveryChargeController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/EmployeeManageController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/EmployeeManageController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/FirebaseController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/FirebaseController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/FlashSaleController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/FlashSaleController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/GeneraleSettingController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/GeneraleSettingController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/GoogleReCaptchaController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/GoogleReCaptchaController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/LanguageController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/LanguageController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/LegalPageController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/LegalPageController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/MailConfigurationController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/MailConfigurationController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ManufacturerController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ManufacturerController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/NetQuantityController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/NetQuantityController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/NotificationController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/NotificationController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/OccasionController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/OccasionController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/OrderController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/OrderController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/PackerController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/PackerController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/PaymentGatewayController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/PaymentGatewayController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/PlatingController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/PlatingController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ProductController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ProductController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ProfileController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ProfileController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/PusherConfigController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/PusherConfigController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ReviewsController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ReviewsController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/RiderController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/RiderController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/RolePermissionController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/RolePermissionController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ShopController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ShopController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SizeController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SizeController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SMSGatewaySetupController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SMSGatewaySetupController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SocialAuthController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SocialAuthController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SocialLinkController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SocialLinkController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SpecificationController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SpecificationController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SpecificationvaluesController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SpecificationvaluesController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/StoneTypeController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/StoneTypeController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SubCategoryController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SubCategoryController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SupportController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SupportController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/SupportTicketController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/SupportTicketController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/ThemeColorController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/ThemeColorController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/TicketIssueTypeController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/TicketIssueTypeController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/TrendController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/TrendController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/TypeController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/TypeController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/UnitController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/UnitController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/VatTaxController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/VatTaxController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/VerifyManageController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/VerifyManageController.js"
+    },
+    {
+      "php": "Http/Controllers/Admin/WithdrawController.php",
+      "js": "b2c-backend/converted-http/Controllers/Admin/WithdrawController.js"
+    },
+    {
+      "php": "Http/Controllers/API/AddressController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/AddressController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Auth/AuthController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Auth/AuthController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Auth/ForgotPasswordController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Auth/ForgotPasswordController.js"
+    },
+    {
+      "php": "Http/Controllers/API/BannerController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/BannerController.js"
+    },
+    {
+      "php": "Http/Controllers/API/BlogController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/BlogController.js"
+    },
+    {
+      "php": "Http/Controllers/API/CartController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/CartController.js"
+    },
+    {
+      "php": "Http/Controllers/API/CategoryController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/CategoryController.js"
+    },
+    {
+      "php": "Http/Controllers/API/CountryController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/CountryController.js"
+    },
+    {
+      "php": "Http/Controllers/API/CouponController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/CouponController.js"
+    },
+    {
+      "php": "Http/Controllers/API/FlashSaleController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/FlashSaleController.js"
+    },
+    {
+      "php": "Http/Controllers/API/HomeController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/HomeController.js"
+    },
+    {
+      "php": "Http/Controllers/API/LegalPageController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/LegalPageController.js"
+    },
+    {
+      "php": "Http/Controllers/API/MasterController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/MasterController.js"
+    },
+    {
+      "php": "Http/Controllers/API/OrderController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/OrderController.js"
+    },
+    {
+      "php": "Http/Controllers/API/ProductController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/ProductController.js"
+    },
+    {
+      "php": "Http/Controllers/API/ReviewController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/ReviewController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Rider/LoginController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Rider/LoginController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Rider/NotificationController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Rider/NotificationController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Rider/OrderController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Rider/OrderController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Rider/UserController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Rider/UserController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/BannerController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/BannerController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/DashboardController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/DashboardController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/LoginController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/LoginController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/NotificationController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/NotificationController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/OrderController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/OrderController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/ProductController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/ProductController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/UserController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/UserController.js"
+    },
+    {
+      "php": "Http/Controllers/API/Seller/WalletController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/Seller/WalletController.js"
+    },
+    {
+      "php": "Http/Controllers/API/ShopController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/ShopController.js"
+    },
+    {
+      "php": "Http/Controllers/API/SocialAuthController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/SocialAuthController.js"
+    },
+    {
+      "php": "Http/Controllers/API/SubCategoryController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/SubCategoryController.js"
+    },
+    {
+      "php": "Http/Controllers/API/SupportController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/SupportController.js"
+    },
+    {
+      "php": "Http/Controllers/API/SupportTicketController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/SupportTicketController.js"
+    },
+    {
+      "php": "Http/Controllers/API/SupportTicketMessageController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/SupportTicketMessageController.js"
+    },
+    {
+      "php": "Http/Controllers/API/TicketIssueTypeController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/TicketIssueTypeController.js"
+    },
+    {
+      "php": "Http/Controllers/API/UserController.php",
+      "js": "b2c-backend/converted-http/Controllers/API/UserController.js"
+    },
+    {
+      "php": "Http/Controllers/Controller.php",
+      "js": "b2c-backend/converted-http/Controllers/Controller.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/AamarPay/ProcessController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/AamarPay/ProcessController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/Bkash/ExecutePaymentController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/Bkash/ExecutePaymentController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/Bkash/ProcessController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/Bkash/ProcessController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/PaymentGatewayController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/PaymentGatewayController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/PayPal/ProcessController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/PayPal/ProcessController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/PayStack/ProcessController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/PayStack/ProcessController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/PayTabs/ProcessController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/PayTabs/ProcessController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/Razorpay/ProcessController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/Razorpay/ProcessController.js"
+    },
+    {
+      "php": "Http/Controllers/Gateway/Stripe/ProcessController.php",
+      "js": "b2c-backend/converted-http/Controllers/Gateway/Stripe/ProcessController.js"
+    },
+    {
+      "php": "Http/Controllers/PassportStorageSupportController.php",
+      "js": "b2c-backend/converted-http/Controllers/PassportStorageSupportController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/Auth/LoginController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/Auth/LoginController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/BannerController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/BannerController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/BrandController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/BrandController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/BulkProductExportController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/BulkProductExportController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/BulkProductImportController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/BulkProductImportController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/CategoryController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/CategoryController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/ColorController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/ColorController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/DashboardController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/DashboardController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/EmployeeController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/EmployeeController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/FlashSaleController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/FlashSaleController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/GalleryController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/GalleryController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/NotificationController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/NotificationController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/OrderController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/OrderController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/POSController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/POSController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/ProductController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/ProductController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/ProfileController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/ProfileController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/SizeController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/SizeController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/SpecificationController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/SpecificationController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/SubCategoryController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/SubCategoryController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/UnitController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/UnitController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/VoucherController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/VoucherController.js"
+    },
+    {
+      "php": "Http/Controllers/Shop/WithdrawController.php",
+      "js": "b2c-backend/converted-http/Controllers/Shop/WithdrawController.js"
+    },
+    {
+      "php": "Http/Kernel.php",
+      "js": "b2c-backend/converted-http/Kernel.js"
+    },
+    {
+      "php": "Http/Middleware/Authenticate.php",
+      "js": "b2c-backend/converted-http/Middleware/Authenticate.js"
+    },
+    {
+      "php": "Http/Middleware/CheckPermission.php",
+      "js": "b2c-backend/converted-http/Middleware/CheckPermission.js"
+    },
+    {
+      "php": "Http/Middleware/EncryptCookies.php",
+      "js": "b2c-backend/converted-http/Middleware/EncryptCookies.js"
+    },
+    {
+      "php": "Http/Middleware/LocalizationManage.php",
+      "js": "b2c-backend/converted-http/Middleware/LocalizationManage.js"
+    },
+    {
+      "php": "Http/Middleware/PreventRequestsDuringMaintenance.php",
+      "js": "b2c-backend/converted-http/Middleware/PreventRequestsDuringMaintenance.js"
+    },
+    {
+      "php": "Http/Middleware/RedirectIfAuthenticated.php",
+      "js": "b2c-backend/converted-http/Middleware/RedirectIfAuthenticated.js"
+    },
+    {
+      "php": "Http/Middleware/ShopAuthenticate.php",
+      "js": "b2c-backend/converted-http/Middleware/ShopAuthenticate.js"
+    },
+    {
+      "php": "Http/Middleware/TrimStrings.php",
+      "js": "b2c-backend/converted-http/Middleware/TrimStrings.js"
+    },
+    {
+      "php": "Http/Middleware/TrustHosts.php",
+      "js": "b2c-backend/converted-http/Middleware/TrustHosts.js"
+    },
+    {
+      "php": "Http/Middleware/TrustProxies.php",
+      "js": "b2c-backend/converted-http/Middleware/TrustProxies.js"
+    },
+    {
+      "php": "Http/Middleware/ValidateSignature.php",
+      "js": "b2c-backend/converted-http/Middleware/ValidateSignature.js"
+    },
+    {
+      "php": "Http/Middleware/VerifyCsrfToken.php",
+      "js": "b2c-backend/converted-http/Middleware/VerifyCsrfToken.js"
+    },
+    {
+      "php": "Http/Requests/AddFavoriteRequest.php",
+      "js": "b2c-backend/converted-http/Requests/AddFavoriteRequest.js"
+    },
+    {
+      "php": "Http/Requests/AdditionThumbnailDeleteRequest.php",
+      "js": "b2c-backend/converted-http/Requests/AdditionThumbnailDeleteRequest.js"
+    },
+    {
+      "php": "Http/Requests/AddressRequest.php",
+      "js": "b2c-backend/converted-http/Requests/AddressRequest.js"
+    },
+    {
+      "php": "Http/Requests/AdminLoginRequest.php",
+      "js": "b2c-backend/converted-http/Requests/AdminLoginRequest.js"
+    },
+    {
+      "php": "Http/Requests/ApplyCouponRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ApplyCouponRequest.js"
+    },
+    {
+      "php": "Http/Requests/BannerRequest.php",
+      "js": "b2c-backend/converted-http/Requests/BannerRequest.js"
+    },
+    {
+      "php": "Http/Requests/BannerUpdateRequest.php",
+      "js": "b2c-backend/converted-http/Requests/BannerUpdateRequest.js"
+    },
+    {
+      "php": "Http/Requests/BaseMetalRequest.php",
+      "js": "b2c-backend/converted-http/Requests/BaseMetalRequest.js"
+    },
+    {
+      "php": "Http/Requests/BlogRequest.php",
+      "js": "b2c-backend/converted-http/Requests/BlogRequest.js"
+    },
+    {
+      "php": "Http/Requests/BrandRequest.php",
+      "js": "b2c-backend/converted-http/Requests/BrandRequest.js"
+    },
+    {
+      "php": "Http/Requests/BuyNowRequest.php",
+      "js": "b2c-backend/converted-http/Requests/BuyNowRequest.js"
+    },
+    {
+      "php": "Http/Requests/BuyNowStoreRequest.php",
+      "js": "b2c-backend/converted-http/Requests/BuyNowStoreRequest.js"
+    },
+    {
+      "php": "Http/Requests/CartRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CartRequest.js"
+    },
+    {
+      "php": "Http/Requests/CategoryRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CategoryRequest.js"
+    },
+    {
+      "php": "Http/Requests/ChangePasswordRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ChangePasswordRequest.js"
+    },
+    {
+      "php": "Http/Requests/CheckEmailPhoneRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CheckEmailPhoneRequest.js"
+    },
+    {
+      "php": "Http/Requests/CheckoutRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CheckoutRequest.js"
+    },
+    {
+      "php": "Http/Requests/ColorRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ColorRequest.js"
+    },
+    {
+      "php": "Http/Requests/CountyOriginRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CountyOriginRequest.js"
+    },
+    {
+      "php": "Http/Requests/CouponRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CouponRequest.js"
+    },
+    {
+      "php": "Http/Requests/CreatePasswordRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CreatePasswordRequest.js"
+    },
+    {
+      "php": "Http/Requests/CurrencyRequest.php",
+      "js": "b2c-backend/converted-http/Requests/CurrencyRequest.js"
+    },
+    {
+      "php": "Http/Requests/DeliveryChargeRequest.php",
+      "js": "b2c-backend/converted-http/Requests/DeliveryChargeRequest.js"
+    },
+    {
+      "php": "Http/Requests/EmailSendOTPRequest.php",
+      "js": "b2c-backend/converted-http/Requests/EmailSendOTPRequest.js"
+    },
+    {
+      "php": "Http/Requests/FlashSaleRequest.php",
+      "js": "b2c-backend/converted-http/Requests/FlashSaleRequest.js"
+    },
+    {
+      "php": "Http/Requests/GeneraleSettingRequest.php",
+      "js": "b2c-backend/converted-http/Requests/GeneraleSettingRequest.js"
+    },
+    {
+      "php": "Http/Requests/GoogleReCaptchaRequest.php",
+      "js": "b2c-backend/converted-http/Requests/GoogleReCaptchaRequest.js"
+    },
+    {
+      "php": "Http/Requests/LanguageRequest.php",
+      "js": "b2c-backend/converted-http/Requests/LanguageRequest.js"
+    },
+    {
+      "php": "Http/Requests/LoginRequest.php",
+      "js": "b2c-backend/converted-http/Requests/LoginRequest.js"
+    },
+    {
+      "php": "Http/Requests/ManufacturerRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ManufacturerRequest.js"
+    },
+    {
+      "php": "Http/Requests/NetQuantityRequest.php",
+      "js": "b2c-backend/converted-http/Requests/NetQuantityRequest.js"
+    },
+    {
+      "php": "Http/Requests/OccasionRequest.php",
+      "js": "b2c-backend/converted-http/Requests/OccasionRequest.js"
+    },
+    {
+      "php": "Http/Requests/OrderIdRequest.php",
+      "js": "b2c-backend/converted-http/Requests/OrderIdRequest.js"
+    },
+    {
+      "php": "Http/Requests/OrderRequest.php",
+      "js": "b2c-backend/converted-http/Requests/OrderRequest.js"
+    },
+    {
+      "php": "Http/Requests/OTPRequest.php",
+      "js": "b2c-backend/converted-http/Requests/OTPRequest.js"
+    },
+    {
+      "php": "Http/Requests/OTPVerifyRequest.php",
+      "js": "b2c-backend/converted-http/Requests/OTPVerifyRequest.js"
+    },
+    {
+      "php": "Http/Requests/PackerRequest.php",
+      "js": "b2c-backend/converted-http/Requests/PackerRequest.js"
+    },
+    {
+      "php": "Http/Requests/PasswordResetRequest.php",
+      "js": "b2c-backend/converted-http/Requests/PasswordResetRequest.js"
+    },
+    {
+      "php": "Http/Requests/PaymentGatewayRequest.php",
+      "js": "b2c-backend/converted-http/Requests/PaymentGatewayRequest.js"
+    },
+    {
+      "php": "Http/Requests/PlatingRequest.php",
+      "js": "b2c-backend/converted-http/Requests/PlatingRequest.js"
+    },
+    {
+      "php": "Http/Requests/PosApplyCouponRequest.php",
+      "js": "b2c-backend/converted-http/Requests/PosApplyCouponRequest.js"
+    },
+    {
+      "php": "Http/Requests/PosCartRequest.php",
+      "js": "b2c-backend/converted-http/Requests/PosCartRequest.js"
+    },
+    {
+      "php": "Http/Requests/ProductRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ProductRequest.js"
+    },
+    {
+      "php": "Http/Requests/ProfileUpdateRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ProfileUpdateRequest.js"
+    },
+    {
+      "php": "Http/Requests/RegistrationRequest.php",
+      "js": "b2c-backend/converted-http/Requests/RegistrationRequest.js"
+    },
+    {
+      "php": "Http/Requests/ReviewRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ReviewRequest.js"
+    },
+    {
+      "php": "Http/Requests/RiderRequest.php",
+      "js": "b2c-backend/converted-http/Requests/RiderRequest.js"
+    },
+    {
+      "php": "Http/Requests/RoleRequest.php",
+      "js": "b2c-backend/converted-http/Requests/RoleRequest.js"
+    },
+    {
+      "php": "Http/Requests/SellerLoginRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SellerLoginRequest.js"
+    },
+    {
+      "php": "Http/Requests/ShopCreateRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ShopCreateRequest.js"
+    },
+    {
+      "php": "Http/Requests/ShopInfoUpdateRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ShopInfoUpdateRequest.js"
+    },
+    {
+      "php": "Http/Requests/ShopPasswordResetRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ShopPasswordResetRequest.js"
+    },
+    {
+      "php": "Http/Requests/ShopProfileRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ShopProfileRequest.js"
+    },
+    {
+      "php": "Http/Requests/ShopSettingUpdateRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ShopSettingUpdateRequest.js"
+    },
+    {
+      "php": "Http/Requests/ShopUserUpdateRequest.php",
+      "js": "b2c-backend/converted-http/Requests/ShopUserUpdateRequest.js"
+    },
+    {
+      "php": "Http/Requests/SizeRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SizeRequest.js"
+    },
+    {
+      "php": "Http/Requests/SocialAuthRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SocialAuthRequest.js"
+    },
+    {
+      "php": "Http/Requests/SpecificationRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SpecificationRequest.js"
+    },
+    {
+      "php": "Http/Requests/SpecificationvaluesRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SpecificationvaluesRequest.js"
+    },
+    {
+      "php": "Http/Requests/StatusUpdateRequest.php",
+      "js": "b2c-backend/converted-http/Requests/StatusUpdateRequest.js"
+    },
+    {
+      "php": "Http/Requests/StoneTypeRequest.php",
+      "js": "b2c-backend/converted-http/Requests/StoneTypeRequest.js"
+    },
+    {
+      "php": "Http/Requests/SubCategoryRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SubCategoryRequest.js"
+    },
+    {
+      "php": "Http/Requests/SupportRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SupportRequest.js"
+    },
+    {
+      "php": "Http/Requests/SupportTicketMessageRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SupportTicketMessageRequest.js"
+    },
+    {
+      "php": "Http/Requests/SupportTicketRequest.php",
+      "js": "b2c-backend/converted-http/Requests/SupportTicketRequest.js"
+    },
+    {
+      "php": "Http/Requests/TimeScheduleRequest.php",
+      "js": "b2c-backend/converted-http/Requests/TimeScheduleRequest.js"
+    },
+    {
+      "php": "Http/Requests/TrendRequest.php",
+      "js": "b2c-backend/converted-http/Requests/TrendRequest.js"
+    },
+    {
+      "php": "Http/Requests/TypeRequest.php",
+      "js": "b2c-backend/converted-http/Requests/TypeRequest.js"
+    },
+    {
+      "php": "Http/Requests/UnitRequest.php",
+      "js": "b2c-backend/converted-http/Requests/UnitRequest.js"
+    },
+    {
+      "php": "Http/Requests/UserRequest.php",
+      "js": "b2c-backend/converted-http/Requests/UserRequest.js"
+    },
+    {
+      "php": "Http/Requests/VatTaxRequest.php",
+      "js": "b2c-backend/converted-http/Requests/VatTaxRequest.js"
+    },
+    {
+      "php": "Http/Requests/VoucherRequest.php",
+      "js": "b2c-backend/converted-http/Requests/VoucherRequest.js"
+    },
+    {
+      "php": "Http/Requests/WithdrawRequest.php",
+      "js": "b2c-backend/converted-http/Requests/WithdrawRequest.js"
+    },
+    {
+      "php": "Http/Resources/AddressResource.php",
+      "js": "b2c-backend/converted-http/Resources/AddressResource.js"
+    },
+    {
+      "php": "Http/Resources/BannerResource.php",
+      "js": "b2c-backend/converted-http/Resources/BannerResource.js"
+    },
+    {
+      "php": "Http/Resources/BlogDetailsResource.php",
+      "js": "b2c-backend/converted-http/Resources/BlogDetailsResource.js"
+    },
+    {
+      "php": "Http/Resources/BlogResource.php",
+      "js": "b2c-backend/converted-http/Resources/BlogResource.js"
+    },
+    {
+      "php": "Http/Resources/BrandResource.php",
+      "js": "b2c-backend/converted-http/Resources/BrandResource.js"
+    },
+    {
+      "php": "Http/Resources/CartResource.php",
+      "js": "b2c-backend/converted-http/Resources/CartResource.js"
+    },
+    {
+      "php": "Http/Resources/CategoryResource.php",
+      "js": "b2c-backend/converted-http/Resources/CategoryResource.js"
+    },
+    {
+      "php": "Http/Resources/ColorResource.php",
+      "js": "b2c-backend/converted-http/Resources/ColorResource.js"
+    },
+    {
+      "php": "Http/Resources/CountryResource.php",
+      "js": "b2c-backend/converted-http/Resources/CountryResource.js"
+    },
+    {
+      "php": "Http/Resources/CouponResource.php",
+      "js": "b2c-backend/converted-http/Resources/CouponResource.js"
+    },
+    {
+      "php": "Http/Resources/FlashSaleProductResource.php",
+      "js": "b2c-backend/converted-http/Resources/FlashSaleProductResource.js"
+    },
+    {
+      "php": "Http/Resources/FlashSaleResource.php",
+      "js": "b2c-backend/converted-http/Resources/FlashSaleResource.js"
+    },
+    {
+      "php": "Http/Resources/LanguageResource.php",
+      "js": "b2c-backend/converted-http/Resources/LanguageResource.js"
+    },
+    {
+      "php": "Http/Resources/NotificationResource.php",
+      "js": "b2c-backend/converted-http/Resources/NotificationResource.js"
+    },
+    {
+      "php": "Http/Resources/OnlyCategoryResource.php",
+      "js": "b2c-backend/converted-http/Resources/OnlyCategoryResource.js"
+    },
+    {
+      "php": "Http/Resources/OrderDetailsResource.php",
+      "js": "b2c-backend/converted-http/Resources/OrderDetailsResource.js"
+    },
+    {
+      "php": "Http/Resources/OrderProductResource.php",
+      "js": "b2c-backend/converted-http/Resources/OrderProductResource.js"
+    },
+    {
+      "php": "Http/Resources/OrderResource.php",
+      "js": "b2c-backend/converted-http/Resources/OrderResource.js"
+    },
+    {
+      "php": "Http/Resources/OrderRiderResource.php",
+      "js": "b2c-backend/converted-http/Resources/OrderRiderResource.js"
+    },
+    {
+      "php": "Http/Resources/PaymentGatewayResource.php",
+      "js": "b2c-backend/converted-http/Resources/PaymentGatewayResource.js"
+    },
+    {
+      "php": "Http/Resources/PosCartProductResource.php",
+      "js": "b2c-backend/converted-http/Resources/PosCartProductResource.js"
+    },
+    {
+      "php": "Http/Resources/ProductDetailsResource.php",
+      "js": "b2c-backend/converted-http/Resources/ProductDetailsResource.js"
+    },
+    {
+      "php": "Http/Resources/ProductResource.php",
+      "js": "b2c-backend/converted-http/Resources/ProductResource.js"
+    },
+    {
+      "php": "Http/Resources/ProductShopResource.php",
+      "js": "b2c-backend/converted-http/Resources/ProductShopResource.js"
+    },
+    {
+      "php": "Http/Resources/ReviewResource.php",
+      "js": "b2c-backend/converted-http/Resources/ReviewResource.js"
+    },
+    {
+      "php": "Http/Resources/RiderOrderDetailsResource.php",
+      "js": "b2c-backend/converted-http/Resources/RiderOrderDetailsResource.js"
+    },
+    {
+      "php": "Http/Resources/RiderOrderResource.php",
+      "js": "b2c-backend/converted-http/Resources/RiderOrderResource.js"
+    },
+    {
+      "php": "Http/Resources/RiderUserResource.php",
+      "js": "b2c-backend/converted-http/Resources/RiderUserResource.js"
+    },
+    {
+      "php": "Http/Resources/SellerOrderResource.php",
+      "js": "b2c-backend/converted-http/Resources/SellerOrderResource.js"
+    },
+    {
+      "php": "Http/Resources/SellerProductDetailsResource.php",
+      "js": "b2c-backend/converted-http/Resources/SellerProductDetailsResource.js"
+    },
+    {
+      "php": "Http/Resources/SellerProductResource.php",
+      "js": "b2c-backend/converted-http/Resources/SellerProductResource.js"
+    },
+    {
+      "php": "Http/Resources/SellerUserResource.php",
+      "js": "b2c-backend/converted-http/Resources/SellerUserResource.js"
+    },
+    {
+      "php": "Http/Resources/ShopDetailsResource.php",
+      "js": "b2c-backend/converted-http/Resources/ShopDetailsResource.js"
+    },
+    {
+      "php": "Http/Resources/ShopOrderResource.php",
+      "js": "b2c-backend/converted-http/Resources/ShopOrderResource.js"
+    },
+    {
+      "php": "Http/Resources/ShopResource.php",
+      "js": "b2c-backend/converted-http/Resources/ShopResource.js"
+    },
+    {
+      "php": "Http/Resources/SizeResource.php",
+      "js": "b2c-backend/converted-http/Resources/SizeResource.js"
+    },
+    {
+      "php": "Http/Resources/SocialLinkResource.php",
+      "js": "b2c-backend/converted-http/Resources/SocialLinkResource.js"
+    },
+    {
+      "php": "Http/Resources/SubCategoryResource.php",
+      "js": "b2c-backend/converted-http/Resources/SubCategoryResource.js"
+    },
+    {
+      "php": "Http/Resources/SupportTicketDetailsResource.php",
+      "js": "b2c-backend/converted-http/Resources/SupportTicketDetailsResource.js"
+    },
+    {
+      "php": "Http/Resources/SupportTicketMessageResource.php",
+      "js": "b2c-backend/converted-http/Resources/SupportTicketMessageResource.js"
+    },
+    {
+      "php": "Http/Resources/SupportTicketResource.php",
+      "js": "b2c-backend/converted-http/Resources/SupportTicketResource.js"
+    },
+    {
+      "php": "Http/Resources/TagResource.php",
+      "js": "b2c-backend/converted-http/Resources/TagResource.js"
+    },
+    {
+      "php": "Http/Resources/TicketIssueTypeResource.php",
+      "js": "b2c-backend/converted-http/Resources/TicketIssueTypeResource.js"
+    },
+    {
+      "php": "Http/Resources/UnitResource.php",
+      "js": "b2c-backend/converted-http/Resources/UnitResource.js"
+    },
+    {
+      "php": "Http/Resources/UserResource.php",
+      "js": "b2c-backend/converted-http/Resources/UserResource.js"
+    },
+    {
+      "php": "Http/Resources/WebNotificationResource.php",
+      "js": "b2c-backend/converted-http/Resources/WebNotificationResource.js"
+    },
+    {
+      "php": "Http/Resources/WithdrawResource.php",
+      "js": "b2c-backend/converted-http/Resources/WithdrawResource.js"
+    }
+  ]
+}
