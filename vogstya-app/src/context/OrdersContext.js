@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api/client";
 import { useAuth } from "./AuthContext";
 
@@ -45,7 +45,7 @@ export function OrdersProvider({ children }) {
     };
   }
 
-  async function refreshOrders() {
+  const refreshOrders = useCallback(async () => {
     if (!token) {
       setOrders([]);
       return;
@@ -61,7 +61,7 @@ export function OrdersProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!token || !user) {
@@ -69,7 +69,7 @@ export function OrdersProvider({ children }) {
       return;
     }
     refreshOrders();
-  }, [token, user]);
+  }, [token, user, refreshOrders]);
 
   const value = useMemo(() => {
     function placeOrder({
@@ -101,7 +101,7 @@ export function OrdersProvider({ children }) {
     }
 
     return { orders, loading, refreshOrders, placeOrder, markOrderPaid };
-  }, [orders, loading, token]);
+  }, [orders, loading, refreshOrders]);
 
   return <OrdersContext.Provider value={value}>{children}</OrdersContext.Provider>;
 }

@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { View, Text, StyleSheet, Platform, ScrollView } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useFocusEffect } from "@react-navigation/native";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useOrders } from "../context/OrdersContext";
@@ -21,10 +21,32 @@ function formatMoney(value) {
   return `₹${amount.toFixed(2)}`;
 }
 
+function normalizeOrderStatus(status) {
+  const value = String(status || "Pending").trim().toLowerCase();
+  if (value === "out for delivery" || value === "out_for_delivery") return "Out for Delivery";
+  if (value === "return / refund" || value === "return_refund" || value === "returned") return "Return / Refund";
+  if (value === "shipped") return "Shipped";
+  if (value === "packed") return "Packed";
+  if (value === "delivered") return "Delivered";
+  if (value === "cancelled" || value === "canceled") return "Cancelled";
+  return "Pending";
+}
+
+function statusStyle(status) {
+  const value = String(status || "").toLowerCase();
+  if (value.includes("delivered")) return "delivered";
+  if (value.includes("out for delivery")) return "outForDelivery";
+  if (value.includes("shipped")) return "shipped";
+  if (value.includes("packed")) return "packed";
+  if (value.includes("return")) return "returnRefund";
+  if (value.includes("cancel")) return "cancelled";
+  return "pending";
+}
+
 export default function OrdersScreen() {
   const route = useRoute();
   const focusOrderId = route.params?.focusOrderId;
-  const { orders, loading } = useOrders();
+  const { orders, loading, refreshOrders } = useOrders();
   const { products } = useProducts();
   const { user } = useAuth();
 
@@ -39,6 +61,14 @@ export default function OrdersScreen() {
       return { ...ord, lines };
     });
   }, [orders, products]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        refreshOrders();
+      }
+    }, [user, refreshOrders])
+  );
 
   return (
     <View style={styles.root}>
@@ -62,18 +92,21 @@ export default function OrdersScreen() {
         ) : (
           rows.map((ord) => {
             const focused = focusOrderId && ord.id === focusOrderId;
+            const lifecycleStatus = normalizeOrderStatus(ord.orderStatus);
+            const lifecycleStatusKey = statusStyle(lifecycleStatus);
             return (
               <View key={ord.id} style={[styles.card, focused && styles.cardFocus]}>
                 <View style={styles.row}>
                   <Text style={styles.orderId}>{ord.id}</Text>
-                  <Text style={[styles.status, ord.paymentStatus === "paid" ? styles.paid : styles.pending]}>
-                    {ord.paymentStatus.toUpperCase()}
+                  <Text style={[styles.status, styles[lifecycleStatusKey]]}>
+                    {lifecycleStatus.toUpperCase()}
                   </Text>
                 </View>
                 {ord.orderCode ? <Text style={styles.meta}>Order Code: {ord.orderCode}</Text> : null}
                 <Text style={styles.meta}>{fmtDate(ord.createdAt)}</Text>
                 <Text style={styles.meta}>Payment: {ord.paymentMethod}</Text>
-                {ord.orderStatus ? <Text style={styles.meta}>Order Status: {ord.orderStatus}</Text> : null}
+                <Text style={styles.meta}>Order Status: {lifecycleStatus}</Text>
+                <Text style={styles.meta}>Payment Status: {String(ord.paymentStatus || "pending").toUpperCase()}</Text>
                 {ord.address.fullName ? <Text style={styles.meta}>Customer: {ord.address.fullName}</Text> : null}
                 {ord.address.phone ? <Text style={styles.meta}>Phone: {ord.address.phone}</Text> : null}
                 <Text style={styles.meta}>
@@ -131,7 +164,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   orderId: { color: colors.ink, fontWeight: "900" },
   status: { fontWeight: "900", fontSize: 11, letterSpacing: 0.8 },
-  paid: { color: colors.accent },
+  delivered: { color: colors.accent },
+  outForDelivery: { color: "#0c6c8f" },
+  shipped: { color: "#0b7ea4" },
+  packed: { color: "#2563eb" },
+  returnRefund: { color: "#b91c1c" },
+  cancelled: { color: "#6b7280" },
   pending: { color: "#a05b00" },
   meta: { marginTop: 4, color: colors.subtleText, fontSize: 12, fontWeight: "600" },
   linesWrap: { marginTop: 8 },

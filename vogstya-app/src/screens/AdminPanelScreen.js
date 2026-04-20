@@ -33,6 +33,14 @@ const chartConfigBase = (mainColor) => ({
   propsForDots: { r: "5", strokeWidth: "2", stroke: "#fff" }
 });
 
+const ORDER_LIFECYCLE_OPTIONS = [
+  { label: "Packed", value: "packed" },
+  { label: "Shipped", value: "shipped" },
+  { label: "Out for Delivery", value: "out_for_delivery" },
+  { label: "Delivered", value: "delivered" },
+  { label: "Return / Refund", value: "return_refund" },
+];
+
 export default function AdminPanelScreen() {
   const navigation = useNavigation();
   const { user, token, logout } = useAuth();
@@ -49,9 +57,10 @@ export default function AdminPanelScreen() {
   const [tableData, setTableData] = useState({ rows: [], columns: [] });
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
-  const [activeMetric, setActiveMetric] = useState("Total Earnings");
+  const [activeMetric, setActiveMetric] = useState("Earnings");
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState(null);
+  const [orderStatusUpdatingKey, setOrderStatusUpdatingKey] = useState("");
 
   // Security check: Redirect if not admin
   useEffect(() => {
@@ -87,6 +96,9 @@ export default function AdminPanelScreen() {
       try {
         const data = await apiRequest("/admin/dashboard", { token });
         setDashboardData(data);
+        if (data?.metrics?.length) {
+          setActiveMetric(data.metrics[0].label);
+        }
       } catch (err) {
         console.error("Dashboard hit error:", err);
         setDashboardError(err.message);
@@ -127,6 +139,38 @@ export default function AdminPanelScreen() {
       console.error("Failed to load table content:", err);
     } finally {
       setContentLoading(false);
+    }
+  };
+
+  const getFirstTableByHint = (hint) => {
+    const normalizedHint = String(hint || "").toLowerCase();
+    return tables.find((table) => String(table?.name || "").toLowerCase().includes(normalizedHint))?.name || null;
+  };
+
+  const handleMetricCardPress = async (metricLabel) => {
+    const key = String(metricLabel || "").toLowerCase();
+    if (key.includes("earning")) {
+      setSelectedTable(null);
+      setActiveMetric("Earnings");
+      return;
+    }
+
+    if (key.includes("user")) {
+      const tableName = getFirstTableByHint("user");
+      if (tableName) await pickTable(tableName);
+      return;
+    }
+
+    if (key.includes("order")) {
+      const tableName = getFirstTableByHint("order");
+      if (tableName) await pickTable(tableName);
+      return;
+    }
+
+    if (key.includes("product")) {
+      const tableName = getFirstTableByHint("product");
+      if (tableName) await pickTable(tableName);
+      return;
     }
   };
 
@@ -178,6 +222,48 @@ export default function AdminPanelScreen() {
        alert("Delete failed: " + err.message);
      }
   }
+
+  const handleOrderLifecycleUpdate = async (orderId, status) => {
+    if (!orderId || !status) return;
+    const updateKey = `${orderId}:${status}`;
+    setOrderStatusUpdatingKey(updateKey);
+    try {
+      await apiRequest(`/orders/${orderId}/lifecycle-status`, {
+        method: "PATCH",
+        token,
+        body: { status },
+      });
+      await pickTable("orders");
+      const refreshedDashboard = await apiRequest("/admin/dashboard", { token });
+      setDashboardData(refreshedDashboard);
+      Alert.alert("Success", `Order #${orderId} moved to ${status.replaceAll("_", " ")}.`);
+    } catch (err) {
+      Alert.alert("Update failed", err.message);
+    } finally {
+      setOrderStatusUpdatingKey("");
+    }
+  };
+
+  const metricCards = dashboardData?.metrics || [];
+  const metricStyleByLabel = {
+    earnings: { color: colors.accent, icon: "cash" },
+    products: { color: colors.accent, icon: "cube" },
+    orders: { color: colors.accent, icon: "cart" },
+    users: { color: colors.accent, icon: "people" },
+  };
+  const selectedMetricKey = String(activeMetric || "").trim().toLowerCase();
+  const lineLabels = dashboardData?.analytics?.labels || [];
+  const lineDatasets = dashboardData?.analytics?.datasets || {};
+  const selectedLineData =
+    selectedMetricKey.includes("earning")
+      ? lineDatasets.revenue
+      : selectedMetricKey.includes("product")
+        ? lineDatasets.products
+        : selectedMetricKey.includes("order")
+          ? lineDatasets.orders
+          : lineDatasets.users;
+  const selectedChartColor = colors.accent;
+  const selectedChartTitle = selectedMetricKey.includes("earning") ? "Earnings" : (activeMetric || "Overview");
 
   if (loading) {
     return (
@@ -350,7 +436,7 @@ export default function AdminPanelScreen() {
                         <Text style={styles.columnName}>{col.name.toUpperCase()}</Text>
                       </View>
                     ))}
-                    <View style={[styles.cell, { width: 100 }]}>
+                    <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 100 }]}>
                       <Text style={styles.columnName}>ACTIONS</Text>
                     </View>
                   </View>
@@ -365,13 +451,38 @@ export default function AdminPanelScreen() {
                             </Text>
                           </View>
                         ))}
-                         <View style={[styles.cell, { width: 100, flexDirection: "row", gap: 12 }]}>
-                            <Pressable onPress={() => setEditingItem(row)} hitSlop={8}>
-                               <Ionicons name="create-outline" size={18} color={colors.accent} />
-                            </Pressable>
-                            <Pressable onPress={() => handleDeleteProduct(row.id)} hitSlop={8}>
-                               <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                            </Pressable>
+                         <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 100, flexDirection: "row", gap: 8, flexWrap: "wrap" }]}>
+                          {selectedTable === "products" ? (
+                            <>
+                              <Pressable onPress={() => setEditingItem(row)} hitSlop={8}>
+                                <Ionicons name="create-outline" size={18} color={colors.accent} />
+                              </Pressable>
+                              <Pressable onPress={() => handleDeleteProduct(row.id)} hitSlop={8}>
+                                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                              </Pressable>
+                            </>
+                          ) : selectedTable === "orders" ? (
+                            ORDER_LIFECYCLE_OPTIONS.map((option) => {
+                              const opKey = `${row.id}:${option.value}`;
+                              const isBusy = orderStatusUpdatingKey === opKey;
+                              return (
+                                <Pressable
+                                  key={option.value}
+                                  style={styles.orderStatusBtn}
+                                  onPress={() => handleOrderLifecycleUpdate(row.id, option.value)}
+                                  disabled={Boolean(orderStatusUpdatingKey)}
+                                >
+                                  {isBusy ? (
+                                    <ActivityIndicator size="small" color={colors.white} />
+                                  ) : (
+                                    <Text style={styles.orderStatusBtnText}>{option.label}</Text>
+                                  )}
+                                </Pressable>
+                              );
+                            })
+                          ) : (
+                            <Text style={styles.cellText}>-</Text>
+                          )}
                         </View>
                       </View>
                     ))
@@ -385,7 +496,70 @@ export default function AdminPanelScreen() {
             </View>
           ) : (
             <View style={styles.dashboardContainer}>
-              <Text>Dashboard Debug Mode</Text>
+              {dashboardLoading ? (
+                <View style={styles.tableCardLoading}>
+                  <ActivityIndicator color={colors.accent} />
+                  <Text style={styles.loadingDataText}>Loading dashboard analytics...</Text>
+                </View>
+              ) : dashboardError ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>{dashboardError}</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.dashboardGrid}>
+                    {metricCards.map((metric) => {
+                      const key = String(metric.label || "").toLowerCase();
+                      const styleMeta = metricStyleByLabel[key] || { color: colors.accent, icon: "stats-chart" };
+                      const isActive = metric.label === activeMetric;
+                      return (
+                        <Pressable
+                          key={metric.label}
+                          onPress={() => handleMetricCardPress(metric.label)}
+                          style={[
+                            styles.statCard,
+                            { borderLeftColor: styleMeta.color },
+                            isActive && styles.statCardActive,
+                          ]}
+                        >
+                          <View style={[styles.statIconContainer, { backgroundColor: `${styleMeta.color}1A` }]}>
+                            <Ionicons name={styleMeta.icon} size={24} color={styleMeta.color} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.statValue}>{metric.value}</Text>
+                            <Text style={styles.statLabel}>{metric.label}</Text>
+                            {isActive ? <Text style={styles.activeIndicator}>Selected</Text> : null}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <View style={styles.chartCard}>
+                    <View style={styles.chartHeader}>
+                      <Text style={styles.chartTitle}>{selectedChartTitle} Trend</Text>
+                      <Text style={styles.chartSub}>Click a card above to switch line graph.</Text>
+                    </View>
+                    {lineLabels.length > 0 && Array.isArray(selectedLineData) ? (
+                      <LineChart
+                        data={{
+                          labels: lineLabels,
+                          datasets: [{ data: selectedLineData.length ? selectedLineData : [0] }],
+                        }}
+                        width={Math.max(340, Dimensions.get("window").width - (sidebarCollapsed ? 220 : 520))}
+                        height={260}
+                        chartConfig={chartConfigBase(selectedChartColor)}
+                        bezier
+                        style={styles.chartStyle}
+                      />
+                    ) : (
+                      <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No chart data available yet.</Text>
+                      </View>
+                    )}
+                  </View>
+                </>
+              )}
             </View>
           )}
         </ScrollView>
@@ -613,7 +787,7 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: SIDEBAR_WIDTH,
-    backgroundColor: colors.adminDark,
+    backgroundColor: colors.primary,
     height: "100%",
     paddingTop: spacing.xl,
   },
@@ -927,6 +1101,21 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 13,
     fontWeight: "700",
+  },
+  orderStatusBtn: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 7,
+    minWidth: 72,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  orderStatusBtnText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: "700",
+    textAlign: "center",
   },
   refreshBtn: {
     padding: 8,

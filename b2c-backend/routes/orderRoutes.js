@@ -6,6 +6,7 @@ import {
   listOrders,
   listPaymentGateways,
   startCheckout,
+  updateOrderLifecycleStatus,
 } from "../controllers/orderController.js";
 import { attachUserIfToken, verifyToken } from "../middleware/auth.js";
 
@@ -15,6 +16,7 @@ router.get("/payment-gateways", listPaymentGateways);
 router.get("/", verifyToken, listOrders);
 router.post("/checkout/start", attachUserIfToken, startCheckout);
 router.post("/checkout/complete", attachUserIfToken, completeCheckout);
+router.patch("/:id/lifecycle-status", verifyToken, updateOrderLifecycleStatus);
 
 // Backward-compatible entry point
 router.post("/", attachUserIfToken, createOrder);

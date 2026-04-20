@@ -13,6 +13,14 @@ function query(sql, params = []) {
   });
 }
 
+async function safeQuery(sql, params = [], fallback = []) {
+  try {
+    return await query(sql, params);
+  } catch (_error) {
+    return fallback;
+  }
+}
+
 function toCurrency(value) {
   return Number(value || 0);
 }
@@ -26,15 +34,19 @@ export async function getAdminDashboard(req, res) {
       recentOrders,
       topProducts,
       dailyStats,
+      dailyUserStats,
+      dailyProductStats,
       topProductsDistribution,
     ] = await Promise.all([
-      query("SELECT COUNT(*) AS total FROM users"),
-      query("SELECT COUNT(*) AS total FROM products"),
-      query(
+      safeQuery("SELECT COUNT(*) AS total FROM users", [], [{ total: 0 }]),
+      safeQuery("SELECT COUNT(*) AS total FROM products", [], [{ total: 0 }]),
+      safeQuery(
         `SELECT COUNT(*) AS totalOrders, COALESCE(SUM(payable_amount), 0) AS totalRevenue
-         FROM orders`
+         FROM orders`,
+        [],
+        [{ totalOrders: 0, totalRevenue: 0 }]
       ),
-      query(
+      safeQuery(
         `SELECT
            o.id,
            o.order_code,
@@ -47,9 +59,11 @@ export async function getAdminDashboard(req, res) {
          LEFT JOIN customers c ON c.id = o.customer_id
          LEFT JOIN users u ON u.id = c.user_id
          ORDER BY o.id DESC
-         LIMIT 6`
+         LIMIT 6`,
+        [],
+        []
       ),
-      query(
+      safeQuery(
         `SELECT
            p.id,
            p.name,
@@ -58,20 +72,45 @@ export async function getAdminDashboard(req, res) {
            p.created_at
          FROM products p
          ORDER BY p.id DESC
-         LIMIT 6`
+         LIMIT 6`,
+        [],
+        []
       ),
-      query(
+      safeQuery(
         `SELECT 
             DATE_FORMAT(created_at, '%d %b') AS label,
             COALESCE(SUM(payable_amount), 0) AS revenue,
-            COUNT(*) AS orders,
-            (SELECT COUNT(*) FROM users u2 WHERE DATE(u2.created_at) = DATE(o.created_at)) AS users
+            COUNT(*) AS orders
          FROM orders o
          WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
          GROUP BY DATE(created_at)
-         ORDER BY created_at ASC`
+         ORDER BY DATE(created_at) ASC`,
+        [],
+        []
       ),
-      query(
+      safeQuery(
+        `SELECT
+           DATE_FORMAT(created_at, '%d %b') AS label,
+           COUNT(*) AS users
+         FROM users
+         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+         GROUP BY DATE(created_at)
+         ORDER BY DATE(created_at) ASC`,
+        [],
+        []
+      ),
+      safeQuery(
+        `SELECT
+           DATE_FORMAT(created_at, '%d %b') AS label,
+           COUNT(*) AS products
+         FROM products
+         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+         GROUP BY DATE(created_at)
+         ORDER BY DATE(created_at) ASC`,
+        [],
+        []
+      ),
+      safeQuery(
         `SELECT
            c.name AS label,
            COUNT(p.id) AS value
@@ -81,23 +120,36 @@ export async function getAdminDashboard(req, res) {
          GROUP BY c.id
          HAVING value > 0
          ORDER BY value DESC
-         LIMIT 6`
+         LIMIT 6`,
+        [],
+        []
       ),
     ]);
 
+    const labels = dailyStats.map((s) => s.label);
+    const usersByLabel = dailyUserStats.reduce((acc, row) => {
+      acc[row.label] = Number(row.users || 0);
+      return acc;
+    }, {});
+    const productsByLabel = dailyProductStats.reduce((acc, row) => {
+      acc[row.label] = Number(row.products || 0);
+      return acc;
+    }, {});
+
     return res.json({
       metrics: [
-        { label: "Total Earnings", value: `Rs ${toCurrency(orderStatsRows[0]?.totalRevenue).toLocaleString("en-IN")}` },
-        { label: "Total Products", value: String(productCountRows[0]?.total ?? 0) },
-        { label: "Processed Orders", value: String(orderStatsRows[0]?.totalOrders ?? 0) },
-        { label: "Active Users", value: String(userCountRows[0]?.total ?? 0) },
+        { label: "Earnings", value: `Rs ${toCurrency(orderStatsRows[0]?.totalRevenue).toLocaleString("en-IN")}` },
+        { label: "Products", value: String(productCountRows[0]?.total ?? 0) },
+        { label: "Orders", value: String(orderStatsRows[0]?.totalOrders ?? 0) },
+        { label: "Users", value: String(userCountRows[0]?.total ?? 0) },
       ],
       analytics: {
-        labels: dailyStats.map(s => s.label),
+        labels,
         datasets: {
           revenue: dailyStats.map(s => Number(s.revenue)),
           orders: dailyStats.map(s => Number(s.orders)),
-          users: dailyStats.map(s => Number(s.users)),
+          users: labels.map((label) => usersByLabel[label] || 0),
+          products: labels.map((label) => productsByLabel[label] || 0),
         }
       },
       categoryDistribution: topProductsDistribution.map((row, idx) => ({
