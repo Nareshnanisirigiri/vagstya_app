@@ -14,6 +14,9 @@ export default function AuthLoginScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const role = route.params?.role === "admin" ? "admin" : "customer";
+  const returnTo = route.params?.returnTo;
+  const returnParams = route.params?.returnParams;
+  const returnMode = route.params?.returnMode;
   const { login, sessionNotice, clearSessionNotice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +35,15 @@ export default function AuthLoginScreen() {
       setError(res.error || "Login failed.");
       return;
     }
-    navigation.navigate(role === "admin" ? "AdminPanel" : "Shop");
+    if (role === "admin") {
+      navigation.replace("AdminPanel");
+    } else if (returnMode === "goBack" && navigation.canGoBack()) {
+      navigation.goBack();
+    } else if (returnTo) {
+      navigation.replace(returnTo, returnParams);
+    } else {
+      navigation.replace("Shop");
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable, Platform, ScrollView, useWindowDimensions } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,6 +11,7 @@ import { useStore } from "../context/StoreContext";
 import { useSnackbar } from "../context/SnackbarContext";
 import { useProducts } from "../context/ProductsContext";
 import { colors, spacing } from "../theme/theme";
+import { apiRequest } from "../api/client";
 
 export default function ProductDetailsScreen() {
   const navigation = useNavigation();
@@ -26,6 +27,27 @@ export default function ProductDetailsScreen() {
   const [selectedMetal, setSelectedMetal] = useState("Sterling Silver");
   const { addToCart, toggleWishlist, isWishlisted } = useStore();
   const { showMessage } = useSnackbar();
+
+  const [reviewsList, setReviewsList] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  const fetchReviews = useCallback(async () => {
+    if (!productId) return;
+    try {
+      const response = await apiRequest(`/products/${productId}/reviews`);
+      if (response && response.reviews) {
+        setReviewsList(response.reviews);
+      }
+    } catch (error) {
+      console.error("Fetch Reviews Error:", error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const details = useMemo(() => {
     const byCategory = {
@@ -80,30 +102,35 @@ export default function ProductDetailsScreen() {
   }, [product?.category]);
 
   const reviewSummary = useMemo(() => {
-    const totalReviews = Math.max(Number(product?.reviews || 0), 1);
-    const rating = Number(product?.rating || 4.5);
-    const totalWeight = 100;
-    const five = Math.max(40, Math.round((rating / 5) * 58));
-    const four = 24;
-    const three = 10;
-    const two = 5;
-    const one = 3;
-    const used = five + four + three + two + one;
-    const scale = totalWeight / used;
-    const distribution = [
-      { stars: 5, value: Math.round(five * scale) },
-      { stars: 4, value: Math.round(four * scale) },
-      { stars: 3, value: Math.round(three * scale) },
-      { stars: 2, value: Math.round(two * scale) },
-      { stars: 1, value: Math.round(one * scale) },
-    ];
+    const totalReviews = reviewsList.length;
+    if (totalReviews === 0) {
+      return {
+        average: "0.0",
+        count: 0,
+        distribution: [
+          { stars: 5, value: 0 },
+          { stars: 4, value: 0 },
+          { stars: 3, value: 0 },
+          { stars: 2, value: 0 },
+          { stars: 1, value: 0 },
+        ],
+      };
+    }
+
+    const totalStars = reviewsList.reduce((sum, r) => sum + r.rating, 0);
+    const average = (totalStars / totalReviews).toFixed(1);
+    
+    const distribution = [5, 4, 3, 2, 1].map(stars => {
+      const count = reviewsList.filter(r => r.rating === stars).length;
+      return { stars, value: Math.round((count / totalReviews) * 100) };
+    });
 
     return {
-      average: rating.toFixed(1),
+      average,
       count: totalReviews,
       distribution,
     };
-  }, [product?.rating, product?.reviews]);
+  }, [reviewsList]);
 
   const relatedProducts = useMemo(() => {
     if (!product) return [];
@@ -295,30 +322,52 @@ export default function ProductDetailsScreen() {
                   </View>
                 ))}
               </View>
+              
+              <Pressable 
+                style={styles.writeReviewBtn}
+                onPress={() => navigation.navigate("WriteReview", { productId: product.id })}
+              >
+                <Text style={styles.writeReviewBtnText}>Write a review</Text>
+              </Pressable>
             </View>
 
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewCardHead}>
-                <View>
-                  <Text style={styles.reviewAuthor}>Alex Mathio</Text>
-                  <View style={styles.reviewStars}>
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Ionicons key={i} name="star" size={14} color={colors.highlight} />
-                    ))}
+            <View style={styles.reviewList}>
+              {reviewsLoading ? (
+                <View style={styles.reviewPlaceholder}>
+                  <Text style={styles.reviewPlaceholderText}>Loading reviews...</Text>
+                </View>
+              ) : reviewsList.length === 0 ? (
+                <View style={styles.reviewPlaceholder}>
+                  <Text style={styles.reviewSectionTitle}>No reviews yet</Text>
+                  <Text style={[styles.reviewPlaceholderText, { marginTop: 8 }]}>
+                    Be the first to review this product and help other customers!
+                  </Text>
+                </View>
+              ) : (
+                reviewsList.map((review) => (
+                  <View key={review.id} style={styles.reviewCard}>
+                    <View style={styles.reviewCardHead}>
+                      <View>
+                        <Text style={styles.reviewAuthor}>{review.user_name}</Text>
+                        <View style={styles.reviewStars}>
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <Ionicons key={i} name={i <= review.rating ? "star" : "star-outline"} size={14} color={colors.highlight} />
+                          ))}
+                        </View>
+                      </View>
+                      <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString()}</Text>
+                    </View>
+                    <Text style={styles.reviewHeadline}>{review.title}</Text>
+                    <Text style={styles.reviewText}>{review.comment}</Text>
+                    <View style={styles.reviewerRow}>
+                      <View style={styles.reviewerAvatar}>
+                        <Text style={styles.reviewerAvatarText}>{review.user_name?.charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <Text style={styles.reviewerMeta}>Verified buyer</Text>
+                    </View>
                   </View>
-                </View>
-                <Text style={styles.reviewDate}>13 Oct 2024</Text>
-              </View>
-              <Text style={styles.reviewText}>
-                The finish feels premium and the overall silhouette looks elevated in person. It balances comfort and
-                structure really well, and the detailing makes it feel more polished than a typical everyday piece.
-              </Text>
-              <View style={styles.reviewerRow}>
-                <View style={styles.reviewerAvatar}>
-                  <Text style={styles.reviewerAvatarText}>A</Text>
-                </View>
-                <Text style={styles.reviewerMeta}>Verified buyer</Text>
-              </View>
+                ))
+              )}
             </View>
           </View>
 
@@ -722,62 +771,40 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.06)",
     flex: 0.9,
   },
-  reviewSectionTitle: {
-    color: "#161310",
-    fontSize: 22,
-    fontWeight: "800",
+  writeReviewBtn: {
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: '#d5d9d9',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    boxShadow: '0 2px 5px rgba(213,217,217,.5)',
   },
-  ratingHero: {
-    marginTop: spacing.lg,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
+  writeReviewBtnText: {
+    fontSize: 13,
+    color: '#0f1111',
+    fontWeight: '500',
   },
-  ratingBig: {
-    fontSize: 86,
-    lineHeight: 86,
-    color: "#171411",
-    fontWeight: "500",
-    fontFamily: Platform.OS === "web" ? "Georgia, 'Times New Roman', serif" : undefined,
+  reviewList: {
+    flex: 1.1,
+    gap: 16,
   },
-  ratingOutOf: {
-    fontSize: 28,
-    color: "#7b746d",
-    marginBottom: 12,
+  reviewPlaceholder: {
+    padding: 40,
+    backgroundColor: 'rgba(255,255,255,0.84)',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  reviewCount: {
-    color: "#8a837b",
+  reviewPlaceholderText: {
+    color: '#8a837b',
     fontSize: 14,
-    marginTop: 8,
-  },
-  ratingBars: {
-    marginTop: spacing.lg,
-    gap: 10,
-  },
-  ratingBarRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  ratingBarLabel: {
-    width: 16,
-    color: "#2a2520",
-    fontWeight: "700",
-  },
-  ratingTrack: {
-    flex: 1,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#ece7e0",
-    overflow: "hidden",
-  },
-  ratingFill: {
-    height: "100%",
-    borderRadius: 999,
-    backgroundColor: "#1f1b18",
+    textAlign: 'center',
   },
   reviewCard: {
-    flex: 1.1,
     backgroundColor: "rgba(255,255,255,0.84)",
     borderRadius: 28,
     padding: 24,
@@ -807,8 +834,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
+  reviewHeadline: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+  },
   reviewText: {
-    marginTop: spacing.lg,
+    marginTop: 8,
     color: "#5f5952",
     lineHeight: 24,
     fontSize: 15,

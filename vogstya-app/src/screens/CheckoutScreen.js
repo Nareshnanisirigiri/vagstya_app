@@ -91,7 +91,10 @@ export default function CheckoutScreen() {
     }
     if (!token) {
       setError("Please sign in to place and track your order.");
-      navigation.navigate("Login");
+      navigation.navigate("Login", {
+        returnTo: "Checkout",
+        returnMode: "goBack",
+      });
       return;
     }
     const err = validateAddress();
@@ -152,7 +155,10 @@ export default function CheckoutScreen() {
         await refreshOrders();
         clearCart();
         showMessage("Order placed successfully");
-        navigation.replace("Orders", { focusOrderId: `ORD-${backendOrder.id}` });
+        navigation.replace("OrderSuccess", { 
+           orderId: backendOrder.id,
+           displayOrderId: `ORD-${backendOrder.id}`
+        });
         return;
       }
 

@@ -9,6 +9,7 @@ import { orderRoutes } from "./routes/orderRoutes.js";
 import { adminAdRoutes } from "./routes/adminAdRoutes.js";
 import { dashboardRoutes } from "./routes/dashboardRoutes.js";
 import { adminDataRoutes } from "./routes/adminDataRoutes.js";
+import { categoryRoutes } from "./routes/categoryRoutes.js";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin/ads", adminAdRoutes);

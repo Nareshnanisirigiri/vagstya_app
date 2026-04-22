@@ -27,6 +27,13 @@ export default function UpiQrScreen() {
   const { token } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const { orderId, displayOrderId, gatewayOrderId, gatewayLabel, gatewayId, upiHandle, amount } = route.params || {};
+  const { orders } = useOrders();
+
+  // Find current order in context to get items/totals if needed (usually for OrderSuccess nav)
+  const currentOrder = orders.find(o => o.backendOrderId === Number(orderId) || o.id === orderId);
+  const items = currentOrder?.items || [];
+  const totals = currentOrder?.totals || {};
+  const address = currentOrder?.address || {};
 
   const upiPayload = useMemo(() => {
     const query = [
@@ -74,7 +81,9 @@ export default function UpiQrScreen() {
       await refreshOrders();
       clearCart();
       showMessage("Payment confirmed");
-      navigation.replace("Orders", { focusOrderId: displayOrderId || `ORD-${orderId}` });
+      navigation.replace("OrderSuccess", {
+        orderId, displayOrderId: displayOrderId || `ORD-${orderId}`
+      });
     } catch (error) {
       showMessage(error.message || "Payment confirmation failed");
     } finally {
@@ -117,7 +126,9 @@ export default function UpiQrScreen() {
             style={styles.secondary}
             onPress={() => {
               clearCart();
-              navigation.replace("Orders", { focusOrderId: displayOrderId || `ORD-${orderId}` });
+              navigation.replace("OrderSuccess", {
+                orderId, displayOrderId: displayOrderId || `ORD-${orderId}`
+              });
             }}
           >
             <Text style={styles.secondaryText}>Mark Pending & Continue</Text>

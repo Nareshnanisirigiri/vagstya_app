@@ -45,16 +45,17 @@ export function inferCategoryLabel(product) {
   ) {
     return "Jewellery";
   }
-  if (haystack.includes("men") || haystack.includes("shirt") || haystack.includes("kurta")) return "Men";
   if (
     haystack.includes("women") ||
     haystack.includes("dress") ||
     haystack.includes("kurti") ||
     haystack.includes("blouse") ||
-    haystack.includes("lehenga")
+    haystack.includes("lehenga") ||
+    haystack.includes("dupatta")
   ) {
     return "Women";
   }
+  if (/\bmen\b/.test(haystack) || haystack.includes("shirt") || haystack.includes("kurta")) return "Men";
   return product?.category || "Collections";
 }
 

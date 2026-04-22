@@ -33,9 +33,9 @@ async function assertTableExists(tableName) {
 export async function getCategories(req, res) {
   try {
     const categories = await query(
-      `SELECT id, name, slug, is_active, created_at, updated_at
+      `SELECT id, name, url_slug as slug, status as is_active, image_url, created_at, updated_at
        FROM categories
-       ORDER BY id DESC`
+       ORDER BY id ASC`
     );
 
     return res.json({ rows: categories });
@@ -107,7 +107,7 @@ export async function getSqlTables(req, res) {
 export async function getSqlTableContent(req, res) {
   const tableName = String(req.params.tableName || "").trim();
   const requestedLimit = Number(req.query.limit);
-  const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(100, requestedLimit)) : 25;
+  const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(2000, requestedLimit)) : 500;
 
   if (!tableName) {
     return res.status(400).json({ message: "Table name is required." });
@@ -143,5 +143,71 @@ export async function getSqlTableContent(req, res) {
     });
   } catch (error) {
     return res.status(500).json({ message: `Failed to load content from table "${tableName}".`, error: error.message });
+  }
+}
+export async function createRecord(req, res) {
+  const { tableName } = req.params;
+  const data = req.body;
+
+  if (!tableName || !data) {
+    return res.status(400).json({ message: "Table name and data are required." });
+  }
+
+  try {
+    const matchingTable = await assertTableExists(tableName);
+    if (!matchingTable) return res.status(404).json({ message: `Table "${tableName}" not found.` });
+
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const placeholders = keys.map(() => "?").join(", ");
+    const sql = `INSERT INTO \`${tableName}\` (\`${keys.join("`, `")}\`) VALUES (${placeholders})`;
+
+    await query(sql, values);
+    return res.json({ success: true, message: "Record created successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: `Failed to create record in "${tableName}".`, error: error.message });
+  }
+}
+
+export async function updateRecord(req, res) {
+  const { tableName, id } = req.params;
+  const data = req.body;
+
+  if (!tableName || !id || !data) {
+    return res.status(400).json({ message: "Table name, ID, and data are required." });
+  }
+
+  try {
+    const matchingTable = await assertTableExists(tableName);
+    if (!matchingTable) return res.status(404).json({ message: `Table "${tableName}" not found.` });
+
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const setClause = keys.map(key => `\`${key}\` = ?`).join(", ");
+    const sql = `UPDATE \`${tableName}\` SET ${setClause} WHERE id = ?`;
+
+    await query(sql, [...values, id]);
+    return res.json({ success: true, message: "Record updated successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: `Failed to update record in "${tableName}".`, error: error.message });
+  }
+}
+
+export async function deleteRecord(req, res) {
+  const { tableName, id } = req.params;
+
+  if (!tableName || !id) {
+    return res.status(400).json({ message: "Table name and ID are required." });
+  }
+
+  try {
+    const matchingTable = await assertTableExists(tableName);
+    if (!matchingTable) return res.status(404).json({ message: `Table "${tableName}" not found.` });
+
+    const sql = `DELETE FROM \`${tableName}\` WHERE id = ?`;
+    await query(sql, [id]);
+    return res.json({ success: true, message: "Record deleted successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: `Failed to delete record from "${tableName}".`, error: error.message });
   }
 }

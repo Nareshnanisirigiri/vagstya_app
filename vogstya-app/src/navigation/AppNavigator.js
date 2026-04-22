@@ -13,6 +13,9 @@ import CheckoutScreen from "../screens/CheckoutScreen";
 import OrdersScreen from "../screens/OrdersScreen";
 import UpiQrScreen from "../screens/UpiQrScreen";
 import AdminPanelScreen from "../screens/AdminPanelScreen";
+import OrderSuccessScreen from "../screens/OrderSuccessScreen";
+import TrackOrderScreen from "../screens/TrackOrderScreen";
+import WriteReviewScreen from "../screens/WriteReviewScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -40,8 +43,11 @@ export default function AppNavigator() {
       <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Orders" component={OrdersScreen} />
+      <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
       <Stack.Screen name="UpiQr" component={UpiQrScreen} />
       <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+      <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
+      <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
     </Stack.Navigator>
   );
 }

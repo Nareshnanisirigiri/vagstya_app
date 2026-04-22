@@ -31,6 +31,7 @@ const linking = {
       ProductDetails: "product/:slug",
       Checkout: "checkout",
       Orders: "orders",
+      OrderSuccess: "order-success",
       AdminPanel: "admin-panel",
     },
   },

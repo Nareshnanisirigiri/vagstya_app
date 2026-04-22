@@ -34,8 +34,8 @@ const HERO = {
     subtitle: "Curated pieces selected for timeless style.",
   },
   bestDeals: {
-    title: "Best Deals",
-    subtitle: "Limited-time offers on select favorites.",
+    title: "Flash Sale",
+    subtitle: "Highly curated deals on our most popular pieces.",
   },
 };
 
@@ -60,7 +60,7 @@ export default function CatalogScreen() {
   const isWide = width >= WIDE;
 
   const baseProducts = useMemo(() => {
-    if (mode === "bestDeals") return products.filter((p) => p.sale);
+    if (mode === "bestDeals") return products.filter((p) => p.isFlashSale);
     return products;
   }, [mode, products]);
 
@@ -74,7 +74,9 @@ export default function CatalogScreen() {
   const [filterModal, setFilterModal] = useState(false);
 
   const counts = useMemo(() => {
-    const map = {};
+    const map = {
+      Women: 0,
+    };
     for (const p of baseProducts) {
       const category = inferCategoryLabel(p);
       map[category] = (map[category] || 0) + 1;

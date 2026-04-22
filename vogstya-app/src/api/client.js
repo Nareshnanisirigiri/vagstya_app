@@ -41,7 +41,13 @@ export async function apiRequest(path, { method = "GET", body, token } = {}) {
 }
 
 export function mapBackendProduct(row) {
-  const price = Number(row.discount_price || row.price || 0);
+  const isFlashSale = Boolean(row.is_flash_sale);
+  const flashSalePrice = row.flash_sale_price ? Number(row.flash_sale_price) : null;
+  const originalPrice = Number(row.price || 0);
+  const discountPrice = Number(row.discount_price || 0);
+
+  const price = isFlashSale && flashSalePrice !== null ? flashSalePrice : (discountPrice || originalPrice);
+  const oldPrice = isFlashSale && flashSalePrice !== null ? (discountPrice || originalPrice) : (discountPrice ? originalPrice : null);
   const category = inferCategoryLabel({
     category: row.category_name,
     name: row.name,
@@ -57,7 +63,8 @@ export function mapBackendProduct(row) {
     image:
       row.image ||
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=80",
-    sale: Number(row.discount_price || 0) > 0 && Number(row.discount_price) < Number(row.price || 0),
+    sale: Boolean(oldPrice && oldPrice > price),
+    oldPriceLabel: oldPrice ? `₹${oldPrice.toFixed(2)}` : null,
     rating,
     reviews,
     description: row.description || row.short_description || "",
@@ -66,5 +73,19 @@ export function mapBackendProduct(row) {
     brand: row.brand || "Vogstya",
     metal: row.metal || "Premium Alloy",
     size: row.size || "",
+    isFeatured: Boolean(row.is_featured),
+    isAuspicious: Boolean(row.is_auspicious),
+    isBannerMain: Boolean(row.is_banner_main),
+    isBannerEarrings: Boolean(row.is_banner_earrings),
+    isBannerNecklaces: Boolean(row.is_banner_necklaces),
+    isPopularJewellery: Boolean(row.is_popular_jewellery),
+    isMensShirts: Boolean(row.is_mens_shirts),
+    isWomensHighlights: Boolean(row.is_womens_highlights),
+    isPremiumSarees: Boolean(row.is_premium_sarees),
+    isFlashSale: Boolean(row.is_flash_sale),
+    flashSalePrice: row.flash_sale_price ? Number(row.flash_sale_price) : null,
+    flashSaleDiscount: row.flash_sale_discount ? Number(row.flash_sale_discount) : null,
+    flashSaleTotalQty: row.flash_sale_total_qty ? Number(row.flash_sale_total_qty) : 0,
+    flashSaleSoldQty: row.flash_sale_sold_qty ? Number(row.flash_sale_sold_qty) : 0,
   };
 }

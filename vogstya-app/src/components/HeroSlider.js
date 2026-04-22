@@ -110,7 +110,7 @@ export default function HeroSlider() {
         />
       )}
 
-      <View style={styles.heroOverlay}>
+      <View style={[styles.heroOverlay, isMobile && { padding: spacing.md, marginTop: -20, marginLeft: -10 }]}>
         <View style={[styles.heroTintPanel, isMobile && styles.heroTintPanelMobile]}>
           <View style={styles.heroContent}>
             <Text style={styles.heroEyebrow}>Exclusive Offer</Text>

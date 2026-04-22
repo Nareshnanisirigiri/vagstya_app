@@ -1,16 +1,22 @@
-import { useMemo, useCallback } from "react";
-import { View, Text, StyleSheet, Platform, ScrollView } from "react-native";
-import { useRoute, useFocusEffect } from "@react-navigation/native";
+import { useMemo, useCallback, useState } from "react";
+import { View, Text, StyleSheet, Platform, ScrollView, Pressable } from "react-native";
+import { Image } from "expo-image";
+import { useRoute, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useOrders } from "../context/OrdersContext";
 import { useProducts } from "../context/ProductsContext";
 import { useAuth } from "../context/AuthContext";
+import { useStore } from "../context/StoreContext";
 import { colors, spacing } from "../theme/theme";
 
 function fmtDate(iso) {
+  if (!iso) return "N/A";
   try {
-    return new Date(iso).toLocaleString();
+    const d = new Date(iso);
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   } catch {
     return iso;
   }
@@ -18,7 +24,7 @@ function fmtDate(iso) {
 
 function formatMoney(value) {
   const amount = Number(value || 0);
-  return `₹${amount.toFixed(2)}`;
+  return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function normalizeOrderStatus(status) {
@@ -45,22 +51,47 @@ function statusStyle(status) {
 
 export default function OrdersScreen() {
   const route = useRoute();
+  const navigation = useNavigation();
   const focusOrderId = route.params?.focusOrderId;
   const { orders, loading, refreshOrders } = useOrders();
   const { products } = useProducts();
   const { user } = useAuth();
+  const { addToCart } = useStore();
+
+  const [activeTab, setActiveTab] = useState("Orders");
+  const [timeframe, setTimeframe] = useState("past 3 months");
+
+  const TABS = ["Orders", "Buy Again", "Not Yet Shipped"];
 
   const rows = useMemo(() => {
     return orders.map((ord) => {
       const lines = ord.items
         .map((it) => {
           const p = products.find((x) => x.id === it.productId);
-          return `${p?.name || it.name || "Product"} x${it.qty}`;
+          return {
+            productId: it.productId,
+            name: p?.name || it.name || "Product",
+            qty: it.qty,
+            size: it.size,
+            image: p?.image || it.image,
+            price: p?.price || it.price,
+          };
         })
         .filter(Boolean);
       return { ...ord, lines };
     });
   }, [orders, products]);
+
+  // Filtering logic for tabs (mocked / simple)
+  const filteredRows = useMemo(() => {
+    if (activeTab === "Not Yet Shipped") {
+      return rows.filter(r => !["delivered", "cancelled"].includes(r.orderStatus?.toLowerCase()));
+    }
+    if (activeTab === "Buy Again") {
+        return rows.filter(r => r.orderStatus?.toLowerCase() === "delivered");
+    }
+    return rows;
+  }, [rows, activeTab]);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,12 +101,38 @@ export default function OrdersScreen() {
     }, [user, refreshOrders])
   );
 
+  const handleBuyAgain = (productId) => {
+    addToCart(productId, 1);
+    navigation.navigate("Cart");
+  };
+
+  const handleTrackPackage = (orderId) => {
+    navigation.navigate("TrackOrder", { orderId });
+  };
+
+  const handleWriteReview = (productId) => {
+    navigation.navigate("WriteReview", { productId });
+  };
+
   return (
     <View style={styles.root}>
       <Header />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Orders</Text>
-        <Text style={styles.sub}>{user ? `${rows.length} orders for ${user.name}` : "Sign in to see your orders"}</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.title}>Your Orders</Text>
+          
+          <View style={styles.tabBar}>
+            {TABS.map(tab => (
+              <Pressable 
+                key={tab} 
+                style={[styles.tab, activeTab === tab && styles.tabActive]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         {!user ? (
           <View style={styles.empty}>
@@ -85,47 +142,131 @@ export default function OrdersScreen() {
           <View style={styles.empty}>
             <Text style={styles.emptyText}>Loading your orders...</Text>
           </View>
-        ) : rows.length === 0 ? (
+        ) : filteredRows.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No orders yet.</Text>
           </View>
         ) : (
-          rows.map((ord) => {
-            const focused = focusOrderId && ord.id === focusOrderId;
-            const lifecycleStatus = normalizeOrderStatus(ord.orderStatus);
-            const lifecycleStatusKey = statusStyle(lifecycleStatus);
-            return (
-              <View key={ord.id} style={[styles.card, focused && styles.cardFocus]}>
-                <View style={styles.row}>
-                  <Text style={styles.orderId}>{ord.id}</Text>
-                  <Text style={[styles.status, styles[lifecycleStatusKey]]}>
-                    {lifecycleStatus.toUpperCase()}
-                  </Text>
-                </View>
-                {ord.orderCode ? <Text style={styles.meta}>Order Code: {ord.orderCode}</Text> : null}
-                <Text style={styles.meta}>{fmtDate(ord.createdAt)}</Text>
-                <Text style={styles.meta}>Payment: {ord.paymentMethod}</Text>
-                <Text style={styles.meta}>Order Status: {lifecycleStatus}</Text>
-                <Text style={styles.meta}>Payment Status: {String(ord.paymentStatus || "pending").toUpperCase()}</Text>
-                {ord.address.fullName ? <Text style={styles.meta}>Customer: {ord.address.fullName}</Text> : null}
-                {ord.address.phone ? <Text style={styles.meta}>Phone: {ord.address.phone}</Text> : null}
-                <Text style={styles.meta}>
-                  Address: {ord.address.street}, {ord.address.city}, {ord.address.state} {ord.address.pincode}
-                </Text>
-                <View style={styles.linesWrap}>
-                  {ord.lines.map((line, idx) => (
-                    <Text key={`${ord.id}-${idx}`} style={styles.line}>
-                      {"\u2022"} {line}
-                    </Text>
-                  ))}
-                </View>
-                <View style={styles.sumRow}>
-                  <Text style={styles.sumLabel}>Grand Total</Text>
-                  <Text style={styles.sumValue}>{formatMoney(ord.totals?.grandTotal)}</Text>
-                </View>
+          <View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.orderCount}>{filteredRows.length} orders placed in</Text>
+              <View style={styles.dropdownBtn}>
+                <Text style={styles.dropdownText}>{timeframe}</Text>
+                <Ionicons name="chevron-down" size={16} color={colors.subtleText} />
               </View>
-            );
-          })
+            </View>
+
+            {filteredRows.map((ord) => {
+              const focused = focusOrderId && ord.id === focusOrderId;
+              const lifecycleStatus = normalizeOrderStatus(ord.orderStatus);
+              const isDelivered = lifecycleStatus === "Delivered";
+              const isReturned = lifecycleStatus === "Return / Refund";
+
+              return (
+                <View key={ord.id} style={[styles.card, focused && styles.cardFocus]}>
+                  {/* Order Header (Gray Area) */}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.headerInfo}>
+                      <View style={styles.headerField}>
+                        <Text style={styles.headerLabel}>ORDER PLACED</Text>
+                        <Text style={styles.headerValue}>{fmtDate(ord.createdAt)}</Text>
+                      </View>
+                      <View style={styles.headerField}>
+                        <Text style={styles.headerLabel}>TOTAL</Text>
+                        <Text style={styles.headerValue}>{formatMoney(ord.totals?.grandTotal)}</Text>
+                      </View>
+                      <View style={styles.headerField}>
+                        <Text style={styles.headerLabel}>SHIP TO</Text>
+                        <View style={styles.shipToContainer}>
+                          <Text style={[styles.headerValue, { color: '#007185' }]}>{ord.address.fullName || "NARESH"}</Text>
+                          <Ionicons name="chevron-down" size={14} color="#007185" style={{ marginLeft: 2 }} />
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.headerActionsRight}>
+                      <Text style={styles.headerOrderId}>ORDER # {ord.id}</Text>
+                      <View style={styles.headerLinks}>
+                        <Text style={styles.headerLink}>View order details</Text>
+                        <View style={styles.vDivider} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={styles.headerLink}>Invoice</Text>
+                          <Ionicons name="chevron-down" size={14} color="#007185" style={{ marginLeft: 2 }} />
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Order Body */}
+                  <View style={styles.cardContent}>
+                    <View style={styles.mainCol}>
+                      <Text style={styles.statusTitle}>
+                        {isDelivered ? "Delivered" : isReturned ? "Return complete" : lifecycleStatus}
+                      </Text>
+                      <Text style={styles.statusDesc}>
+                        {isDelivered ? "Package was handed to resident" : isReturned ? "Your return is complete." : `Order is currently ${lifecycleStatus.toLowerCase()}`}
+                      </Text>
+
+                      {ord.lines.map((line, idx) => (
+                        <View key={`${ord.id}-${idx}`} style={styles.productRow}>
+                          <Pressable 
+                            style={styles.itemImageContainer}
+                            onPress={() => navigation.navigate("ProductDetails", { productId: line.productId })}
+                          >
+                            {line.image ? (
+                              <Image source={{ uri: line.image }} style={styles.itemImage} contentFit="cover" transition={200} />
+                            ) : (
+                              <View style={[styles.itemImage, styles.itemImageFallback]}>
+                                <Ionicons name="image-outline" size={24} color={colors.muted} />
+                              </View>
+                            )}
+                          </Pressable>
+                          <View style={styles.productInfo}>
+                            <Pressable onPress={() => navigation.navigate("ProductDetails", { productId: line.productId })}>
+                              <Text style={styles.productName} numberOfLines={3}>{line.name}</Text>
+                            </Pressable>
+                            <View style={styles.productActionsInner}>
+                              <Pressable style={styles.buyAgainBtn} onPress={() => handleBuyAgain(line.productId)}>
+                                <View style={styles.buyAgainIcon}>
+                                  <Ionicons name="cart" size={14} color="#333" />
+                                </View>
+                                <Text style={styles.buyAgainText}>Buy it again</Text>
+                              </Pressable>
+                              <Pressable style={styles.viewItemBtn} onPress={() => navigation.navigate("ProductDetails", { productId: line.productId })}>
+                                <Text style={styles.viewItemText}>View your item</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Right-side Action Column */}
+                    <View style={styles.actionCol}>
+                      {isReturned && (
+                        <Pressable style={styles.primaryActionBtn} onPress={() => handleTrackPackage(ord.id)}>
+                          <Text style={styles.primaryActionText}>View Return/Refund Status</Text>
+                        </Pressable>
+                      )}
+                      {!isReturned && (
+                        <Pressable style={styles.primaryActionBtn} onPress={() => handleTrackPackage(ord.id)}>
+                          <Text style={styles.primaryActionText}>Track package</Text>
+                        </Pressable>
+                      )}
+                      <Pressable style={styles.secondaryActionBtn}>
+                        <Text style={styles.secondaryActionText}>Leave seller feedback</Text>
+                      </Pressable>
+                      <Pressable 
+                        style={styles.secondaryActionBtn} 
+                        onPress={() => handleWriteReview(ord.lines[0]?.productId)}
+                      >
+                        <Text style={styles.secondaryActionText}>Write a product review</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         )}
         <Footer bleed={spacing.lg} bleedBottom={spacing.xxl} />
       </ScrollView>
@@ -135,46 +276,181 @@ export default function OrdersScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  body: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  pageHeader: { marginTop: spacing.lg, marginBottom: spacing.lg },
   title: {
     color: colors.ink,
-    fontSize: 26,
-    fontWeight: "900",
-    fontFamily: Platform.OS === "web" ? "Georgia, 'Times New Roman', serif" : undefined,
+    fontSize: 28,
+    fontWeight: "400",
+    marginBottom: spacing.md,
   },
-  sub: { marginTop: 6, color: colors.subtleText, fontWeight: "700", marginBottom: spacing.lg },
+  tabBar: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e7e7e7",
+    gap: spacing.lg,
+  },
+  tab: {
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  tabActive: {
+    borderBottomColor: "#e47911", // Amazon Orange
+  },
+  tabText: {
+    fontSize: 14,
+    color: "#007185", // Amazon Blue link
+    fontWeight: "500",
+  },
+  tabTextActive: {
+    color: colors.ink,
+    fontWeight: "700",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    gap: 8,
+  },
+  orderCount: { fontSize: 14, color: colors.ink, fontWeight: "700" },
+  dropdownBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f2f2",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#d5d9d9",
+    boxShadow: "0 2px 5px rgba(213,217,217,.5)",
+  },
+  dropdownText: { fontSize: 13, color: colors.ink, marginRight: 4 },
   empty: {
     backgroundColor: colors.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.10)",
+    borderColor: "#d5d9d9",
     padding: spacing.xl,
     alignItems: "center",
   },
-  emptyText: { color: colors.subtleText, fontWeight: "700" },
+  emptyText: { color: colors.subtleText, fontWeight: "600" },
   card: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.10)",
-    padding: spacing.md,
+    borderColor: "#d5d9d9",
+    overflow: "hidden",
   },
-  cardFocus: { borderColor: colors.accent, borderWidth: 2 },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  orderId: { color: colors.ink, fontWeight: "900" },
-  status: { fontWeight: "900", fontSize: 11, letterSpacing: 0.8 },
-  delivered: { color: colors.accent },
-  outForDelivery: { color: "#0c6c8f" },
-  shipped: { color: "#0b7ea4" },
-  packed: { color: "#2563eb" },
-  returnRefund: { color: "#b91c1c" },
-  cancelled: { color: "#6b7280" },
-  pending: { color: "#a05b00" },
-  meta: { marginTop: 4, color: colors.subtleText, fontSize: 12, fontWeight: "600" },
-  linesWrap: { marginTop: 8 },
-  line: { marginTop: 2, color: colors.ink, fontWeight: "600" },
-  sumRow: { marginTop: 10, flexDirection: "row", justifyContent: "space-between" },
-  sumLabel: { color: colors.subtleText, fontWeight: "700" },
-  sumValue: { color: colors.ink, fontWeight: "900" },
+  cardFocus: { borderColor: "#e47911", borderWidth: 2 },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#f0f2f2",
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#d5d9d9",
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  headerInfo: { flexDirection: "row", gap: spacing.lg, flexWrap: 'wrap' },
+  headerField: { gap: 4 },
+  headerLabel: { fontSize: 10, color: "#565959", fontWeight: "700" },
+  headerValue: { fontSize: 12, color: "#565959", fontWeight: "500" },
+  shipToContainer: { flexDirection: 'row', alignItems: 'center' },
+  headerActionsRight: { alignItems: 'flex-end', flex: 1, minWidth: 150 },
+  headerOrderId: { fontSize: 11, color: "#565959", fontWeight: "500", marginBottom: 4 },
+  headerLinks: { flexDirection: 'row', alignItems: 'center' },
+  headerLink: { fontSize: 12, color: "#007185", fontWeight: "00" },
+  vDivider: { width: 1, height: 12, backgroundColor: '#d5d9d9', marginHorizontal: 8 },
+  cardContent: {
+    padding: 16,
+    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    justifyContent: 'space-between',
+    gap: 20,
+  },
+  mainCol: { flex: 3 },
+  statusTitle: { fontSize: 18, fontWeight: "700", color: colors.ink, marginBottom: 4 },
+  statusDesc: { fontSize: 13, color: "#565959", marginBottom: 16 },
+  productRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: spacing.lg,
+  },
+  itemImageContainer: {
+    width: 90,
+    height: 90,
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    padding: 4,
+  },
+  itemImage: {
+    width: '100%',
+    height: '100%',
+  },
+  itemImageFallback: {
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  productInfo: { flex: 1 },
+  productName: {
+    fontSize: 14,
+    color: "#007185",
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  productActionsInner: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  buyAgainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD814', // Amazon Yellow
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FCD200',
+  },
+  buyAgainIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#F7CA00',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  buyAgainText: { fontSize: 12, fontWeight: '600', color: '#0F1111' },
+  viewItemBtn: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D5D9D9',
+  },
+  viewItemText: { fontSize: 12, fontWeight: '500', color: '#0F1111' },
+  actionCol: { flex: 1, minWidth: 200, gap: 8 },
+  primaryActionBtn: {
+    backgroundColor: '#FFD814',
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FCD200',
+    boxShadow: '0 2px 5px rgba(213,217,217,.5)',
+  },
+  primaryActionText: { fontSize: 13, fontWeight: '500', color: '#0F1111' },
+  secondaryActionBtn: {
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D5D9D9',
+    boxShadow: '0 2px 5px rgba(213,217,217,.5)',
+  },
+  secondaryActionText: { fontSize: 13, fontWeight: '500', color: '#0F1111' },
 });

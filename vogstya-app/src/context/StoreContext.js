@@ -1,10 +1,33 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const StoreContext = createContext(null);
 
 export function StoreProvider({ children }) {
   const [cartItems, setCartItems] = useState([]); // { id, qty }
   const [wishlistIds, setWishlistIds] = useState([]); // number[]
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      AsyncStorage.getItem("@vogstya_cart"),
+      AsyncStorage.getItem("@vogstya_wishlist"),
+    ]).then(([cartData, wishData]) => {
+      try { if (cartData) setCartItems(JSON.parse(cartData)); } catch (e) {}
+      try { if (wishData) setWishlistIds(JSON.parse(wishData)); } catch (e) {}
+      setIsReady(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) return;
+    AsyncStorage.setItem("@vogstya_cart", JSON.stringify(cartItems));
+  }, [cartItems, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    AsyncStorage.setItem("@vogstya_wishlist", JSON.stringify(wishlistIds));
+  }, [wishlistIds, isReady]);
 
   const cartCount = useMemo(
     () => cartItems.reduce((sum, it) => sum + (it.qty || 0), 0),

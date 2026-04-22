@@ -49,6 +49,12 @@ export default function ProductCard({ item, index = 0, compact }) {
               <Text style={styles.saleText}>SALE</Text>
             </View>
           ) : null}
+          {item.isFlashSale ? (
+            <View style={[styles.saleBadge, styles.flashSaleBadge]}>
+              <Ionicons name="flash" size={10} color="white" style={{ marginRight: 2 }} />
+              <Text style={[styles.saleText, styles.flashSaleText]}>FLASH SALE</Text>
+            </View>
+          ) : null}
           <View style={[styles.hoverActions, !showOverlay && styles.hoverHiddenWeb]}>
             <Pressable
               onHoverIn={() => setHovered(true)}
@@ -92,7 +98,28 @@ export default function ProductCard({ item, index = 0, compact }) {
             <StarRow rating={item.rating} />
             <Text style={styles.reviews}>({item.reviews})</Text>
           </View>
-          <Text style={styles.price}>{item.priceLabel}</Text>
+          <View style={styles.priceRow}>
+            <Text style={[styles.price, item.isFlashSale && styles.flashPrice]}>{item.priceLabel}</Text>
+            {item.oldPriceLabel && (
+              <Text style={styles.oldPrice}>{item.oldPriceLabel}</Text>
+            )}
+          </View>
+
+          {item.isFlashSale && item.flashSaleTotalQty > 0 && (
+            <View style={styles.flashSaleStock}>
+              <View style={styles.progressBg}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${Math.min((item.flashSaleSoldQty / item.flashSaleTotalQty) * 100, 100)}%` }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.stockLabel}>
+                {Math.max(item.flashSaleTotalQty - item.flashSaleSoldQty, 0)} items left
+              </Text>
+            </View>
+          )}
         </Pressable>
       </Pressable>
     </Animated.View>
@@ -144,6 +171,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
+  },
+  flashSaleBadge: {
+    backgroundColor: "#ef4444",
+    top: 40,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  flashSaleText: {
+    color: colors.white,
   },
   saleText: {
     fontWeight: "800",
@@ -231,8 +267,42 @@ const styles = StyleSheet.create({
     color: colors.subtleText,
   },
   price: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "800",
-    color: colors.accent,
+    color: colors.ink,
+    letterSpacing: -0.5,
+  },
+  flashPrice: {
+    color: "#e03131",
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  oldPrice: {
+    color: colors.muted,
+    textDecorationLine: "line-through",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  flashSaleStock: {
+    marginTop: 8,
+  },
+  progressBg: {
+    height: 4,
+    backgroundColor: "rgba(224, 49, 49, 0.1)",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginBottom: 4,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#e03131",
+  },
+  stockLabel: {
+    fontSize: 11,
+    color: colors.muted,
+    fontWeight: "600",
   },
 });

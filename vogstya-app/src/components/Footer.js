@@ -5,7 +5,7 @@ import { colors, spacing } from "../theme/theme";
 const LINKS = [
   { label: "Shop", screen: "Shop" },
   { label: "Collection", screen: "Collection" },
-  { label: "Best Deals", screen: "BestDeals" },
+  { label: "Flash Sale", screen: "BestDeals" },
   { label: "Orders", screen: "Orders" },
 ];
 

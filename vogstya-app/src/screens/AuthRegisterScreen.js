@@ -45,7 +45,11 @@ export default function AuthRegisterScreen() {
       setError(res.error || "Registration failed.");
       return;
     }
-    navigation.navigate(role === "admin" ? "Account" : "Orders");
+    if (role === "admin") {
+      navigation.replace("AdminPanel");
+    } else {
+      navigation.replace("Shop");
+    }
   };
 
   return (

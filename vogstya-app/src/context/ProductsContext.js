@@ -5,6 +5,7 @@ const ProductsContext = createContext(null);
 
 export function ProductsProvider({ children }) {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -12,11 +13,16 @@ export function ProductsProvider({ children }) {
     setLoading(true);
     setError("");
     try {
-      const rows = await apiRequest("/products");
+      const [rows, cats] = await Promise.all([
+        apiRequest("/products"),
+        apiRequest("/categories").catch(() => []) // fallback
+      ]);
       setProducts(Array.isArray(rows) ? rows.map(mapBackendProduct) : []);
+      setCategories(Array.isArray(cats) ? cats : []);
     } catch (e) {
       setError(e.message || "Failed to load products.");
       setProducts([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -29,12 +35,13 @@ export function ProductsProvider({ children }) {
   const value = useMemo(
     () => ({
       products,
+      categories,
       loading,
       error,
       reloadProducts,
       getProductById: (id) => products.find((p) => Number(p.id) === Number(id)),
     }),
-    [products, loading, error]
+    [products, categories, loading, error]
   );
 
   return <ProductsContext.Provider value={value}>{children}</ProductsContext.Provider>;
