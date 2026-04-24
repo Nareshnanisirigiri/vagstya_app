@@ -1,9 +1,6 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-// This script starts the backend server from the correct directory
-// to satisfy Render's default 'node server.js' start command.
-
 const backendDir = path.join(__dirname, 'b2c-backend');
 
 console.log(`Starting backend server from: ${backendDir}`);

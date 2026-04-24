@@ -11,7 +11,6 @@ services:
         value: 5000
       - key: NODE_ENV
         value: production
-      # Note: Add DB_HOST, DB_USER, DB_PASSWORD, DB_NAME manually in Render UI or here if they are public
 
   # Frontend Service (Expo Web Static Site)
   - type: static
