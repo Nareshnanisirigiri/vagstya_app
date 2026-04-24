@@ -1,9 +1,9 @@
 import { Platform } from "react-native";
 import { inferCategoryLabel } from "../utils/shopCurations";
 
-const WEB_DEFAULT = "https://vagstya-backend.onrender.com/api";
+const WEB_DEFAULT = "https://vagstya-app.onrender.com/api";
 const ANDROID_DEFAULT = "http://10.0.2.2:5000/api";
-const IOS_DEFAULT = "https://vagstya-backend.onrender.com/api";
+const IOS_DEFAULT = "https://vagstya-app.onrender.com/api";
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
