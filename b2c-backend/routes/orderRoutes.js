@@ -7,8 +7,8 @@ import {
   listPaymentGateways,
   startCheckout,
   updateOrderLifecycleStatus,
-} from "../controllers/orderController.js";
-import { attachUserIfToken, verifyToken } from "../middleware/auth.js";
+} from "../Controllers/orderController.js";
+import { attachUserIfToken, verifyToken } from "../Middleware/auth.js";
 
 const router = express.Router();
 

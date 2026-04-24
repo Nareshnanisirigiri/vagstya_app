@@ -1,5 +1,5 @@
 import express from "express";
-import { getCategories, getColors, getSizes, getCustomers, getSqlTableContent, getSqlTables, createRecord, updateRecord, deleteRecord } from "../controllers/adminDataController.js";
+import { getCategories, getColors, getSizes, getCustomers, getSqlTableContent, getSqlTables, createRecord, updateRecord, deleteRecord } from "../Controllers/adminDataController.js";
 import { verifyToken } from "../Middleware/auth.js";
 
 const router = express.Router();
