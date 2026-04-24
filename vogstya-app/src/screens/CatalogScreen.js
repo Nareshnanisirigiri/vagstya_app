@@ -161,12 +161,12 @@ export default function CatalogScreen() {
 
   return (
     <View style={styles.root}>
+      <Header />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Header />
 
         <View style={styles.hero}>
           <Text style={styles.heroTitle}>{hero.title}</Text>
@@ -208,7 +208,7 @@ export default function CatalogScreen() {
                     onPress={() => setFilterModal(true)}
                     style={({ pressed }) => [styles.filterFab, pressed && styles.pressed]}
                   >
-                    <Ionicons name="funnel-outline" size={18} color={colors.white} />
+                    <Ionicons name="funnel-outline" size={18} color={colors.ink} />
                     <Text style={styles.filterFabText}>Filters</Text>
                   </Pressable>
                 ) : null}
@@ -387,13 +387,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.highlight,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
   },
   filterFabText: {
-    color: colors.white,
+    color: colors.ink,
     fontWeight: "700",
     fontSize: 14,
   },
@@ -513,13 +513,13 @@ const styles = StyleSheet.create({
     marginTop: "auto",
   },
   applyBtn: {
-    backgroundColor: colors.ink,
+    backgroundColor: colors.highlight,
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: "center",
   },
   applyBtnText: {
-    color: colors.white,
+    color: colors.ink,
     fontWeight: "800",
     fontSize: 16,
   },

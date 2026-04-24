@@ -525,3 +525,87 @@ export async function portalLogin(req, res) {
     return res.status(500).json({ message: "Portal login failed.", error: error.message });
   }
 }
+export async function forgotPassword(req, res) {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required." });
+  }
+
+  try {
+    const users = await query("SELECT * FROM users WHERE email = ? LIMIT 1", [email]);
+    const user = users[0];
+
+    if (!user) {
+      return res.status(404).json({ message: "This email is not registered. Please check your spelling or sign up." });
+    }
+
+    // Generate a reset token (expires in 1 hour)
+    const resetToken = jwt.sign(
+      { id: user.id, email: user.email, purpose: "password_reset" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const resetLink = `http://localhost:8081/reset-password?token=${resetToken}`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <div style="background: #0d5731; padding: 24px; text-align: center;">
+          <h1 style="color: white; margin: 0; letter-spacing: 2px;">VOGSTYA</h1>
+        </div>
+        <div style="padding: 32px; color: #1f2937;">
+          <h2 style="color: #0d5731; margin-top: 0;">Password Reset Request</h2>
+          <p>Hi ${user.name || "Customer"},</p>
+          <p>We received a request to reset your password. Click the button below to set a new password:</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${resetLink}" style="background: #0d5731; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Reset Password</a>
+          </div>
+          <p style="font-size: 14px; color: #6b7280;">If you didn't request this, you can safely ignore this email. This link will expire in 1 hour.</p>
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+          <p style="font-size: 12px; color: #9ca3af; text-align: center;">&copy; 2026 VOGSTYA Store. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    await sendMail(
+      email,
+      "Password Reset Request - VOGSTYA Store",
+      `Hi, please use this link to reset your password: ${resetLink}`,
+      htmlContent
+    );
+
+    return res.json({ message: "Password reset link sent successfully to your email." });
+  } catch (error) {
+    console.error("FORGOT PASSWORD ERROR:", error);
+    return res.status(500).json({ message: "Failed to send reset link.", error: error.message });
+  }
+}
+
+export async function resetPassword(req, res) {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({ message: "Token and password are required." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.purpose !== "password_reset") {
+      return res.status(400).json({ message: "Invalid reset token." });
+    }
+
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    
+    await query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, decoded.id]);
+
+    return res.json({ message: "Password updated successfully. You can now login with your new password." });
+  } catch (error) {
+    console.error("RESET PASSWORD ERROR:", error);
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Reset link has expired. Please request a new one." });
+    }
+    return res.status(400).json({ message: "Invalid or corrupted reset link." });
+  }
+}

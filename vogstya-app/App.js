@@ -28,6 +28,7 @@ const linking = {
       AdminLogin: "admin/login",
       AdminRegister: "admin/register",
       ForgotPassword: "forgot-password",
+      ResetPassword: "reset-password",
       ProductDetails: "product/:slug",
       Checkout: "checkout",
       Orders: "orders",

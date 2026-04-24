@@ -42,7 +42,15 @@ export default function AccountScreen() {
                 >
                   <Text style={styles.secondaryButtonText}>View Orders</Text>
                 </Pressable>
-              ) : null}
+              ) : (
+                <Pressable
+                  onPress={() => navigation.navigate("AdminPanel")}
+                  style={({ pressed }) => [styles.adminButton, pressed && styles.pressed]}
+                >
+                  <Ionicons name="speedometer-outline" size={18} color="white" style={{ marginRight: 8 }} />
+                  <Text style={styles.adminButtonText}>Enter Admin Panel</Text>
+                </Pressable>
+              )}
 
               <Pressable
                 onPress={() => {
@@ -125,5 +133,17 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: colors.ink, fontWeight: "800", fontSize: 15 },
   secondary: { alignItems: "center", marginTop: spacing.md },
   secondaryText: { color: colors.accent, fontWeight: "900" },
+  adminButton: {
+    backgroundColor: colors.accent,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  adminButtonText: { color: "white", fontWeight: "900", fontSize: 16 },
   pressed: { opacity: 0.9 },
 });

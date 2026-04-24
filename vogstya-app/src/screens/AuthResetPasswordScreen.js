@@ -6,22 +6,18 @@ import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { colors, spacing } from "../theme/theme";
 
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email || "").trim());
-}
-
-export default function AuthLoginScreen() {
+export default function AuthResetPasswordScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const role = route.params?.role === "admin" ? "admin" : "customer";
-  const returnTo = route.params?.returnTo;
-  const returnParams = route.params?.returnParams;
-  const returnMode = route.params?.returnMode;
-  const { login, sessionNotice, clearSessionNotice } = useAuth();
-  const [email, setEmail] = useState("");
+  const { token: resetToken } = route.params || {};
+  
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [secure, setSecure] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { confirmPasswordReset } = useAuth();
 
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const slideAnim = useMemo(() => new Animated.Value(30), []);
@@ -42,26 +38,32 @@ export default function AuthLoginScreen() {
     ]).start();
   }, []);
 
-  const disabled = useMemo(
-    () => !isValidEmail(email) || String(password).length < 1,
-    [email, password]
-  );
+  const disabled = useMemo(() => {
+    return password.length < 8 || password !== confirm;
+  }, [password, confirm]);
 
   const onSubmit = async () => {
     setError("");
-    const res = await login({ email, password, role });
-    if (!res.ok) {
-      setError(res.error || "Login failed.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
-    if (role === "admin") {
-      navigation.replace("AdminPanel");
-    } else if (returnMode === "goBack" && navigation.canGoBack()) {
-      navigation.goBack();
-    } else if (returnTo) {
-      navigation.replace(returnTo, returnParams);
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    
+    setLoading(true);
+    const result = await confirmPasswordReset(resetToken, password);
+    setLoading(false);
+
+    if (result.ok) {
+      setSuccess(true);
+      setTimeout(() => {
+        navigation.navigate("Login");
+      }, 3000);
     } else {
-      navigation.replace("Shop");
+      setError(result.error);
     }
   };
 
@@ -79,88 +81,82 @@ export default function AuthLoginScreen() {
           
           <View style={styles.card}>
             <View style={styles.headerIcon}>
-              <Ionicons name="lock-closed" size={24} color={colors.accent} />
+              <Ionicons name="shield-checkmark" size={24} color={colors.accent} />
             </View>
-            
-            <Text style={styles.title}>{role === "admin" ? "Admin sign in" : "Welcome back"}</Text>
-            <Text style={styles.sub}>
-              {role === "admin"
-                ? "Use your admin credentials to manage the store."
-                : "Sign in to continue shopping and track your orders."}
-            </Text>
 
-            {sessionNotice ? (
-              <Pressable style={styles.notice} onPress={clearSessionNotice}>
-                <Ionicons name="notifications-outline" size={18} color={colors.ink} />
-                <Text style={styles.noticeText}>{sessionNotice}</Text>
-              </Pressable>
-            ) : null}
+            <Text style={styles.title}>Set New Password</Text>
+            <Text style={styles.sub}>
+              Create a strong password to secure your Vogstya account.
+            </Text>
 
             {error ? (
               <View style={styles.alert}>
-                <Ionicons name="alert-circle-outline" size={18} color="#7a1f1f" />
+                <Ionicons name="alert-circle-outline" size={18} color="#e11d48" />
                 <Text style={styles.alertText}>{error}</Text>
               </View>
             ) : null}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={18} color={colors.muted} style={styles.inputIcon} />
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  placeholder="you@example.com"
-                  placeholderTextColor={colors.muted}
-                  style={styles.input}
-                />
+            {success ? (
+              <View style={styles.success}>
+                <Ionicons name="checkmark-circle" size={24} color={colors.accent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.successTitle}>Password Reset!</Text>
+                  <Text style={styles.successText}>Redirecting you to login...</Text>
+                </View>
               </View>
-            </View>
+            ) : (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>New Password</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="key-outline" size={18} color={colors.muted} style={styles.inputIcon} />
+                    <TextInput
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={secure}
+                      placeholder="Min 8 characters"
+                      placeholderTextColor={colors.muted}
+                      style={[styles.input, { flex: 1 }]}
+                    />
+                    <Pressable onPress={() => setSecure((s) => !s)} hitSlop={10} style={styles.eyeBtn}>
+                      <Ionicons name={secure ? "eye-outline" : "eye-off-outline"} size={20} color={colors.ink} />
+                    </Pressable>
+                  </View>
+                </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="key-outline" size={18} color={colors.muted} style={styles.inputIcon} />
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={secure}
-                  placeholder="Your password"
-                  placeholderTextColor={colors.muted}
-                  style={[styles.input, { flex: 1 }]}
-                />
-                <Pressable onPress={() => setSecure((s) => !s)} hitSlop={10} style={styles.eyeBtn}>
-                  <Ionicons name={secure ? "eye-outline" : "eye-off-outline"} size={20} color={colors.ink} />
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Confirm Password</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="checkmark-done-outline" size={18} color={colors.muted} style={styles.inputIcon} />
+                    <TextInput
+                      value={confirm}
+                      onChangeText={setConfirm}
+                      secureTextEntry={secure}
+                      placeholder="Repeat new password"
+                      placeholderTextColor={colors.muted}
+                      style={styles.input}
+                    />
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={onSubmit}
+                  disabled={disabled || loading}
+                  style={({ pressed }) => [
+                    styles.primary, 
+                    (pressed && !disabled && !loading) && styles.pressed, 
+                    (disabled || loading) && styles.disabled
+                  ]}
+                >
+                  <Text style={styles.primaryText}>{loading ? "Updating..." : "Update Password"}</Text>
+                  {!loading && <Ionicons name="save-outline" size={18} color="white" style={{ marginLeft: 8 }} />}
                 </Pressable>
-              </View>
-            </View>
+              </>
+            )}
 
-            <Pressable onPress={() => navigation.navigate("ForgotPassword")} hitSlop={8} style={styles.forgot}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+            <Pressable onPress={() => navigation.navigate("Login")} hitSlop={8} style={styles.back}>
+              <Text style={styles.backText}>Return to sign in</Text>
             </Pressable>
-
-            <Pressable
-              onPress={onSubmit}
-              disabled={disabled}
-              style={({ pressed }) => [
-                styles.primary, 
-                (pressed && !disabled) && styles.pressed, 
-                disabled && styles.disabled
-              ]}
-            >
-              <Text style={styles.primaryText}>{role === "admin" ? "Enter admin panel" : "Sign in"}</Text>
-              <Ionicons name="arrow-forward" size={18} color="white" style={{ marginLeft: 8 }} />
-            </Pressable>
-
-            <View style={styles.bottomRow}>
-              <Text style={styles.bottomText}>{role === "admin" ? "Need admin access?" : "New here?"}</Text>
-              <Pressable onPress={() => navigation.navigate(role === "admin" ? "AdminRegister" : "Register")} hitSlop={8}>
-                <Text style={styles.bottomLink}>{role === "admin" ? "Register admin" : "Create account"}</Text>
-              </Pressable>
-            </View>
           </View>
         </View>
         <Footer bleed={spacing.lg} />
@@ -255,22 +251,27 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
   },
-  notice: {
+  success: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 16,
     backgroundColor: `${colors.accent}08`,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: spacing.md,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: `${colors.accent}15`,
   },
-  noticeText: {
+  successTitle: {
     color: colors.accent,
-    fontWeight: "800",
-    flex: 1,
-    fontSize: 13,
+    fontWeight: "900",
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  successText: {
+    color: colors.ink,
+    fontWeight: "600",
+    fontSize: 14,
   },
   inputGroup: {
     marginBottom: 20,
@@ -304,15 +305,6 @@ const styles = StyleSheet.create({
   eyeBtn: {
     padding: 10,
   },
-  forgot: {
-    alignSelf: "flex-end",
-    marginBottom: spacing.xl,
-  },
-  forgotText: {
-    color: colors.accent,
-    fontWeight: "900",
-    fontSize: 14,
-  },
   primary: {
     backgroundColor: colors.ink,
     paddingVertical: 18,
@@ -320,6 +312,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: 'center',
     flexDirection: 'row',
+    marginTop: spacing.md,
     ...(Platform.OS === "web" ? { boxShadow: "0 10px 25px rgba(13, 87, 49, 0.2)" } : {}),
   },
   primaryText: {
@@ -335,18 +328,11 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
-  bottomRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 6,
+  back: {
+    alignSelf: "center",
     marginTop: spacing.xl,
   },
-  bottomText: {
-    color: colors.subtleText,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  bottomLink: {
+  backText: {
     color: colors.accent,
     fontWeight: "900",
     fontSize: 14,

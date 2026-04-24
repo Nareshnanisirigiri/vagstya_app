@@ -8,6 +8,7 @@ import AccountScreen from "../screens/AccountScreen";
 import AuthLoginScreen from "../screens/AuthLoginScreen";
 import AuthRegisterScreen from "../screens/AuthRegisterScreen";
 import AuthForgotPasswordScreen from "../screens/AuthForgotPasswordScreen";
+import AuthResetPasswordScreen from "../screens/AuthResetPasswordScreen";
 import ProductDetailsScreen from "../screens/ProductDetailsScreen";
 import CheckoutScreen from "../screens/CheckoutScreen";
 import OrdersScreen from "../screens/OrdersScreen";
@@ -16,6 +17,7 @@ import AdminPanelScreen from "../screens/AdminPanelScreen";
 import OrderSuccessScreen from "../screens/OrderSuccessScreen";
 import TrackOrderScreen from "../screens/TrackOrderScreen";
 import WriteReviewScreen from "../screens/WriteReviewScreen";
+import SellerFeedbackScreen from "../screens/SellerFeedbackScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +42,7 @@ export default function AppNavigator() {
       <Stack.Screen name="AdminLogin" component={AuthLoginScreen} initialParams={{ role: "admin" }} />
       <Stack.Screen name="AdminRegister" component={AuthRegisterScreen} initialParams={{ role: "admin" }} />
       <Stack.Screen name="ForgotPassword" component={AuthForgotPasswordScreen} />
+      <Stack.Screen name="ResetPassword" component={AuthResetPasswordScreen} />
       <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Orders" component={OrdersScreen} />
@@ -48,6 +51,7 @@ export default function AppNavigator() {
       <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
       <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
       <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
+      <Stack.Screen name="SellerFeedback" component={SellerFeedbackScreen} />
     </Stack.Navigator>
   );
 }

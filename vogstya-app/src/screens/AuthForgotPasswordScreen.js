@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { View, Text, TextInput, StyleSheet, Pressable, Platform, ScrollView } from "react-native";
+import { useMemo, useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, Pressable, Platform, ScrollView, Animated, Easing } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Footer from "../components/Footer";
@@ -17,6 +17,25 @@ export default function AuthForgotPasswordScreen() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const fadeAnim = useMemo(() => new Animated.Value(0), []);
+  const slideAnim = useMemo(() => new Animated.Value(30), []);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const disabled = useMemo(() => !isValidEmail(email), [email]);
 
   const onSubmit = async () => {
@@ -32,53 +51,88 @@ export default function AuthForgotPasswordScreen() {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Reset password</Text>
-        <Text style={styles.sub}>
-          Enter your email and we’ll send a reset link if the account exists.
-        </Text>
-
-        {error ? (
-          <View style={styles.alert}>
-            <Ionicons name="alert-circle-outline" size={18} color="#7a1f1f" />
-            <Text style={styles.alertText}>{error}</Text>
+      <Animated.ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
+      >
+        <View style={styles.bagContainer}>
+          {/* Bag Handle */}
+          <View style={styles.bagHandleOuter}>
+            <View style={styles.bagHandleInner} />
           </View>
-        ) : null}
+          
+          <View style={styles.card}>
+            <View style={styles.headerIcon}>
+              <Ionicons name="help-buoy" size={24} color={colors.accent} />
+            </View>
 
-        {success ? (
-          <View style={styles.success}>
-            <Ionicons name="checkmark-circle-outline" size={18} color="#0d5731" />
-            <Text style={styles.successText}>Check your inbox for reset instructions.</Text>
+            <Text style={styles.title}>Reset password</Text>
+            <Text style={styles.sub}>
+              Enter your email and we’ll send a secure reset link if your account exists in our system.
+            </Text>
+
+            {error ? (
+              <View style={styles.alert}>
+                <Ionicons name="alert-circle-outline" size={18} color="#e11d48" />
+                <Text style={styles.alertText}>{error}</Text>
+              </View>
+            ) : null}
+
+            {success ? (
+              <View style={styles.success}>
+                <Ionicons name="checkmark-circle-outline" size={18} color={colors.accent} />
+                <Text style={styles.successText}>Success! We've sent a secure password reset link to your email. Please check your inbox.</Text>
+              </View>
+            ) : null}
+
+            {!success && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email Address</Text>
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="mail-outline" size={18} color={colors.muted} style={styles.inputIcon} />
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    placeholder="you@example.com"
+                    placeholderTextColor={colors.muted}
+                    style={styles.input}
+                  />
+                </View>
+              </View>
+            )}
+
+            {!success ? (
+              <Pressable
+                onPress={onSubmit}
+                disabled={disabled}
+                style={({ pressed }) => [
+                  styles.primary, 
+                  (pressed && !disabled) && styles.pressed, 
+                  disabled && styles.disabled
+                ]}
+              >
+                <Text style={styles.primaryText}>Send reset link</Text>
+                <Ionicons name="paper-plane-outline" size={18} color="white" style={{ marginLeft: 8 }} />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => setSuccess(false)}
+                style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+              >
+                <Text style={styles.primaryText}>Send another link</Text>
+              </Pressable>
+            )}
+
+            <Pressable onPress={() => navigation.navigate("Login")} hitSlop={8} style={styles.back}>
+              <Text style={styles.backText}>Back to sign in</Text>
+            </Pressable>
           </View>
-        ) : null}
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          placeholder="you@example.com"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-        />
-
-        <Pressable
-          onPress={onSubmit}
-          disabled={disabled}
-          style={({ pressed }) => [styles.primary, (pressed && !disabled) && styles.pressed, disabled && styles.disabled]}
-        >
-          <Text style={styles.primaryText}>Send reset link</Text>
-        </Pressable>
-
-        <Pressable onPress={() => navigation.navigate("Login")} hitSlop={8} style={styles.back}>
-          <Text style={styles.backText}>Back to sign in</Text>
-        </Pressable>
-      </View>
-      <Footer bleed={spacing.lg} />
-      </ScrollView>
+        </View>
+        <Footer bleed={spacing.lg} />
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -93,102 +147,158 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexGrow: 1,
   },
+  bagContainer: {
+    width: "100%",
+    maxWidth: 450,
+    alignSelf: 'center',
+    marginTop: 20,
+  },
+  bagHandleOuter: {
+    width: 120,
+    height: 60,
+    borderWidth: 8,
+    borderColor: 'rgba(13, 87, 49, 0.15)',
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
+    alignSelf: 'center',
+    marginBottom: -10,
+    zIndex: -1,
+  },
+  bagHandleInner: {
+    flex: 1,
+  },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 18,
+    borderRadius: 30,
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.12)",
-    ...(Platform.OS === "web" ? { boxShadow: "0 18px 60px rgba(13, 87, 49, 0.10)" } : {}),
+    borderColor: "rgba(13, 87, 49, 0.08)",
+    ...(Platform.OS === "web" ? { 
+      boxShadow: "0 25px 80px rgba(13, 87, 49, 0.12), 0 2px 4px rgba(0,0,0,0.02)" 
+    } : {
+      elevation: 5,
+    }),
+  },
+  headerIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: `${colors.accent}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    alignSelf: 'center',
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "900",
     color: colors.ink,
+    textAlign: 'center',
     fontFamily: Platform.OS === "web" ? "Georgia, 'Times New Roman', serif" : undefined,
   },
   sub: {
-    marginTop: 6,
+    marginTop: 8,
     color: colors.subtleText,
     fontSize: 14,
-    marginBottom: spacing.lg,
     lineHeight: 20,
+    marginBottom: spacing.xl,
+    textAlign: 'center',
+    paddingHorizontal: 10,
   },
   alert: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#ffe7e7",
-    borderRadius: 12,
-    padding: 12,
+    gap: 10,
+    backgroundColor: "#fff1f2",
+    borderRadius: 16,
+    padding: 16,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: "#ffd0d0",
+    borderColor: "#fecdd3",
   },
   alertText: {
-    color: "#7a1f1f",
-    fontWeight: "600",
+    color: "#e11d48",
+    fontWeight: "700",
     flex: 1,
+    fontSize: 13,
   },
   success: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#e7ffef",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: spacing.md,
+    gap: 10,
+    backgroundColor: `${colors.accent}08`,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: "#c8f4d7",
+    borderColor: `${colors.accent}15`,
   },
   successText: {
-    color: colors.ink,
-    fontWeight: "700",
+    color: colors.accent,
+    fontWeight: "800",
     flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  inputGroup: {
+    marginBottom: 24,
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "800",
-    letterSpacing: 1.2,
     color: colors.subtleText,
-    marginBottom: 8,
-    marginTop: spacing.sm,
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: "rgba(13, 87, 49, 0.12)",
+    backgroundColor: "#f8fafc",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.18)",
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    flex: 1,
+    paddingVertical: 14,
     fontSize: 15,
     color: colors.ink,
+    fontWeight: "600",
   },
   primary: {
     backgroundColor: colors.ink,
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingVertical: 18,
+    borderRadius: 20,
     alignItems: "center",
-    marginTop: spacing.lg,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    ...(Platform.OS === "web" ? { boxShadow: "0 10px 25px rgba(13, 87, 49, 0.2)" } : {}),
   },
   primaryText: {
     color: colors.white,
     fontWeight: "900",
-    fontSize: 16,
-    letterSpacing: 0.4,
+    fontSize: 17,
+    letterSpacing: 0.6,
   },
   pressed: {
     opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   disabled: {
-    opacity: 0.55,
+    opacity: 0.5,
   },
   back: {
     alignSelf: "center",
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
   },
   backText: {
     color: colors.accent,
     fontWeight: "900",
+    fontSize: 14,
   },
 });

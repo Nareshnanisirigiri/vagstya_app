@@ -693,8 +693,14 @@ export default function AdminPanelScreen() {
       },
     ],
   };
-  if (loading) return <View><Text>Loading...</Text></View>;
-  return <View><Text>Admin Panel</Text></View>;
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={styles.loadingText}>Preparing Admin Dashboard...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.root, isMobile && { flexDirection: "column" }]}>
@@ -1317,6 +1323,8 @@ export default function AdminPanelScreen() {
 }
 
 function ManageCategoriesModal({ visible, categories, products, onClose, onSave }) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const [formData, setFormData] = useState({});
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1514,6 +1522,8 @@ function ManageCategoriesModal({ visible, categories, products, onClose, onSave 
 }
 
 function GenericEntryModal({ visible, tableName, columns, formData, onClose, onSave, onChange }) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   if (!visible) return null;
 
   const editableColumns = (columns || []).filter(c => 
@@ -1586,6 +1596,8 @@ function GenericEntryModal({ visible, tableName, columns, formData, onClose, onS
 
 
 function ProductModal({ visible, item, categories, colors, sizes, onClose, onSave }) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const [name, setName] = useState(item?.name || "");
   const [price, setPrice] = useState(String(item?.price || ""));
   const [discountPrice, setDiscountPrice] = useState(String(item?.discount_price || "0"));
@@ -1899,15 +1911,16 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
     backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 12,
-    color: colors.subtleText,
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.ink,
+    letterSpacing: 0.5,
   },
   mobileHeader: {
     height: 60,
@@ -2046,11 +2059,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
-  },
-  contentTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: colors.ink,
   },
   contentSub: {
     fontSize: 12,

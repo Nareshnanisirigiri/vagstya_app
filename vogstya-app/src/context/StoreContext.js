@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "./AuthContext";
 
 const StoreContext = createContext(null);
 
@@ -8,32 +9,42 @@ export function StoreProvider({ children }) {
   const [wishlistIds, setWishlistIds] = useState([]); // number[]
   const [isReady, setIsReady] = useState(false);
 
+  const { user } = useAuth();
+
   useEffect(() => {
+    // Only load from storage if user is logged in
+    if (!user) {
+      setCartItems([]);
+      setWishlistIds([]);
+      setIsReady(true);
+      return;
+    }
+
     Promise.all([
-      AsyncStorage.getItem("@vogstya_cart"),
-      AsyncStorage.getItem("@vogstya_wishlist"),
+      AsyncStorage.getItem(`@vogstya_cart_${user.id || 'guest'}`),
+      AsyncStorage.getItem(`@vogstya_wishlist_${user.id || 'guest'}`),
     ]).then(([cartData, wishData]) => {
-      try { if (cartData) setCartItems(JSON.parse(cartData)); } catch (e) {}
-      try { if (wishData) setWishlistIds(JSON.parse(wishData)); } catch (e) {}
+      try { if (cartData) setCartItems(JSON.parse(cartData)); else setCartItems([]); } catch (e) {}
+      try { if (wishData) setWishlistIds(JSON.parse(wishData)); else setWishlistIds([]); } catch (e) {}
       setIsReady(true);
     });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    if (!isReady) return;
-    AsyncStorage.setItem("@vogstya_cart", JSON.stringify(cartItems));
-  }, [cartItems, isReady]);
+    if (!isReady || !user) return;
+    AsyncStorage.setItem(`@vogstya_cart_${user.id || 'guest'}`, JSON.stringify(cartItems));
+  }, [cartItems, isReady, user]);
 
   useEffect(() => {
-    if (!isReady) return;
-    AsyncStorage.setItem("@vogstya_wishlist", JSON.stringify(wishlistIds));
-  }, [wishlistIds, isReady]);
+    if (!isReady || !user) return;
+    AsyncStorage.setItem(`@vogstya_wishlist_${user.id || 'guest'}`, JSON.stringify(wishlistIds));
+  }, [wishlistIds, isReady, user]);
 
   const cartCount = useMemo(
-    () => cartItems.reduce((sum, it) => sum + (it.qty || 0), 0),
-    [cartItems]
+    () => user ? cartItems.reduce((sum, it) => sum + (it.qty || 0), 0) : 0,
+    [cartItems, user]
   );
-  const wishlistCount = wishlistIds.length;
+  const wishlistCount = user ? wishlistIds.length : 0;
 
   const value = useMemo(() => {
     function addToCart(id, qty = 1) {

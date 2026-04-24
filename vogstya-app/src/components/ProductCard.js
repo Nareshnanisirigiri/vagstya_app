@@ -28,7 +28,14 @@ export default function ProductCard({ item, index = 0, compact }) {
   const showOverlay = Platform.OS === "web" ? hovered : false;
   const showAddCart = Platform.OS !== "web" || showOverlay;
   const wished = isWishlisted(item.id);
-  const openDetails = () => navigation.navigate("ProductDetails", { productId: item.id });
+  const openDetails = () => {
+    // Using push ensures a new screen instance is created for related products
+    if (navigation.push) {
+      navigation.push("ProductDetails", { productId: item.id });
+    } else {
+      navigation.navigate("ProductDetails", { productId: item.id });
+    }
+  };
 
   return (
     <Animated.View
@@ -58,7 +65,8 @@ export default function ProductCard({ item, index = 0, compact }) {
           <View style={[styles.hoverActions, !showOverlay && styles.hoverHiddenWeb]}>
             <Pressable
               onHoverIn={() => setHovered(true)}
-              onPress={() => {
+              onPress={(e) => {
+                if (e?.stopPropagation) e.stopPropagation();
                 toggleWishlist(item.id);
                 showMessage(wished ? "Removed from wishlist" : "Added to wishlist");
               }}
@@ -80,7 +88,8 @@ export default function ProductCard({ item, index = 0, compact }) {
           </View>
           <Pressable
             onHoverIn={() => setHovered(true)}
-            onPress={() => {
+            onPress={(e) => {
+              if (e?.stopPropagation) e.stopPropagation();
               addToCart(item.id, 1);
               showMessage(`${item.name} added to cart`);
             }}
@@ -135,19 +144,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.08)",
+    borderColor: "rgba(13, 87, 49, 0.05)",
     overflow: "hidden",
-    ...(Platform.OS === "web"
-      ? {
-          boxShadow: "0 8px 28px rgba(13, 87, 49, 0.08)",
-        }
-      : {
-          shadowColor: "#0d5731",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.08,
-          shadowRadius: 16,
-          elevation: 4,
-        }),
+    ...Platform.select({
+      web: {
+        boxShadow: "0 15px 40px rgba(13, 87, 49, 0.1), 0 4px 12px rgba(0, 0, 0, 0.02)",
+      },
+      default: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 6,
+      },
+    }),
   },
   cardCompact: {
     padding: 6,
@@ -160,7 +170,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    aspectRatio: 1,
+    aspectRatio: 1.05,
     backgroundColor: colors.surface,
   },
   saleBadge: {
@@ -217,7 +227,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.highlight,
     paddingVertical: 12,
     alignItems: "center",
     zIndex: 2,
@@ -227,7 +237,7 @@ const styles = StyleSheet.create({
     default: {},
   }),
   addCartText: {
-    color: colors.white,
+    color: colors.ink,
     fontWeight: "800",
     fontSize: 12,
     letterSpacing: 1,

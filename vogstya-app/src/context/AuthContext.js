@@ -122,11 +122,36 @@ export function AuthProvider({ children }) {
       setSessionNotice("");
     }
 
-    function requestPasswordReset(email) {
+    async function requestPasswordReset(email) {
       const e = String(email || "").trim().toLowerCase();
       if (!isValidEmail(e)) return { ok: false, error: "Please enter a valid email." };
-      // in a real app: call API. Here: always succeed to avoid account enumeration.
-      return { ok: true, message: "Password reset service will be connected from backend." };
+      
+      try {
+        const payload = await apiRequest("/auth/forgot-password", {
+          method: "POST",
+          body: { email: e },
+        });
+        return { ok: true, message: payload.message };
+      } catch (err) {
+        return { ok: false, error: err.message || "Failed to request reset link." };
+      }
+    }
+
+    async function confirmPasswordReset(token, password) {
+      if (!token) return { ok: false, error: "Reset token is missing." };
+      if (String(password || "").length < 8) {
+        return { ok: false, error: "Password must be at least 8 characters." };
+      }
+
+      try {
+        const payload = await apiRequest("/auth/reset-password", {
+          method: "POST",
+          body: { token, password },
+        });
+        return { ok: true, message: payload.message };
+      } catch (err) {
+        return { ok: false, error: err.message || "Failed to reset password." };
+      }
     }
 
     return {
@@ -139,6 +164,7 @@ export function AuthProvider({ children }) {
       logout,
       clearSessionNotice,
       requestPasswordReset,
+      confirmPasswordReset,
     };
   }, [user, token, sessionExpiresAt, sessionNotice]);
 

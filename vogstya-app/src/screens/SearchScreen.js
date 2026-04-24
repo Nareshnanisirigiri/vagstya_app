@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text, TextInput, StyleSheet, Platform, ScrollView, Pressable, useWindowDimensions } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -11,9 +12,10 @@ const WIDE = 1024;
 const TABLET = 640;
 
 export default function SearchScreen() {
+  const route = useRoute();
   const { products } = useProducts();
   const { width } = useWindowDimensions();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(route.params?.q || "");
   const query = String(q || "").trim().toLowerCase();
   const isWide = width >= WIDE;
   const isTablet = width >= TABLET;
