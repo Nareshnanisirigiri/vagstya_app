@@ -1,0 +1,21 @@
+services:
+  # Backend Service (Node.js Express)
+  - type: web
+    name: vagstya-backend
+    runtime: node
+    rootDir: b2c-backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      # Note: Add DB_HOST, DB_USER, DB_PASSWORD, DB_NAME manually in Render UI or here if they are public
+
+  # Frontend Service (Expo Web Static Site)
+  - type: static
+    name: vagstya-frontend
+    rootDir: vogstya-app
+    buildCommand: npm install && npx expo export --platform web
+    publishDir: dist
