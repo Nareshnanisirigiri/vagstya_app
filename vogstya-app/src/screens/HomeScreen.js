@@ -10,6 +10,7 @@ import ProductCard from "../components/ProductCard";
 import { useProducts } from "../context/ProductsContext";
 import { colors, spacing } from "../theme/theme";
 import { HOME_COLLECTIONS } from "../utils/shopCurations";
+import { API_BASE_URL } from "../api/client";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -197,6 +198,9 @@ export default function HomeScreen() {
           </View>
         ))}
 
+        <View style={{ padding: 20, backgroundColor: '#f0f0f0', alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, color: '#666' }}>API URL: {API_BASE_URL}</Text>
+        </View>
         <Footer />
       </ScrollView>
     </View>
