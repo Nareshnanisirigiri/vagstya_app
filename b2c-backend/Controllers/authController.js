@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "../config/db.js";
 import { sendMail } from "../utils/mail.js";
+import { welcomeTemplate, forgotPasswordTemplate } from "../utils/emailTemplates.js";
 
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -49,148 +50,7 @@ function normalizeUser(role, user, extra = {}) {
   };
 }
 
-function buildWelcomeEmailTemplate(customerName) {
-  const safeName = customerName || "Customer";
 
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          background: #f6f7fb;
-          font-family: Arial, sans-serif;
-          color: #1f2937;
-        }
-
-        .wrapper {
-          width: 100%;
-          padding: 28px 12px;
-          box-sizing: border-box;
-        }
-
-        .card {
-          max-width: 620px;
-          margin: 0 auto;
-          background: #ffffff;
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 12px 35px rgba(17, 24, 39, 0.08);
-          animation: riseIn 1s ease;
-        }
-
-        .hero {
-          padding: 34px 24px;
-          text-align: center;
-          background: linear-gradient(135deg, #0f172a, #1d4ed8 55%, #2563eb);
-          color: #fff;
-        }
-
-        .brand {
-          margin: 0;
-          letter-spacing: 3px;
-          font-size: 30px;
-          font-weight: 700;
-          animation: pulseGlow 2.2s ease-in-out infinite;
-        }
-
-        .body {
-          padding: 34px 28px 26px;
-          text-align: center;
-        }
-
-        .title {
-          margin: 0 0 12px;
-          color: #1d4ed8;
-          font-size: 24px;
-          line-height: 1.3;
-          animation: fadeSlide 1.1s ease;
-        }
-
-        .message {
-          margin: 0;
-          color: #4b5563;
-          font-size: 15px;
-          line-height: 1.7;
-        }
-
-        .badge {
-          display: inline-block;
-          margin: 18px 0 16px;
-          padding: 8px 14px;
-          border-radius: 999px;
-          font-size: 13px;
-          font-weight: 700;
-          letter-spacing: 0.3px;
-          color: #0b4a6f;
-          background: linear-gradient(90deg, #dbeafe, #bfdbfe);
-        }
-
-        .cta {
-          display: inline-block;
-          margin-top: 24px;
-          padding: 13px 30px;
-          border-radius: 999px;
-          background: linear-gradient(90deg, #d97706, #ea580c);
-          color: #fff !important;
-          text-decoration: none;
-          font-weight: 700;
-          font-size: 14px;
-          letter-spacing: 0.3px;
-        }
-
-        .footer {
-          padding: 16px 20px 24px;
-          text-align: center;
-          font-size: 12px;
-          color: #9ca3af;
-        }
-
-        @keyframes riseIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulseGlow {
-          0%, 100% { transform: scale(1); text-shadow: 0 0 0 rgba(255,255,255,0); }
-          50% { transform: scale(1.04); text-shadow: 0 0 16px rgba(255,255,255,0.4); }
-        }
-
-        @keyframes fadeSlide {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="wrapper">
-        <div class="card">
-          <div class="hero">
-            <h1 class="brand">VOGSTYA</h1>
-          </div>
-          <div class="body">
-            <div class="badge">Registered Successfully</div>
-            <h2 class="title">Welcome to VOGSTYA Store</h2>
-            <p class="message">
-              Hi <strong>${safeName}</strong>,<br />
-              Your account has been created successfully.<br />
-              We are excited to have you with us.
-            </p>
-            <a class="cta" href="#">Start Shopping</a>
-          </div>
-          <div class="footer">
-            You are receiving this email because you registered on VOGSTYA Store.
-          </div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-}
 
 async function findPortalUser(email) {
   const users = await query(
@@ -412,12 +272,12 @@ export async function register(req, res) {
 
     const tokenData = signAuthToken({ id: result.insertId, email, role: "customer" });
 
-    const htmlContent = buildWelcomeEmailTemplate(name);
+    const htmlContent = welcomeTemplate(name);
 
     sendMail(
       email,
       "Registered successfully - Welcome to VOGSTYA Store",
-      `Hi ${name},\n\nRegistered successfully. Welcome to VOGSTYA Store.\n\nThank you for creating your account with us.\n\nBest Regards,\nVOGSTYA Store Team`,
+      `Hi ${name},\n\nRegistered successfully. Welcome to VOGSTYA Store.`,
       htmlContent
     ).catch(err => console.error("Welcome email failed to send:", err));
 
@@ -547,26 +407,10 @@ export async function forgotPassword(req, res) {
       { expiresIn: "1h" }
     );
 
-    const resetLink = `http://localhost:8081/reset-password?token=${resetToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || "https://vogstyaapp.vercel.app";
+    const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-        <div style="background: #0d5731; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; letter-spacing: 2px;">VOGSTYA</h1>
-        </div>
-        <div style="padding: 32px; color: #1f2937;">
-          <h2 style="color: #0d5731; margin-top: 0;">Password Reset Request</h2>
-          <p>Hi ${user.name || "Customer"},</p>
-          <p>We received a request to reset your password. Click the button below to set a new password:</p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${resetLink}" style="background: #0d5731; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Reset Password</a>
-          </div>
-          <p style="font-size: 14px; color: #6b7280;">If you didn't request this, you can safely ignore this email. This link will expire in 1 hour.</p>
-          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-          <p style="font-size: 12px; color: #9ca3af; text-align: center;">&copy; 2026 VOGSTYA Store. All rights reserved.</p>
-        </div>
-      </div>
-    `;
+    const htmlContent = forgotPasswordTemplate(user.name || "Customer", resetLink);
 
     await sendMail(
       email,

@@ -35,6 +35,7 @@ export const getProducts = (req, res) => {
       p.is_mens_shirts,
       p.is_womens_highlights,
       p.is_premium_sarees,
+      p.is_ad,
       p.is_new,
       p.created_at,
       p.updated_at,
@@ -93,6 +94,7 @@ export const addProduct = (req, res) => {
     is_mens_shirts = 0,
     is_womens_highlights = 0,
     is_premium_sarees = 0,
+    is_ad = 0,
     is_flash_sale = 0,
     colors = [], 
     sizes = [],
@@ -104,12 +106,12 @@ export const addProduct = (req, res) => {
 
   const sql = `
     INSERT INTO products
-    (name, slug, price, discount_price, metal, weight, size, description, quantity, is_active, is_featured, is_auspicious, is_banner_main, is_banner_earrings, is_banner_necklaces, is_popular_jewellery, is_mens_shirts, is_womens_highlights, is_premium_sarees)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (name, slug, price, discount_price, metal, weight, size, description, quantity, is_active, is_featured, is_auspicious, is_banner_main, is_banner_earrings, is_banner_necklaces, is_popular_jewellery, is_mens_shirts, is_womens_highlights, is_premium_sarees, is_ad)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
-    name, slug, price, discount_price, metal, weight, size, description, quantity, is_featured, is_auspicious, is_banner_main, is_banner_earrings, is_banner_necklaces, is_popular_jewellery, is_mens_shirts, is_womens_highlights, is_premium_sarees
+    name, slug, price, discount_price, metal, weight, size, description, quantity, is_featured, is_auspicious, is_banner_main, is_banner_earrings, is_banner_necklaces, is_popular_jewellery, is_mens_shirts, is_womens_highlights, is_premium_sarees, is_ad
   ];
 
   db.query(
@@ -178,6 +180,7 @@ export const updateProduct = (req, res) => {
     is_mens_shirts,
     is_womens_highlights,
     is_premium_sarees,
+    is_ad,
     is_flash_sale,
     colors = [],
     sizes = [],
@@ -204,12 +207,13 @@ export const updateProduct = (req, res) => {
       is_mens_shirts = COALESCE(?, is_mens_shirts),
       is_womens_highlights = COALESCE(?, is_womens_highlights),
       is_premium_sarees = COALESCE(?, is_premium_sarees),
+      is_ad = COALESCE(?, is_ad),
       updated_at = NOW()
     WHERE id = ?
   `;
 
   const values = [
-    name ?? null, price ?? null, discount_price ?? null, quantity ?? null, description ?? null, is_active ?? null, metal ?? null, weight ?? null, size ?? null, is_featured ?? null, is_auspicious ?? null, is_banner_main ?? null, is_banner_earrings ?? null, is_banner_necklaces ?? null, is_popular_jewellery ?? null, is_mens_shirts ?? null, is_womens_highlights ?? null, is_premium_sarees ?? null, id
+    name ?? null, price ?? null, discount_price ?? null, quantity ?? null, description ?? null, is_active ?? null, metal ?? null, weight ?? null, size ?? null, is_featured ?? null, is_auspicious ?? null, is_banner_main ?? null, is_banner_earrings ?? null, is_banner_necklaces ?? null, is_popular_jewellery ?? null, is_mens_shirts ?? null, is_womens_highlights ?? null, is_premium_sarees ?? null, is_ad ?? null, id
   ];
 
   db.query(
@@ -299,5 +303,38 @@ export const deleteProduct = (req, res) => {
     }
 
     return res.json({ message: "Product removed successfully." });
+  });
+};
+
+export const getActiveAd = (req, res) => {
+  const sql = `
+    (SELECT a.id, a.title, m.src AS media_src, 'custom' as type
+     FROM ads a
+     LEFT JOIN media m ON m.id = a.media_id
+     WHERE a.status = 1)
+    UNION
+    (SELECT p.id, p.name as title, m.src AS media_src, 'product' as type
+     FROM products p
+     LEFT JOIN media m ON m.id = p.media_id
+     WHERE p.is_ad = 1 AND p.is_active = 1)
+    ORDER BY RAND()
+    LIMIT 1
+  `;
+
+  db.query(sql, (err, data) => {
+    if (err) {
+      console.error("GET Active Ad Error:", err);
+      return res.status(500).json(err);
+    }
+
+    if (!data.length) {
+      return res.status(404).json({ message: "No active ads found." });
+    }
+
+    const ad = data[0];
+    return res.json({
+      ...ad,
+      image: resolveProductImage(ad.media_src)
+    });
   });
 };

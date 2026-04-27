@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import HeroSlider from "../components/HeroSlider";
 import AuspiciousBeginning from "../components/AuspiciousBeginning";
 import CollectionsBanners from "../components/CollectionsBanners";
+import AdPopup from "../components/AdPopup";
 import ProductCard from "../components/ProductCard";
 import { useProducts } from "../context/ProductsContext";
 import { colors, spacing } from "../theme/theme";
@@ -44,6 +45,8 @@ export default function HomeScreen() {
 
         <AuspiciousBeginning products={products} />
         <CollectionsBanners products={products} />
+
+        <AdPopup />
 
         {flashSaleProducts.length > 0 && (
           <View style={[styles.section, { backgroundColor: "#fff5f5" }]}>

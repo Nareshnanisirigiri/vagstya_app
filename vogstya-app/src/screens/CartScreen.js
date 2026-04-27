@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { View, Text, StyleSheet, Pressable, Platform, ScrollView, useWindowDimensions, TextInput } from "react-native";
+import ConfettiCannon from "react-native-confetti-cannon";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -7,6 +8,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useStore } from "../context/StoreContext";
 import { useProducts } from "../context/ProductsContext";
+import { useSnackbar } from "../context/SnackbarContext";
 import { colors, spacing } from "../theme/theme";
 
 export default function CartScreen() {
@@ -16,15 +18,28 @@ export default function CartScreen() {
   const isTablet = width >= 720;
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState("");
-  const { cartItems, cartCount, setCartQty, removeFromCart } = useStore();
+  const [showConfetti, setShowConfetti] = useState(false);
+  const confettiRef = useRef(null);
+  const { cartItems, cartCount, setCartQty, removeFromCart, updateItemSize } = useStore();
   const { products } = useProducts();
+  const { showMessage } = useSnackbar();
+
+  const getSizeOptions = (category) => {
+    const map = {
+      Jewelry: ["6", "7", "8", "9"],
+      Sarees: ["Free Size"],
+      Men: ["S", "M", "L", "XL", "XXL"],
+      Women: ["XS", "S", "M", "L", "XL"],
+    };
+    return map[category] || map.Jewelry;
+  };
 
   const rows = useMemo(() => {
     return cartItems
       .map((ci) => {
         const p = products.find((x) => x.id === ci.id);
         if (!p) return null;
-        return { ...p, qty: ci.qty };
+        return { ...p, qty: ci.qty, selectedSize: ci.size };
       })
       .filter(Boolean);
   }, [cartItems, products]);
@@ -44,9 +59,20 @@ export default function CartScreen() {
     if (normalized === "VOGSTYA20") {
       setAppliedCoupon(normalized);
       setCouponCode(normalized);
+      setShowConfetti(false);
+      setTimeout(() => setShowConfetti(true), 10);
       return;
     }
     setAppliedCoupon("");
+  }
+
+  function handleCheckout() {
+    const missingSize = rows.find(r => !r.selectedSize);
+    if (missingSize) {
+      showMessage(`Please select a size for ${missingSize.name}`, "error");
+      return;
+    }
+    navigation.navigate("Checkout");
   }
 
   return (
@@ -59,6 +85,9 @@ export default function CartScreen() {
               <Ionicons name="bag-outline" size={34} color={colors.muted} />
               <Text style={styles.emptyTitle}>Your cart is empty.</Text>
               <Text style={styles.emptyText}>Add a few favorites and come back here to review them.</Text>
+              <Pressable style={styles.emptyBtn} onPress={() => navigation.navigate("Shop")}>
+                <Text style={styles.emptyBtnText}>Go to Shop</Text>
+              </Pressable>
             </View>
           ) : (
             <View style={styles.cartShell}>
@@ -78,7 +107,7 @@ export default function CartScreen() {
                           <View style={styles.productBlock}>
                             <View style={styles.imageFrame}>
                               <Image source={{ uri: r.image }} style={styles.image} contentFit="cover" transition={120} />
-                              <Pressable onPress={() => removeFromCart(r.id)} hitSlop={10} style={styles.removeBadge}>
+                              <Pressable onPress={() => removeFromCart(r.id, r.selectedSize)} hitSlop={10} style={styles.removeBadge}>
                                 <Ionicons name="trash-outline" size={14} color="#6e1d1d" />
                               </Pressable>
                             </View>
@@ -89,7 +118,7 @@ export default function CartScreen() {
                                 Color: <Text style={styles.metaStrong}>Signature Green</Text>
                               </Text>
                               <Text style={styles.metaLine}>
-                                Size: <Text style={styles.metaStrong}>XL</Text>
+                                Category: <Text style={styles.metaStrong}>{r.category}</Text>
                               </Text>
                               <View style={styles.stockRow}>
                                 <View style={styles.stockDot} />
@@ -99,19 +128,29 @@ export default function CartScreen() {
                           </View>
 
                           <View style={[styles.metricsGroup, !isTablet && styles.metricsGroupMobile]}>
-                            <View style={[styles.metricCard, styles.priceCol, !isTablet && styles.mobileInlineCell]}>
-                              <Text style={styles.mobileLabel}>Price</Text>
-                              <Text style={styles.cellValue}>{formatPrice(r.price)}</Text>
+                            <View style={[styles.metricCard, styles.sizeCol, !isTablet && styles.mobileInlineCell, !r.selectedSize && styles.errorCard]}>
+                              <Text style={styles.mobileLabel}>Size</Text>
+                              <View style={styles.sizeOptions}>
+                                {getSizeOptions(r.category).map(sz => (
+                                  <Pressable 
+                                    key={sz} 
+                                    onPress={() => updateItemSize(r.id, r.selectedSize, sz)}
+                                    style={[styles.sizeChip, r.selectedSize === sz && styles.sizeChipActive]}
+                                  >
+                                    <Text style={[styles.sizeText, r.selectedSize === sz && styles.sizeTextActive]}>{sz}</Text>
+                                  </Pressable>
+                                ))}
+                              </View>
                             </View>
 
                             <View style={[styles.metricCard, styles.qtyCol, !isTablet && styles.mobileInlineCell]}>
                               <Text style={styles.mobileLabel}>Quantity</Text>
                               <View style={styles.qty}>
-                                <Pressable onPress={() => setCartQty(r.id, r.qty - 1)} hitSlop={10} style={styles.qtyBtn}>
+                                <Pressable onPress={() => setCartQty(r.id, r.qty - 1, r.selectedSize)} hitSlop={10} style={styles.qtyBtn}>
                                   <Ionicons name="remove" size={18} color="#1d1a18" />
                                 </Pressable>
                                 <Text style={styles.qtyText}>{r.qty}</Text>
-                                <Pressable onPress={() => setCartQty(r.id, r.qty + 1)} hitSlop={10} style={styles.qtyBtn}>
+                                <Pressable onPress={() => setCartQty(r.id, r.qty + 1, r.selectedSize)} hitSlop={10} style={styles.qtyBtn}>
                                   <Ionicons name="add" size={18} color="#1d1a18" />
                                 </Pressable>
                               </View>
@@ -173,7 +212,7 @@ export default function CartScreen() {
                       </View>
                       <Text style={styles.summaryNote}>Excl. tax and delivery charge</Text>
 
-                      <Pressable style={styles.checkout} onPress={() => navigation.navigate("Checkout")}>
+                      <Pressable style={styles.checkout} onPress={handleCheckout}>
                         <Text style={styles.checkoutText}>Go To Checkout</Text>
                       </Pressable>
                     </View>
@@ -186,6 +225,18 @@ export default function CartScreen() {
 
         <Footer bleed={spacing.lg} bleedBottom={spacing.xxl} />
       </ScrollView>
+
+      {showConfetti && (
+        <ConfettiCannon
+          count={200}
+          origin={{ x: width / 2, y: -20 }}
+          autoStart={true}
+          fadeOut={true}
+          fallSpeed={3000}
+          explosionSpeed={350}
+          onAnimationEnd={() => setShowConfetti(false)}
+        />
+      )}
     </View>
   );
 }
@@ -377,8 +428,38 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  priceCol: {
-    width: 120,
+  sizeCol: {
+    flex: 1,
+    minWidth: 160,
+  },
+  sizeOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  sizeChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e0e5f0",
+    backgroundColor: "#f8f9fb",
+  },
+  sizeChipActive: {
+    borderColor: colors.highlight,
+    backgroundColor: colors.highlightSoft,
+  },
+  sizeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#4a4e57",
+  },
+  sizeTextActive: {
+    color: colors.ink,
+  },
+  errorCard: {
+    borderColor: "#ff4444",
+    backgroundColor: "#fff5f5",
   },
   qtyCol: {
     width: 160,
@@ -598,5 +679,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
     maxWidth: 420,
+  },
+  emptyBtn: {
+    marginTop: 10,
+    backgroundColor: colors.ink,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  emptyBtnText: {
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: 15,
   },
 });

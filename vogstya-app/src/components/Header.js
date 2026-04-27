@@ -19,6 +19,7 @@ import { colors, spacing } from "../theme/theme";
 import { useStore } from "../context/StoreContext";
 import { useAuth } from "../context/AuthContext";
 import { useProducts } from "../context/ProductsContext";
+import AmazonSearchBar from "./AmazonSearchBar";
 
 const NAV_BREAK = 920;
 
@@ -136,54 +137,29 @@ export default function Header() {
       </View>
 
       <View style={styles.container}>
-        <Pressable onPress={() => go("Home")}>
-          <Text style={styles.logo}>VOGSTYA</Text>
-        </Pressable>
+        {/* Unified Row: Logo, Search, and Icons */}
+        <View style={[styles.unifiedRow, { gap: compact ? 8 : 20 }]}>
+          <Pressable onPress={() => go("Home")} style={[styles.logoWrapper, compact && { marginLeft: -5, marginRight: 5 }]}>
+            <Image 
+              source={require("../../assets/logo-.png")} 
+              style={[styles.logoImage, { width: compact ? 100 : 200, height: compact ? 30 : 60 }]} 
+              contentFit="contain"
+            />
+          </Pressable>
 
-        {/* Middle Section: Navigation or Search */}
-        <View style={styles.middleSection}>
-          {searchOpen ? (
-            <Animated.View style={[styles.inlineSearch, { width: searchWidth, opacity: searchOpacity }]}>
-              <Ionicons name="search-outline" size={18} color={colors.muted} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search..."
-                placeholderTextColor={colors.muted}
-                style={styles.searchInput}
-                autoFocus
-                onSubmitEditing={handleSearchSubmit}
-              />
-              <Pressable onPress={() => { setSearchOpen(false); setQuery(""); }} hitSlop={10}>
-                <Ionicons name="close-circle" size={18} color={colors.muted} />
-              </Pressable>
-            </Animated.View>
-          ) : (
-            !compact && (
-              <View style={styles.menu}>
-                {LINKS.map(({ screen, label }) => (
-                  <Pressable 
-                    key={screen} 
-                    onPress={() => go(screen)} 
-                    style={[styles.menuHit, active === screen && styles.menuHitActive]}
-                  >
-                    <Text style={[styles.menuItem, active === screen && styles.menuActive]}>{label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            )
-          )}
-        </View>
+          {/* Search Bar (Middle) */}
+          <View style={styles.middleSection}>
+            <AmazonSearchBar 
+              onSearch={(q, cat) => {
+                navigation.navigate("Search", { q, selectedCategory: cat });
+              }}
+            />
+          </View>
 
-        <View style={styles.rightCluster}>
-          <View style={styles.icons}>
-            {!searchOpen && (
-              <Pressable onPress={() => setSearchOpen(true)}>
-                <Ionicons name="search-outline" size={22} color={colors.ink} />
-              </Pressable>
-            )}
+          {/* Icons (Right) */}
+          <View style={[styles.icons, compact && { gap: 8 }]}>
             <Pressable onPress={() => go("Wishlist")} style={styles.iconWithBadge}>
-              <Ionicons name="heart-outline" size={22} color={colors.ink} />
+              <Ionicons name="heart-outline" size={compact ? 20 : 24} color={colors.ink} />
               {wishlistCount ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{wishlistCount}</Text>
@@ -191,7 +167,7 @@ export default function Header() {
               ) : null}
             </Pressable>
             <Pressable onPress={() => go("Cart")} style={styles.iconWithBadge}>
-              <Ionicons name="bag-outline" size={22} color={colors.ink} />
+              <Ionicons name="bag-outline" size={compact ? 20 : 24} color={colors.ink} />
               {cartCount ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{cartCount}</Text>
@@ -199,7 +175,7 @@ export default function Header() {
               ) : null}
             </Pressable>
             <Pressable onPress={() => go(user ? "Account" : "Login")}>
-              <Ionicons name={user ? "person-circle-outline" : "person-outline"} size={22} color={colors.ink} />
+              <Ionicons name={user ? "person-circle-outline" : "person-outline"} size={compact ? 20 : 24} color={colors.ink} />
             </Pressable>
             {compact && (
               <Pressable
@@ -212,6 +188,25 @@ export default function Header() {
             )}
           </View>
         </View>
+      </View>
+
+      {/* Navigation Links Bar (Below Search) */}
+      <View style={styles.navBar}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.navContent}
+        >
+          {LINKS.map(({ screen, label }) => (
+            <Pressable 
+              key={screen} 
+              onPress={() => go(screen)} 
+              style={[styles.navItem, active === screen && styles.navItemActive]}
+            >
+              <Text style={[styles.navText, active === screen && styles.navTextActive]}>{label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Dropdown Results */}
@@ -362,34 +357,41 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingRight: spacing.md,
+    paddingLeft: 0,
     maxWidth: 1400,
     width: "100%",
     alignSelf: "center",
-    minHeight: 64,
     backgroundColor: colors.surface,
+    zIndex: 10,
   },
-  logo: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.ink,
-    letterSpacing: 1,
-    fontFamily: Platform.OS === "web" ? "Georgia, 'Times New Roman', serif" : undefined,
+  unifiedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  logoWrapper: {
+    marginRight: 10,
+    marginLeft: -10,
+  },
+  logoImage: {
+    width: 200,
+    height: 60,
   },
   middleSection: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    maxWidth: 800,
+  },
+  mobileSearchRow: {
+    marginTop: 4,
+    marginBottom: 4,
   },
   menu: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    marginTop: 8,
   },
   rightCluster: {
     flexDirection: "row",
@@ -507,127 +509,46 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: colors.accent,
   },
-  inlineSearch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(13, 87, 49, 0.05)',
-    borderRadius: 100,
-    paddingHorizontal: 12,
-    height: 40,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(13, 87, 49, 0.08)',
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.ink,
-    fontWeight: '600',
-  },
-  resultsDropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: '50%',
-    transform: [{ translateX: -300 }],
-    width: 600,
-    maxWidth: '95%',
-    backgroundColor: colors.white,
-    borderRadius: 20,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(13, 87, 49, 0.08)',
-    zIndex: 999,
-    ...(Platform.OS === 'web' ? { boxShadow: "0 12px 40px rgba(0,0,0,0.12)" } : { elevation: 8 }),
-  },
-  searchScroll: {
-    maxHeight: 400,
-  },
-  searchSection: {
-    padding: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  searchSectionTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  clearText: {
-    fontSize: 11,
-    color: colors.accent,
-    fontWeight: '700',
-  },
-  historyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-  },
-  historyText: {
-    fontSize: 14,
-    color: colors.ink,
-    fontWeight: '500',
-  },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-  },
-  resultImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-  },
-  resultName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.ink,
-  },
-  resultCat: {
-    fontSize: 12,
-    color: colors.muted,
-  },
-  noResults: {
-    textAlign: 'center',
-    padding: 20,
-    color: colors.muted,
-    fontWeight: '600',
-  },
-  popCats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  popCatChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(31, 122, 74, 0.06)',
-  },
-  popCatText: {
-    color: colors.accent,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  seeAllBtn: {
-    marginTop: 12,
+  navBar: {
+    backgroundColor: colors.surface,
     paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(13, 87, 49, 0.05)",
+    zIndex: 1,
   },
-  seeAllText: {
-    color: colors.accent,
-    fontWeight: '800',
+  navContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingRight: spacing.md,
+    paddingLeft: 0,
+    maxWidth: 1400,
+    width: "100%",
+    alignSelf: "center",
+  },
+  navItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  navItemActive: {
+    backgroundColor: "rgba(31, 122, 74, 0.12)",
+  },
+  navText: {
+    color: colors.ink,
     fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  navTextActive: {
+    color: colors.accent,
+    fontWeight: "900",
+  },
+  mobileSearchRow: {
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
 });

@@ -173,6 +173,31 @@ export default function CatalogScreen() {
           <Text style={styles.heroSub}>{customCollectionTitle || hero.subtitle}</Text>
         </View>
 
+        {!isWide && (
+          <View style={styles.mobileCatBar}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.mobileCatScroll}
+            >
+              {categories.map((cat) => {
+                const active = selectedCategories.includes(cat);
+                return (
+                  <Pressable
+                    key={cat}
+                    onPress={() => toggleCategory(cat)}
+                    style={[styles.mobileCatChip, active && styles.mobileCatChipActive]}
+                  >
+                    <Text style={[styles.mobileCatText, active && styles.mobileCatTextActive]}>
+                      {cat} ({counts[cat] || 0})
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
         <View style={[styles.mainRow, { paddingHorizontal: horizontalPad }]}>
           {isWide ? (
             <View
@@ -186,6 +211,7 @@ export default function CatalogScreen() {
                         top: 12,
                         alignSelf: "flex-start",
                         maxHeight: "calc(100vh - 48px)",
+                        overflowY: "auto",
                       }
                     : {}),
                 },
@@ -522,5 +548,35 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontWeight: "800",
     fontSize: 16,
+  },
+  mobileCatBar: {
+    backgroundColor: colors.background,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(13, 87, 49, 0.05)",
+  },
+  mobileCatScroll: {
+    paddingHorizontal: spacing.md,
+    gap: 10,
+  },
+  mobileCatChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: "rgba(13, 87, 49, 0.1)",
+  },
+  mobileCatChipActive: {
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
+  },
+  mobileCatText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  mobileCatTextActive: {
+    color: colors.white,
   },
 });

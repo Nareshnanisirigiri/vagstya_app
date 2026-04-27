@@ -959,7 +959,7 @@ export default function AdminPanelScreen() {
                 )}
               </View>
 
-              <ScrollView horizontal={isMobile} showsHorizontalScrollIndicator={false}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
                 <View style={styles.tableContainer}>
                   <View style={styles.tableHeaderRow}>
                     {tableData.columns.slice(0, 10).map((col) => (
@@ -967,7 +967,7 @@ export default function AdminPanelScreen() {
                         <Text style={styles.columnName}>{col.name.toUpperCase()}</Text>
                       </View>
                     ))}
-                    <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 100 }]}>
+                    <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 150 }]}>
                       <Text style={styles.columnName}>ACTIONS</Text>
                     </View>
                   </View>
@@ -1025,6 +1025,11 @@ export default function AdminPanelScreen() {
                                   {row.is_flash_sale === 1 ? "FLASH SALE" : (row.is_premium_sarees === 1 ? "In Premium Sarees" : "Not in Collection")}
                                 </Text>
                               </View>
+                              <View style={[styles.statusBadge, { backgroundColor: row.is_ad === 1 ? colors.warning + "1A" : "#f1f5f9" }]}>
+                                <Text style={[styles.statusBadgeText, { color: row.is_ad === 1 ? colors.warning : colors.subtleText }]}>
+                                  {row.is_ad === 1 ? "In Advertisement" : "Not in Ad"}
+                                </Text>
+                              </View>
                             </View>
                           ) : (
                             <Text style={styles.cellText} numberOfLines={1}>
@@ -1034,7 +1039,7 @@ export default function AdminPanelScreen() {
                         </View>
                       </View>
                         ))}
-                         <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 100, flexDirection: "row", gap: 12, flexWrap: "wrap", alignItems: "center" }]}>
+                         <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 150, flexDirection: "row", gap: 12, flexWrap: "nowrap", alignItems: "center" }]}>
                           {selectedTable === "products" ? (
                             <>
                               <Pressable onPress={() => setEditingItem(row)} hitSlop={8} title="Edit">
@@ -1065,24 +1070,36 @@ export default function AdminPanelScreen() {
                               </Pressable>
                             </>
                           ) : selectedTable === "orders" ? (
-                            ORDER_LIFECYCLE_OPTIONS.map((option) => {
-                              const opKey = `${row.id}:${option.value}`;
-                              const isBusy = orderStatusUpdatingKey === opKey;
-                              return (
-                                <Pressable
-                                  key={option.value}
-                                  style={styles.orderStatusBtn}
-                                  onPress={() => handleOrderLifecycleUpdate(row.id, option.value)}
-                                  disabled={Boolean(orderStatusUpdatingKey)}
-                                >
-                                  {isBusy ? (
-                                    <ActivityIndicator size="small" color={colors.white} />
-                                  ) : (
-                                    <Text style={styles.orderStatusBtnText}>{option.label}</Text>
-                                  )}
-                                </Pressable>
-                              );
-                            })
+                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                              {ORDER_LIFECYCLE_OPTIONS.map((option) => {
+                                const opKey = `${row.id}:${option.value}`;
+                                const isBusy = orderStatusUpdatingKey === opKey;
+                                const isActive = String(row.order_status || "").toLowerCase() === option.label.toLowerCase();
+                                
+                                return (
+                                  <Pressable
+                                    key={option.value}
+                                    style={[
+                                      styles.orderStatusBtn,
+                                      isActive && { backgroundColor: colors.highlight, borderColor: colors.highlight }
+                                    ]}
+                                    onPress={() => handleOrderLifecycleUpdate(row.id, option.value)}
+                                    disabled={Boolean(orderStatusUpdatingKey)}
+                                  >
+                                    {isBusy ? (
+                                      <ActivityIndicator size="small" color={isActive ? colors.ink : colors.white} />
+                                    ) : (
+                                      <Text style={[
+                                        styles.orderStatusBtnText,
+                                        isActive && { color: colors.ink, fontWeight: "900" }
+                                      ]}>
+                                        {option.label}
+                                      </Text>
+                                    )}
+                                  </Pressable>
+                                );
+                              })}
+                            </View>
                           ) : (
                             <>
                               <Pressable onPress={() => {
@@ -1618,6 +1635,7 @@ function ProductModal({ visible, item, categories, colors, sizes, onClose, onSav
   const [isMensShirts, setIsMensShirts] = useState(Boolean(item?.is_mens_shirts));
   const [isWomensHighlights, setIsWomensHighlights] = useState(Boolean(item?.is_womens_highlights));
   const [isPremiumSarees, setIsPremiumSarees] = useState(Boolean(item?.is_premium_sarees));
+  const [isAd, setIsAd] = useState(Boolean(item?.is_ad));
   const [selColors, setSelColors] = useState([]); // would need mapping for existing
   const [selSizes, setSelSizes] = useState([]);   // would need mapping for existing
 
@@ -1762,6 +1780,16 @@ function ProductModal({ visible, item, categories, colors, sizes, onClose, onSav
                  {isFlashSale ? "FLASH SALE" : "Not Flash Sale"}
                </Text>
              </Pressable>
+
+             <Pressable 
+              style={[modalStyles.pill, isAd && modalStyles.pillActive]}
+              onPress={() => setIsAd(!isAd)}
+             >
+               <Ionicons name={isAd ? "megaphone" : "megaphone-outline"} size={14} color={isAd ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+               <Text style={[modalStyles.pillText, isAd && modalStyles.pillTextActive]}>
+                 {isAd ? "In Advertisement" : "Not in Ad"}
+               </Text>
+             </Pressable>
           </View>
 
           <Text style={modalStyles.label}>Category</Text>
@@ -1825,6 +1853,7 @@ function ProductModal({ visible, item, categories, colors, sizes, onClose, onSav
              is_womens_highlights: isWomensHighlights ? 1 : 0,
              is_premium_sarees: isPremiumSarees ? 1 : 0,
              is_flash_sale: isFlashSale ? 1 : 0,
+             is_ad: isAd ? 1 : 0,
              colors: selColors, sizes: selSizes
            })}>
              <Text style={modalStyles.saveBtnText}>Save Product</Text>

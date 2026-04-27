@@ -63,6 +63,9 @@ export default function WishlistScreen() {
             <Ionicons name="heart-outline" size={34} color={colors.muted} />
             <Text style={styles.emptyTitle}>Your wishlist is empty.</Text>
             <Text style={styles.emptyText}>Save products you love and they will appear here.</Text>
+            <Pressable style={styles.emptyBtn} onPress={() => navigation.navigate("Shop")}>
+              <Text style={styles.emptyBtnText}>Go to Shop</Text>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.grid}>
@@ -194,6 +197,18 @@ const styles = StyleSheet.create({
     color: colors.subtleText,
     fontWeight: "700",
     textAlign: "center",
+  },
+  emptyBtn: {
+    marginTop: 10,
+    backgroundColor: colors.ink,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  emptyBtnText: {
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: 15,
   },
   grid: {
     flexDirection: "row",

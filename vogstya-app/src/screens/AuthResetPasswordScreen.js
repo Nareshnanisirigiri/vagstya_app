@@ -6,10 +6,24 @@ import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { colors, spacing } from "../theme/theme";
 
+function extractToken(routeParams) {
+  const directToken = String(routeParams?.token || "").trim();
+  if (directToken) {
+    return directToken;
+  }
+
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search || "");
+    return String(params.get("token") || "").trim();
+  }
+
+  return "";
+}
+
 export default function AuthResetPasswordScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { token: resetToken } = route.params || {};
+  const resetToken = useMemo(() => extractToken(route.params || {}), [route.params]);
   
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -39,11 +53,15 @@ export default function AuthResetPasswordScreen() {
   }, []);
 
   const disabled = useMemo(() => {
-    return password.length < 8 || password !== confirm;
-  }, [password, confirm]);
+    return !resetToken || password.length < 8 || password !== confirm;
+  }, [password, confirm, resetToken]);
 
   const onSubmit = async () => {
     setError("");
+    if (!resetToken) {
+      setError("Reset link is invalid or incomplete. Please request a new password reset email.");
+      return;
+    }
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -96,6 +114,13 @@ export default function AuthResetPasswordScreen() {
               </View>
             ) : null}
 
+            {!resetToken ? (
+              <View style={styles.alert}>
+                <Ionicons name="link-outline" size={18} color="#e11d48" />
+                <Text style={styles.alertText}>This reset link is missing the token. Please open the latest reset email and try again.</Text>
+              </View>
+            ) : null}
+
             {success ? (
               <View style={styles.success}>
                 <Ionicons name="checkmark-circle" size={24} color={colors.accent} />
@@ -134,7 +159,7 @@ export default function AuthResetPasswordScreen() {
                       secureTextEntry={secure}
                       placeholder="Repeat new password"
                       placeholderTextColor={colors.muted}
-                      style={styles.input}
+                      style={[styles.input, { flex: 1 }]}
                     />
                   </View>
                 </View>

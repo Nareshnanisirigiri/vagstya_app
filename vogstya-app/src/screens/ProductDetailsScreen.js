@@ -266,7 +266,7 @@ export default function ProductDetailsScreen() {
                   </View>
                   <Pressable
                     onPress={() => {
-                      addToCart(product.id, qty);
+                      addToCart(product.id, qty, selectedSize);
                       showMessage(`${product.name} added to cart`);
                     }}
                     style={styles.primaryBtn}
@@ -427,7 +427,7 @@ export default function ProductDetailsScreen() {
           </View>
           <Pressable
             onPress={() => {
-              addToCart(product.id, qty);
+              addToCart(product.id, qty, selectedSize);
               showMessage("Added to cart");
             }}
             style={styles.floatingBtn}

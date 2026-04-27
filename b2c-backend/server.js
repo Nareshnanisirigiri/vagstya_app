@@ -18,7 +18,7 @@ const PORT = Number(process.env.PORT || 5000);
 const HOST = process.env.HOST || "0.0.0.0";
 
 app.use(cors({
-  origin: ["https://vagstyaapp.vercel.app", "http://localhost:3000", "http://localhost:8081"],
+  origin: "*",
   credentials: true
 }));
 app.use(express.json());

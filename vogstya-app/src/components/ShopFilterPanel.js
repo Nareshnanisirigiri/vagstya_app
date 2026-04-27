@@ -24,6 +24,7 @@ export default function ShopFilterPanel({
   return (
     <Body
       style={scrollable ? styles.scroll : styles.embedded}
+      contentContainerStyle={scrollable ? styles.scrollContent : undefined}
       {...(scrollable ? { showsVerticalScrollIndicator: false } : {})}
     >
       <View style={styles.headerRow}>
@@ -101,6 +102,9 @@ export default function ShopFilterPanel({
 const styles = StyleSheet.create({
   scroll: {
     maxHeight: "100%",
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   embedded: {
     flexGrow: 1,

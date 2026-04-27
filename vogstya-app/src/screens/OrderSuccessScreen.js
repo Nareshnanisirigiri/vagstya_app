@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Platform, useWindowDimen
 import { Image } from "expo-image";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import BirthdayAnimation from "../components/BirthdayAnimation";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useOrders } from "../context/OrdersContext";
@@ -61,6 +62,7 @@ export default function OrderSuccessScreen() {
     <View style={styles.root}>
       <Header />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <BirthdayAnimation />
         
         {/* Success Header Layer */}
         <View style={styles.successHeader}>

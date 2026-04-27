@@ -1,17 +1,58 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { inferCategoryLabel } from "../utils/shopCurations";
 
-const WEB_DEFAULT = "https://vagstya-app.onrender.com/api";
+function isPrivateHost(host) {
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+  );
+}
+
+function resolveWebApiBaseUrl() {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    if (isPrivateHost(host)) {
+      return `http://${host}:5000/api`;
+    }
+
+    if (protocol === "https:" && host !== "vagstyaapp.vercel.app") {
+      return "https://vagstya-app.onrender.com/api";
+    }
+  }
+
+  return "https://vagstya-app.onrender.com/api";
+}
+
+const WEB_DEFAULT = resolveWebApiBaseUrl();
 const ANDROID_DEFAULT = "http://10.0.2.2:5000/api";
-const IOS_DEFAULT = "https://vagstya-app.onrender.com/api";
+const IOS_DEFAULT = "http://localhost:5000/api";
+
+const DEV_IP = "192.168.1.16"; // Your current computer IP
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
-  (Platform.OS === "web" ? WEB_DEFAULT : Platform.OS === "android" ? ANDROID_DEFAULT : IOS_DEFAULT);
+  (Platform.OS === "web" 
+    ? WEB_DEFAULT 
+    : Platform.OS === "android" 
+      ? (Constants?.expoConfig?.hostUri ? `http://${Constants.expoConfig.hostUri.split(':')[0]}:5000/api` : ANDROID_DEFAULT)
+      : `http://${DEV_IP}:5000/api`);
+
+console.log(`[AUTH] API Base set to: ${API_BASE_URL}`);
 
 function normalizeError(payload, fallback = "Request failed.") {
   if (!payload) return fallback;
   if (typeof payload === "string") return payload;
+  if (payload.message && payload.detail) return `${payload.message} ${payload.detail}`;
+  if (payload.message && payload.error && payload.message !== payload.error) {
+    return `${payload.message} ${payload.error}`;
+  }
   return payload.message || payload.error || fallback;
 }
 
@@ -21,11 +62,19 @@ export async function apiRequest(path, { method = "GET", body, token } = {}) {
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const fullUrl = `${API_BASE_URL}${path}`;
+  console.log(`[API] Fetching: ${fullUrl}`);
+
+  let res;
+  try {
+    res = await fetch(fullUrl, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    throw new Error(`Network error while calling ${fullUrl}. Make sure the backend is running and reachable.`);
+  }
 
   let payload = null;
   try {

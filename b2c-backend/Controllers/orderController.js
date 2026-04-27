@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { db } from "../config/db.js";
 import { sendMail } from "../utils/mail.js";
+import { orderUpdateTemplate } from "../utils/emailTemplates.js";
 
 const DEFAULT_DELIVERY_CHARGE = 50;
 const DEFAULT_ORDER_PREFIX = "RC";
@@ -294,6 +295,13 @@ async function resolveCustomerId(userId) {
     return null;
   }
 
+  const users = await query("SELECT id FROM users WHERE id = ? LIMIT 1", [userId]);
+  if (!users.length) {
+    const error = new Error("Session expired. Please sign in again.");
+    error.statusCode = 401;
+    throw error;
+  }
+
   const customers = await query("SELECT id FROM customers WHERE user_id = ? LIMIT 1", [userId]);
 
   if (customers.length) {
@@ -394,61 +402,7 @@ const ORDER_MAIL_TOPICS = {
   },
 };
 
-function buildLifecycleEmailTemplate({ customerName, orderCode, topic, description, detailRows = [] }) {
-  const safeName = customerName || "Customer";
-  const detailHtml = detailRows
-    .map(
-      (row) => `
-        <tr>
-          <td style="padding:10px 0;color:#4b5563;font-size:14px;">${row.label}</td>
-          <td style="padding:10px 0;color:#111827;font-size:14px;font-weight:600;text-align:right;">${row.value}</td>
-        </tr>
-      `
-    )
-    .join("");
 
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <style>
-        body{margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;color:#1f2937;}
-        .wrap{padding:24px 12px;}
-        .card{max-width:640px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 14px 36px rgba(15,23,42,.12);animation:rise .8s ease;}
-        .hero{background:linear-gradient(135deg,#0f172a,${topic.accent});padding:30px 24px;text-align:center;color:#fff;}
-        .logo{margin:0;font-size:30px;letter-spacing:2px;font-weight:700;animation:pulse 2.2s ease-in-out infinite;}
-        .content{padding:28px 26px;text-align:center;}
-        .badge{display:inline-block;padding:8px 14px;border-radius:999px;background:#e5e7eb;color:#111827;font-size:12px;font-weight:700;letter-spacing:.3px;}
-        .title{margin:14px 0 10px;color:${topic.accent};font-size:24px;line-height:1.3;animation:fadeIn .9s ease;}
-        .desc{margin:0;color:#4b5563;font-size:15px;line-height:1.65;}
-        .table{margin:22px auto 4px;max-width:420px;width:100%;border-top:1px solid #e5e7eb;}
-        .order-chip{display:inline-block;margin-top:14px;padding:7px 12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;font-size:13px;color:#1e293b;}
-        .footer{padding:0 24px 22px;text-align:center;color:#9ca3af;font-size:12px;}
-        @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-      </style>
-    </head>
-    <body>
-      <div class="wrap">
-        <div class="card">
-          <div class="hero"><h1 class="logo">VOGSTYA</h1></div>
-          <div class="content">
-            <span class="badge">${topic.badge}</span>
-            <h2 class="title">${topic.title}</h2>
-            <p class="desc">Hi <strong>${safeName}</strong>,<br/>${description}</p>
-            <div class="order-chip">Order ID: <strong>${orderCode}</strong></div>
-            <table class="table" cellspacing="0" cellpadding="0">${detailHtml}</table>
-          </div>
-          <div class="footer">Thank you for shopping with VOGSTYA Store.</div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-}
 
 async function getOrderEmailMeta(orderId) {
   const rows = await query(
@@ -508,13 +462,7 @@ async function maybeSendLifecycleEmail(orderId, topicKey, options = {}) {
       "Thank you for shopping with VOGSTYA Store.",
     ].join("\n");
 
-    const html = buildLifecycleEmailTemplate({
-      customerName: name,
-      orderCode,
-      topic,
-      description,
-      detailRows,
-    });
+    const html = orderUpdateTemplate(name, orderCode, topic, description, detailRows, orderId);
 
     await sendMail(email, topic.subject(orderCode), textContent, html);
   } catch (_error) {
@@ -881,7 +829,24 @@ export async function startCheckout(req, res) {
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: "Could not start checkout.", error: error.message });
+    console.error("CHECKOUT ERROR:", error);
+    try {
+      import("fs").then(fs => {
+        fs.appendFileSync("checkout_error.log", `\n[${new Date().toISOString()}] ${error.stack}\n`);
+      });
+    } catch (fsError) {}
+
+    if (Number(error?.statusCode) === 401) {
+      return res.status(401).json({
+        message: error.message || "Session expired. Please sign in again.",
+      });
+    }
+    
+    return res.status(500).json({ 
+      message: "Could not start checkout.", 
+      error: error.message,
+      detail: error.sqlMessage || "Check checkout_error.log for full stack trace"
+    });
   }
 }
 
@@ -1035,6 +1000,14 @@ export async function completeCheckout(req, res) {
           { label: "Total Paid", value: formatInr(order.payable_amount) },
           { label: "Transaction ID", value: transactionId },
           { label: "Payment Method", value: order.payment_method || "Online" },
+        ],
+      });
+    } else if (finalStatus === "cod_confirmed") {
+      maybeSendLifecycleEmail(orderId, "order_confirmation", {
+        description: "Your order has been placed successfully with Cash on Delivery.",
+        detailRows: [
+          { label: "Payable Amount", value: formatInr(order.payable_amount) },
+          { label: "Payment Method", value: "Cash On Delivery" },
         ],
       });
     }

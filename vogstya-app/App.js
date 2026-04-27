@@ -12,7 +12,12 @@ import { SnackbarProvider } from "./src/context/SnackbarContext";
 import { ProductsProvider } from "./src/context/ProductsContext";
 
 const linking = {
-  prefixes: [Linking.createURL("/")],
+  prefixes: [
+    Linking.createURL("/"),
+    "vogstyaapp://",
+    "https://vagstyaapp.vercel.app",
+    "https://vogstyaapp.vercel.app",
+  ],
   config: {
     screens: {
       Home: "",
@@ -32,6 +37,7 @@ const linking = {
       ProductDetails: "product/:slug",
       Checkout: "checkout",
       Orders: "orders",
+      TrackOrder: "track-order",
       OrderSuccess: "order-success",
       AdminPanel: "admin-panel",
     },

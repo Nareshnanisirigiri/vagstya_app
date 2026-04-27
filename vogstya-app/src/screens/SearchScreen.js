@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, Platform, ScrollView, Pressable, useWindowDimensions } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +16,13 @@ export default function SearchScreen() {
   const { products } = useProducts();
   const { width } = useWindowDimensions();
   const [q, setQ] = useState(route.params?.q || "");
+  const [selectedCategory, setSelectedCategory] = useState(route.params?.selectedCategory || "");
+  
+  useEffect(() => {
+    if (route.params?.q !== undefined) setQ(route.params.q);
+    if (route.params?.selectedCategory !== undefined) setSelectedCategory(route.params.selectedCategory);
+  }, [route.params?.q, route.params?.selectedCategory]);
+
   const query = String(q || "").trim().toLowerCase();
   const isWide = width >= WIDE;
   const isTablet = width >= TABLET;
@@ -26,12 +33,19 @@ export default function SearchScreen() {
   const cardWidth = Math.max(160, (mainWidth - gap * (numCols - 1)) / numCols);
 
   const results = useMemo(() => {
-    if (!query) return [];
-    return products.filter((p) => {
+    let list = products;
+
+    if (selectedCategory) {
+      list = list.filter((p) => p.category === selectedCategory);
+    }
+
+    if (!query) return selectedCategory ? list : [];
+    
+    return list.filter((p) => {
       const hay = `${p.name} ${p.category}`.toLowerCase();
       return hay.includes(query);
     });
-  }, [query, products]);
+  }, [query, products, selectedCategory]);
 
   return (
     <View style={styles.root}>
@@ -42,30 +56,7 @@ export default function SearchScreen() {
           <Text style={styles.subTitle}>Find pieces instantly with a faster, cleaner product search experience.</Text>
         </View>
 
-        <View style={styles.searchShell}>
-          <View style={styles.searchBar}>
-            <View style={styles.searchIconWrap}>
-              <Ionicons name="search-outline" size={20} color={colors.ink} />
-            </View>
-            <TextInput
-              value={q}
-              onChangeText={setQ}
-              placeholder="Search by product name or category"
-              placeholderTextColor={colors.muted}
-              autoFocus={Platform.OS === "web"}
-              style={styles.input}
-            />
-            {q ? (
-              <Pressable onPress={() => setQ("")} hitSlop={10} style={styles.clearBtn}>
-                <Ionicons name="close" size={16} color={colors.ink} />
-              </Pressable>
-            ) : (
-              <View style={styles.shortcutChip}>
-                <Text style={styles.shortcutText}>Search</Text>
-              </View>
-            )}
-          </View>
-        </View>
+
 
         {query ? (
           <Text style={styles.sub}>
@@ -114,69 +105,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 23,
     maxWidth: 620,
-  },
-  searchShell: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  searchBar: {
-    minHeight: 66,
-    borderRadius: 22,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.14)",
-    paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    ...(Platform.OS === "web"
-      ? { boxShadow: "0 16px 50px rgba(13, 87, 49, 0.08)" }
-      : {
-          elevation: 3,
-          shadowColor: "#0d5731",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.07,
-          shadowRadius: 20,
-        }),
-  },
-  searchIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: colors.highlightSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  input: {
-    flex: 1,
-    color: colors.ink,
-    fontWeight: "600",
-    fontSize: 16,
-    paddingVertical: 10,
-  },
-  clearBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.1)",
-  },
-  shortcutChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: "rgba(13, 87, 49, 0.1)",
-  },
-  shortcutText: {
-    color: colors.subtleText,
-    fontWeight: "700",
-    fontSize: 12,
-    letterSpacing: 0.3,
   },
   sub: {
     marginTop: 10,
