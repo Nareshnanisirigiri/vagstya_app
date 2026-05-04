@@ -39,9 +39,9 @@ const FALLBACK_GATEWAYS = [
   },
 ];
 
-function query(sql, params = []) {
+function query(sql, params = [], executor = db) {
   return new Promise((resolve, reject) => {
-    db.query(sql, params, (error, results) => {
+    executor.query(sql, params, (error, results) => {
       if (error) {
         reject(error);
         return;
@@ -52,35 +52,50 @@ function query(sql, params = []) {
   });
 }
 
-function beginTransaction() {
+function getTransactionConnection() {
   return new Promise((resolve, reject) => {
-    db.beginTransaction((error) => {
+    db.getConnection((error, connection) => {
       if (error) {
         reject(error);
         return;
       }
 
-      resolve();
+      connection.beginTransaction((transactionError) => {
+        if (transactionError) {
+          connection.release();
+          reject(transactionError);
+          return;
+        }
+
+        resolve(connection);
+      });
     });
   });
 }
 
-function commitTransaction() {
+function commitTransaction(connection) {
   return new Promise((resolve, reject) => {
-    db.commit((error) => {
+    connection.commit((error) => {
       if (error) {
         reject(error);
         return;
       }
 
+      connection.release();
       resolve();
     });
   });
 }
 
-function rollbackTransaction() {
+function rollbackTransaction(connection) {
   return new Promise((resolve) => {
-    db.rollback(() => {
+    if (!connection) {
+      resolve();
+      return;
+    }
+
+    connection.rollback(() => {
+      connection.release();
       resolve();
     });
   });
@@ -290,19 +305,19 @@ async function getGatewayList() {
   }
 }
 
-async function resolveCustomerId(userId) {
+async function resolveCustomerId(userId, executor = db) {
   if (!userId) {
     return null;
   }
 
-  const users = await query("SELECT id FROM users WHERE id = ? LIMIT 1", [userId]);
+  const users = await query("SELECT id FROM users WHERE id = ? LIMIT 1", [userId], executor);
   if (!users.length) {
     const error = new Error("Session expired. Please sign in again.");
     error.statusCode = 401;
     throw error;
   }
 
-  const customers = await query("SELECT id FROM customers WHERE user_id = ? LIMIT 1", [userId]);
+  const customers = await query("SELECT id FROM customers WHERE user_id = ? LIMIT 1", [userId], executor);
 
   if (customers.length) {
     return Number(customers[0].id);
@@ -310,13 +325,14 @@ async function resolveCustomerId(userId) {
 
   const created = await query(
     "INSERT INTO customers (user_id, created_at, updated_at) VALUES (?, NOW(), NOW())",
-    [userId]
+    [userId],
+    executor
   );
 
   return Number(created.insertId);
 }
 
-async function createAddressRecord(shippingAddress, customerId) {
+async function createAddressRecord(shippingAddress, customerId, executor = db) {
   const address = shippingAddress || {};
 
   const result = await query(
@@ -347,7 +363,8 @@ async function createAddressRecord(shippingAddress, customerId) {
       address.postalCode || null,
       address.latitude || null,
       address.longitude || null,
-    ]
+    ],
+    executor
   );
 
   return Number(result.insertId);
@@ -669,12 +686,14 @@ export async function startCheckout(req, res) {
     let gatewayOrderId = null;
     let redirectUrl = null;
 
-    try {
-      await beginTransaction();
+    let transactionConnection;
 
-      const customerId = await resolveCustomerId(userId);
-      const addressId = await createAddressRecord(shippingAddress, customerId);
-      const lastOrderRows = await query("SELECT id FROM orders ORDER BY id DESC LIMIT 1");
+    try {
+      transactionConnection = await getTransactionConnection();
+
+      const customerId = await resolveCustomerId(userId, transactionConnection);
+      const addressId = await createAddressRecord(shippingAddress, customerId, transactionConnection);
+      const lastOrderRows = await query("SELECT id FROM orders ORDER BY id DESC LIMIT 1", [], transactionConnection);
       const nextOrderId = Number(lastOrderRows[0]?.id || 0) + 1;
       orderCode = formatOrderCode(nextOrderId);
       const paymentMethodLabel =
@@ -719,7 +738,8 @@ export async function startCheckout(req, res) {
           paymentMethodLabel,
           addressId,
           req.body?.note || null,
-        ]
+        ],
+        transactionConnection
       );
 
       orderId = Number(orderInsert.insertId);
@@ -735,13 +755,15 @@ export async function startCheckout(req, res) {
             unit,
             price
           ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [orderId, line.productId, line.quantity, line.color, line.size, line.unit, line.unitPrice]
+          [orderId, line.productId, line.quantity, line.color, line.size, line.unit, line.unitPrice],
+          transactionConnection
         );
 
-        await query("UPDATE products SET quantity = quantity - ?, updated_at = NOW() WHERE id = ?", [
-          line.quantity,
-          line.productId,
-        ]);
+        await query(
+          "UPDATE products SET quantity = quantity - ?, updated_at = NOW() WHERE id = ?",
+          [line.quantity, line.productId],
+          transactionConnection
+        );
       }
 
       if (paymentMethod !== "cod" && selectedGateway?.id === "razorpay") {
@@ -782,14 +804,20 @@ export async function startCheckout(req, res) {
           paymentMethod === "cod" ? "cash" : selectedGateway.id,
           0,
           sessionToken,
-        ]
+        ],
+        transactionConnection
       );
 
       paymentId = Number(paymentInsert.insertId);
 
-      await query("INSERT INTO order_payments (order_id, payment_id) VALUES (?, ?)", [orderId, paymentId]);
+      await query(
+        "INSERT INTO order_payments (order_id, payment_id) VALUES (?, ?)",
+        [orderId, paymentId],
+        transactionConnection
+      );
 
-      await commitTransaction();
+      await commitTransaction(transactionConnection);
+      transactionConnection = null;
       maybeSendLifecycleEmail(orderId, "order_confirmation", {
         description: "Your order has been placed successfully and is now confirmed.",
         detailRows: [
@@ -800,7 +828,7 @@ export async function startCheckout(req, res) {
         ],
       });
     } catch (transactionError) {
-      await rollbackTransaction();
+      await rollbackTransaction(transactionConnection);
       throw transactionError;
     }
 
@@ -935,8 +963,10 @@ export async function completeCheckout(req, res) {
     let nextPaymentStatus = "Pending";
     let nextOrderStatus = "Placed";
 
+    let transactionConnection;
+
     try {
-      await beginTransaction();
+      transactionConnection = await getTransactionConnection();
 
       if (finalStatus === "paid") {
         nextPaymentStatus = "Paid";
@@ -944,7 +974,8 @@ export async function completeCheckout(req, res) {
 
         await query(
           "UPDATE payments SET is_paid = 1, payment_token = ?, updated_at = NOW() WHERE id = ?",
-          [transactionId, order.payment_id]
+          [transactionId, order.payment_id],
+          transactionConnection
         );
       } else if (finalStatus === "cod_confirmed") {
         nextPaymentStatus = "Pending";
@@ -952,7 +983,8 @@ export async function completeCheckout(req, res) {
 
         await query(
           "UPDATE payments SET is_paid = 0, payment_token = ?, updated_at = NOW() WHERE id = ?",
-          [transactionId, order.payment_id]
+          [transactionId, order.payment_id],
+          transactionConnection
         );
       } else if (finalStatus === "failed") {
         nextPaymentStatus = "Failed";
@@ -960,7 +992,8 @@ export async function completeCheckout(req, res) {
 
         await query(
           "UPDATE payments SET is_paid = 0, payment_token = ?, updated_at = NOW() WHERE id = ?",
-          [transactionId, order.payment_id]
+          [transactionId, order.payment_id],
+          transactionConnection
         );
       } else {
         nextPaymentStatus = "Cancelled";
@@ -968,18 +1001,21 @@ export async function completeCheckout(req, res) {
 
         await query(
           "UPDATE payments SET is_paid = 0, payment_token = ?, updated_at = NOW() WHERE id = ?",
-          [transactionId, order.payment_id]
+          [transactionId, order.payment_id],
+          transactionConnection
         );
       }
 
       await query(
         "UPDATE orders SET payment_status = ?, order_status = ?, updated_at = NOW() WHERE id = ?",
-        [nextPaymentStatus, nextOrderStatus, orderId]
+        [nextPaymentStatus, nextOrderStatus, orderId],
+        transactionConnection
       );
 
-      await commitTransaction();
+      await commitTransaction(transactionConnection);
+      transactionConnection = null;
     } catch (transactionError) {
-      await rollbackTransaction();
+      await rollbackTransaction(transactionConnection);
       throw transactionError;
     }
 

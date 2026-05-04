@@ -1,0 +1,24 @@
+
+[2026-05-04T10:58:26.422Z] TypeError: db.rollback is not a function
+    at file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:83:8
+    at new Promise (<anonymous>)
+    at rollbackTransaction (file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:82:10)
+    at startCheckout (file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:803:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/[eval1]:29:1
+
+[2026-05-04T11:00:45.287Z] TypeError: db.rollback is not a function
+    at file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:83:8
+    at new Promise (<anonymous>)
+    at rollbackTransaction (file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:82:10)
+    at startCheckout (file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:803:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/[eval1]:29:1
+
+[2026-05-04T11:08:20.530Z] ReferenceError: beginTransaction is not defined
+    at startCheckout (file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:690:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-05-04T11:08:32.066Z] ReferenceError: beginTransaction is not defined
+    at startCheckout (file:///C:/Users/sirin/Downloads/vogstya_jewellary-main/vogstya_jewellary-main/b2c-backend/Controllers/orderController.js:690:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
