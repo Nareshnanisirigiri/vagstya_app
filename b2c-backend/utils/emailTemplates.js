@@ -2,7 +2,7 @@ const BRAND_COLOR = "#0d5731"; // Forest Green
 const ACCENT_COLOR = "#d97706"; // Gold
 const BG_COLOR = "#f4f7f6";
 const TEXT_COLOR = "#1f2937";
-const WEB_APP_URL = process.env.FRONTEND_URL || "https://vogstyaapp.vercel.app";
+const WEB_APP_URL = process.env.FRONTEND_URL || "https://vagstyaapp.vercel.app";
 
 const baseTemplate = (content, previewText = "") => `
 <!DOCTYPE html>
