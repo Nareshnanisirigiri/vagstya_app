@@ -23,11 +23,11 @@ function resolveWebApiBaseUrl() {
     }
 
     if (protocol === "https:") {
-      return "https://vagstya-app.onrender.com/api";
+      return "https://vagstya-backend.onrender.com/api";
     }
   }
 
-  return "https://vagstya-app.onrender.com/api";
+  return "https://vagstya-backend.onrender.com/api";
 }
 
 function normalizeConfiguredBaseUrl(rawBase) {
