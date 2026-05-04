@@ -22,7 +22,7 @@ function resolveWebApiBaseUrl() {
       return `http://${host}:5000/api`;
     }
 
-    if (protocol === "https:" && host !== "vagstyaapp.vercel.app") {
+    if (protocol === "https:") {
       return "https://vagstya-app.onrender.com/api";
     }
   }
@@ -40,9 +40,10 @@ function normalizeConfiguredBaseUrl(rawBase) {
       const currentHost = window.location.hostname;
 
       if (
-        parsed.hostname === "localhost" ||
+        (parsed.hostname === "localhost" ||
         parsed.hostname === "127.0.0.1" ||
-        parsed.hostname === "::1"
+        parsed.hostname === "::1") &&
+        isPrivateHost(currentHost)
       ) {
         parsed.hostname = currentHost;
         return parsed.toString().replace(/\/$/, "");
