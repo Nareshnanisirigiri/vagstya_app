@@ -25,6 +25,49 @@ function toCurrency(value) {
   return Number(value || 0);
 }
 
+function buildLastSevenDayLabels() {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
+    return formatter.format(date).replace(",", "");
+  });
+}
+
+function mapSeriesByLabel(rows, valueKey) {
+  return rows.reduce((acc, row) => {
+    acc[row.label] = Number(row[valueKey] || 0);
+    return acc;
+  }, {});
+}
+
+function normalizeOrderStatus(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[_/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getOrderAnalyticsBucket(status) {
+  const normalized = normalizeOrderStatus(status);
+
+  if (normalized === "pending") return "pending";
+  if (["confirm", "confirmed", "placed"].includes(normalized)) return "confirm";
+  if (normalized === "processing") return "processing";
+  if (["pickup", "picked up", "packed"].includes(normalized)) return "pickup";
+  if (["on the way", "shipped", "out for delivery"].includes(normalized)) return "onTheWay";
+  if (normalized === "delivered") return "delivered";
+  if (["cancelled", "canceled"].includes(normalized)) return "cancelled";
+
+  return null;
+}
+
 export async function getAdminDashboard(req, res) {
   try {
     const [
@@ -37,6 +80,12 @@ export async function getAdminDashboard(req, res) {
       dailyUserStats,
       dailyProductStats,
       topProductsDistribution,
+      shopCountRows,
+      orderStatusRows,
+      customerCountRows,
+      withdrawApprovedRows,
+      withdrawPendingRows,
+      withdrawRejectedRows,
     ] = await Promise.all([
       safeQuery("SELECT COUNT(*) AS total FROM users", [], [{ total: 0 }]),
       safeQuery("SELECT COUNT(*) AS total FROM products", [], [{ total: 0 }]),
@@ -124,21 +173,57 @@ export async function getAdminDashboard(req, res) {
         [],
         []
       ),
+      safeQuery("SELECT COUNT(*) AS total FROM shops", [], [{ total: 0 }]),
+      safeQuery("SELECT order_status, COUNT(*) AS total FROM orders GROUP BY order_status", [], []),
+      safeQuery("SELECT COUNT(*) AS total FROM customers", [], [{ total: 0 }]),
+      safeQuery("SELECT COALESCE(SUM(amount), 0) AS total FROM withdraws WHERE status = 'approved'", [], [{ total: 0 }]),
+      safeQuery("SELECT COALESCE(SUM(amount), 0) AS total FROM withdraws WHERE status = 'pending'", [], [{ total: 0 }]),
+      safeQuery("SELECT COALESCE(SUM(amount), 0) AS total FROM withdraws WHERE status = 'rejected'", [], [{ total: 0 }]),
     ]);
 
-    const labels = dailyStats.map((s) => s.label);
-    const usersByLabel = dailyUserStats.reduce((acc, row) => {
-      acc[row.label] = Number(row.users || 0);
-      return acc;
-    }, {});
-    const productsByLabel = dailyProductStats.reduce((acc, row) => {
-      acc[row.label] = Number(row.products || 0);
+    const labels = buildLastSevenDayLabels();
+    const revenueByLabel = mapSeriesByLabel(dailyStats, "revenue");
+    const ordersByLabel = mapSeriesByLabel(dailyStats, "orders");
+    const usersByLabel = mapSeriesByLabel(dailyUserStats, "users");
+    const productsByLabel = mapSeriesByLabel(dailyProductStats, "products");
+
+    const orderCounts = orderStatusRows.reduce((acc, row) => {
+      const bucket = getOrderAnalyticsBucket(row.order_status);
+      if (!bucket) {
+        return acc;
+      }
+
+      acc[bucket] = (acc[bucket] || 0) + Number(row.total || 0);
       return acc;
     }, {});
 
+    const totalRevenue = toCurrency(orderStatsRows[0]?.totalRevenue);
+
     return res.json({
+      businessOverview: {
+        shops: Number(shopCountRows[0]?.total ?? 0),
+        products: Number(productCountRows[0]?.total ?? 0),
+        orders: Number(orderStatsRows[0]?.totalOrders ?? 0),
+        customers: Number(customerCountRows[0]?.total ?? 0),
+      },
+      orderAnalytics: {
+        pending: orderCounts.pending || 0,
+        confirm: orderCounts.confirm || 0,
+        processing: orderCounts.processing || 0,
+        pickup: orderCounts.pickup || 0,
+        onTheWay: orderCounts.onTheWay || 0,
+        delivered: orderCounts.delivered || 0,
+        cancelled: orderCounts.cancelled || 0,
+      },
+      adminWallet: {
+        totalEarning: totalRevenue,
+        alreadyWithdraw: Number(withdrawApprovedRows[0]?.total ?? 0),
+        pendingWithdraw: Number(withdrawPendingRows[0]?.total ?? 0),
+        totalCommission: totalRevenue * 0.15, // Assume 15% commission standard
+        rejectedWithdraw: Number(withdrawRejectedRows[0]?.total ?? 0),
+      },
       metrics: [
-        { label: "Earnings", value: `Rs ${toCurrency(orderStatsRows[0]?.totalRevenue).toLocaleString("en-IN")}` },
+        { label: "Earnings", value: `Rs ${totalRevenue.toLocaleString("en-IN")}` },
         { label: "Products", value: String(productCountRows[0]?.total ?? 0) },
         { label: "Orders", value: String(orderStatsRows[0]?.totalOrders ?? 0) },
         { label: "Users", value: String(userCountRows[0]?.total ?? 0) },
@@ -146,11 +231,15 @@ export async function getAdminDashboard(req, res) {
       analytics: {
         labels,
         datasets: {
-          revenue: dailyStats.map(s => Number(s.revenue)),
-          orders: dailyStats.map(s => Number(s.orders)),
+          revenue: labels.map((label) => revenueByLabel[label] || 0),
+          orders: labels.map((label) => ordersByLabel[label] || 0),
           users: labels.map((label) => usersByLabel[label] || 0),
           products: labels.map((label) => productsByLabel[label] || 0),
         }
+      },
+      meta: {
+        period: "Last 7 Days",
+        updatedAt: new Date().toISOString(),
       },
       categoryDistribution: topProductsDistribution.map((row, idx) => ({
         name: row.label,

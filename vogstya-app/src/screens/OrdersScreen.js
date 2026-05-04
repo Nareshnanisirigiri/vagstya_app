@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState } from "react";
-import { View, Text, StyleSheet, Platform, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, Platform, ScrollView, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useRoute, useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +24,7 @@ function fmtDate(iso) {
 
 function formatMoney(value) {
   const amount = Number(value || 0);
-  return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `Rs.${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function normalizeOrderStatus(status) {
@@ -49,9 +49,60 @@ function statusStyle(status) {
   return "pending";
 }
 
+const OrderTracker = ({ status }) => {
+  const allSteps = ["Packed", "Shipped", "Out for Delivery", "Delivered", "Return / Refund"];
+  
+  const getActiveColor = (step) => {
+    switch (step) {
+      case "Packed": return "#6366f1"; // Indigo
+      case "Shipped": return "#8b5cf6"; // Purple
+      case "Out for Delivery": return "#f59e0b"; // Amber
+      case "Delivered": return "#10b981"; // Emerald
+      case "Return / Refund": return "#ef4444"; // Red
+      default: return "#10b981";
+    }
+  };
+
+  const currentIndex = allSteps.indexOf(status);
+
+  return (
+    <View style={styles.trackerContainer}>
+      {allSteps.map((step, index) => {
+        let isActive = false;
+        let isCurrent = false;
+
+        if (status !== "Cancelled") {
+           isActive = currentIndex >= 0 && index <= currentIndex;
+           isCurrent = index === currentIndex;
+        }
+
+        const stepColor = isActive ? getActiveColor(step) : "#d1d5db";
+        const lineActive = currentIndex >= 0 && index < currentIndex;
+        const lineColor = lineActive ? getActiveColor(allSteps[index + 1]) : "#e5e7eb";
+
+        return (
+          <View key={step} style={styles.trackerStepContainer}>
+            <View style={styles.trackerStepIndicator}>
+              <View style={[styles.trackerDot, { backgroundColor: stepColor, transform: [{ scale: isCurrent ? 1.3 : 1 }] }]} />
+              {index < allSteps.length - 1 && (
+                <View style={[styles.trackerLine, { backgroundColor: lineColor }]} />
+              )}
+            </View>
+            <Text style={[styles.trackerText, { color: isCurrent ? stepColor : (isActive ? colors.ink : "#9ca3af"), fontWeight: isCurrent ? "700" : "500" }]}>
+              {step}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+};
+
 export default function OrdersScreen() {
   const route = useRoute();
   const navigation = useNavigation();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 1024;
   const focusOrderId = route.params?.focusOrderId;
   const { orders, loading, refreshOrders } = useOrders();
   const { products } = useProducts();
@@ -197,14 +248,16 @@ export default function OrdersScreen() {
                   </View>
 
                   {/* Order Body */}
-                  <View style={styles.cardContent}>
-                    <View style={styles.mainCol}>
+                  <View style={[styles.cardContent, { flexDirection: isMobile ? 'column' : 'row' }]}>
+                    <View style={[styles.mainCol, isMobile && { flex: undefined, width: '100%' }]}>
                       <Text style={styles.statusTitle}>
                         {isDelivered ? "Delivered" : isReturned ? "Return complete" : lifecycleStatus}
                       </Text>
                       <Text style={styles.statusDesc}>
                         {isDelivered ? "Package was handed to resident" : isReturned ? "Your return is complete." : `Order is currently ${lifecycleStatus.toLowerCase()}`}
                       </Text>
+
+                      <OrderTracker status={lifecycleStatus} />
 
                       {ord.lines.map((line, idx) => (
                         <View key={`${ord.id}-${idx}`} style={styles.productRow}>
@@ -241,7 +294,7 @@ export default function OrdersScreen() {
                     </View>
 
                     {/* Right-side Action Column */}
-                    <View style={styles.actionCol}>
+                    <View style={[styles.actionCol, isMobile && { flex: undefined, width: '100%' }]}>
                       {isReturned && (
                         <Pressable style={styles.primaryActionBtn} onPress={() => handleTrackPackage(ord.id)}>
                           <Text style={styles.primaryActionText}>View Return/Refund Status</Text>
@@ -276,7 +329,7 @@ export default function OrdersScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  body: { paddingHorizontal: spacing.lg, paddingBottom: 100 },
   pageHeader: { marginTop: spacing.lg, marginBottom: spacing.lg },
   title: {
     color: colors.ink,
@@ -323,7 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#d5d9d9",
-    boxShadow: "0 2px 5px rgba(213,217,217,.5)",
+    ...(Platform.OS === "web" ? { boxShadow: "0 2px 5px rgba(213,217,217,.5)" } : {}),
   },
   dropdownText: { fontSize: 13, color: colors.ink, marginRight: 4 },
   empty: {
@@ -341,7 +394,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#d5d9d9",
-    overflow: "hidden",
+    // Remove overflow hidden to prevent clipping
   },
   cardFocus: { borderColor: "#e47911", borderWidth: 2 },
   cardHeader: {
@@ -366,7 +419,7 @@ const styles = StyleSheet.create({
   vDivider: { width: 1, height: 12, backgroundColor: '#d5d9d9', marginHorizontal: 8 },
   cardContent: {
     padding: 16,
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    paddingBottom: 24,
     justifyContent: 'space-between',
     gap: 20,
   },
@@ -377,6 +430,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 16,
     marginBottom: spacing.lg,
+    paddingVertical: 8,
   },
   itemImageContainer: {
     width: 90,
@@ -402,7 +456,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 8,
   },
-  productActionsInner: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  productActionsInner: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', marginTop: 4 },
   buyAgainBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -432,7 +486,12 @@ const styles = StyleSheet.create({
     borderColor: '#D5D9D9',
   },
   viewItemText: { fontSize: 12, fontWeight: '500', color: '#0F1111' },
-  actionCol: { flex: 1, minWidth: 200, gap: 8 },
+  actionCol: { 
+    flex: 1, 
+    gap: 12,
+    minWidth: 180,
+    flexShrink: 0,
+  },
   primaryActionBtn: {
     backgroundColor: colors.highlight,
     paddingVertical: 8,
@@ -440,7 +499,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.highlight,
-    boxShadow: '0 2px 5px rgba(246, 181, 30, 0.3)',
+    ...(Platform.OS === "web" ? { boxShadow: '0 2px 5px rgba(246, 181, 30, 0.3)' } : {}),
   },
   primaryActionText: { fontSize: 13, fontWeight: '500', color: colors.ink },
   secondaryActionBtn: {
@@ -450,7 +509,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#D5D9D9',
-    boxShadow: '0 2px 5px rgba(213,217,217,.5)',
+    ...(Platform.OS === "web" ? { boxShadow: '0 2px 5px rgba(213,217,217,.5)' } : {}),
   },
   secondaryActionText: { fontSize: 13, fontWeight: '500', color: '#0F1111' },
+  trackerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 16,
+    paddingHorizontal: 0,
+  },
+  trackerStepContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  trackerStepIndicator: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    position: 'relative',
+    height: 16,
+  },
+  trackerDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    zIndex: 2,
+    backgroundColor: '#d1d5db',
+  },
+  trackerLine: {
+    position: 'absolute',
+    height: 3,
+    top: 6.5,
+    left: '50%',
+    width: '100%',
+    zIndex: 1,
+  },
+  trackerText: {
+    fontSize: 10,
+    textAlign: 'center',
+    paddingHorizontal: 2,
+    lineHeight: 14,
+  },
 });

@@ -141,16 +141,20 @@ export default function AmazonSearchBar({ onSearch }) {
           <ScrollView style={styles.dropdownScroll} keyboardShouldPersistTaps="handled">
             {/* Quick Explore Section (Always visible when dropdown open) */}
             <View style={styles.quickExploreSection}>
-              <Text style={styles.sectionTitle}>Quick Explore Categories</Text>
-              <View style={styles.quickLinksRow}>
+              <Text style={styles.sectionTitle}>Quick Explore</Text>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                contentContainerStyle={styles.quickLinksRow}
+              >
                 {[
-                  { label: "Collections", cat: "Collections", icon: "grid" },
-                  { label: "Fashion Accessories", cat: "Fashion Accessories", icon: "watch" },
-                  { label: "Festive Vibes", cat: "Festive Vibes", icon: "sparkles" },
-                  { label: "Jewellery", cat: "Jewellery", icon: "diamond" },
-                  { label: "Men", cat: "Men", icon: "shirt" },
-                  { label: "Sarees", cat: "Sarees", icon: "color-palette" },
-                  { label: "Women", cat: "Women", icon: "female" },
+                  { label: "Collections", cat: "Collections", icon: "grid-outline" },
+                  { label: "Fashion Accessories", cat: "Fashion Accessories", icon: "watch-outline" },
+                  { label: "Festive Vibes", cat: "Festive Vibes", icon: "sparkles-outline" },
+                  { label: "Jewellery", cat: "Jewellery", icon: "diamond-outline" },
+                  { label: "Men", cat: "Men", icon: "shirt-outline" },
+                  { label: "Sarees", cat: "Sarees", icon: "color-palette-outline" },
+                  { label: "Women", cat: "Women", icon: "female-outline" },
                 ].map((link) => (
                   <Pressable
                     key={link.label}
@@ -160,11 +164,11 @@ export default function AmazonSearchBar({ onSearch }) {
                       setIsHistoryOpen(false);
                     }}
                   >
-                    <Ionicons name={link.icon} size={14} color={colors.primary} />
+                    <Ionicons name={link.icon} size={14} color="#f6b51e" />
                     <Text style={styles.quickLinkLabel}>{link.label}</Text>
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
             </View>
 
             {query.trim() ? (
@@ -238,7 +242,7 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     flexDirection: "row",
-    height: 42,
+    height: 38,
     backgroundColor: "#fff",
     borderRadius: 8,
     overflow: "hidden",
@@ -295,17 +299,22 @@ const styles = StyleSheet.create({
   historyDropdown: {
     position: "absolute",
     top: 44,
-    left: 0,
-    right: 0,
+    left: -100, // Extend left to cover more area
+    right: -100, // Extend right to cover more area
     backgroundColor: "#fff",
-    borderRadius: 4,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#ccc",
-    maxHeight: 450,
-    zIndex: 9999,
+    borderColor: "#eee",
+    maxHeight: 500,
+    zIndex: 99999,
+    paddingTop: 8,
     ...Platform.select({
-      web: { boxShadow: "0 4px 12px rgba(0,0,0,0.15)" },
-      default: { elevation: 10 },
+      web: { 
+        boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+        width: "120%",
+        alignSelf: 'center'
+      },
+      default: { elevation: 20 },
     }),
   },
   dropdownScroll: {
@@ -376,36 +385,41 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   quickExploreSection: {
-    paddingBottom: 8,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f1f1",
+    borderBottomColor: "#f1f5f9",
+    backgroundColor: "#fafbfc",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   quickLinksRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     paddingHorizontal: 16,
     gap: 10,
-    marginTop: 4,
-    marginBottom: 8,
+    marginTop: 8,
+    paddingBottom: 4,
   },
   quickLinkChip: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
+    borderColor: "#e2e8f0",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 25,
+    gap: 8,
     ...Platform.select({
-      web: { boxShadow: "0 2px 4px rgba(0,0,0,0.05)" },
-      default: { elevation: 1 },
+      web: { 
+        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
+        transition: 'all 0.2s ease'
+      },
+      default: { elevation: 2 },
     }),
   },
   quickLinkLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#333",
+    color: "#0d5731", // Forest Green
   },
 });

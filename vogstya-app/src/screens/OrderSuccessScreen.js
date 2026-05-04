@@ -100,7 +100,7 @@ export default function OrderSuccessScreen() {
                   <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
                   <Text style={styles.itemMeta}>Qty: {item.qty} {item.size ? `| Size: ${item.size}` : ''}</Text>
                 </View>
-                <Text style={styles.itemPrice}>₹{(item.price * item.qty).toFixed(2)}</Text>
+                <Text style={styles.itemPrice}>Rs.{(item.price * item.qty).toFixed(2)}</Text>
               </View>
             ))}
             {items.length === 0 && <Text style={styles.emptyText}>No item details available.</Text>}
@@ -112,15 +112,15 @@ export default function OrderSuccessScreen() {
           <View style={styles.totalsSection}>
              <View style={styles.totRow}>
                <Text style={styles.totLabel}>Subtotal</Text>
-               <Text style={styles.totValue}>₹{Number(totals.subtotal || 0).toFixed(2)}</Text>
+               <Text style={styles.totValue}>Rs.{Number(totals.subtotal || 0).toFixed(2)}</Text>
              </View>
              <View style={styles.totRow}>
                <Text style={styles.totLabel}>Delivery</Text>
-               <Text style={styles.totValue}>₹{Number(totals.deliveryFee || 0).toFixed(2)}</Text>
+               <Text style={styles.totValue}>Rs.{Number(totals.deliveryFee || 0).toFixed(2)}</Text>
              </View>
              <View style={[styles.totRow, styles.grandRow]}>
                <Text style={styles.grandLabel}>Total Paid</Text>
-               <Text style={styles.grandValue}>₹{Number(totals.grandTotal || 0).toFixed(2)}</Text>
+               <Text style={styles.grandValue}>Rs.{Number(totals.grandTotal || 0).toFixed(2)}</Text>
              </View>
           </View>
 

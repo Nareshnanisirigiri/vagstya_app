@@ -55,9 +55,9 @@ export default function ShopFilterPanel({
 
       <Text style={[styles.sectionLabel, styles.sectionSpaced]}>PRICE RANGE</Text>
       <View style={styles.priceRow}>
-        <Text style={styles.priceValue}>₹{Math.round(priceMin)}</Text>
+        <Text style={styles.priceValue}>Rs.{Math.round(priceMin)}</Text>
         <Text style={styles.priceDash}>—</Text>
-        <Text style={styles.priceValue}>₹{Math.round(priceMax)}</Text>
+        <Text style={styles.priceValue}>Rs.{Math.round(priceMax)}</Text>
       </View>
       <Text style={styles.sliderLabel}>Min</Text>
       <Slider

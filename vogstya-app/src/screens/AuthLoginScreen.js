@@ -163,7 +163,6 @@ export default function AuthLoginScreen() {
             </View>
           </View>
         </View>
-        <Footer bleed={spacing.lg} />
       </Animated.ScrollView>
     </View>
   );

@@ -22,10 +22,15 @@ import { useAuth } from "../context/AuthContext";
 import { useProducts } from "../context/ProductsContext";
 import { apiRequest } from "../api/client";
 import { colors, spacing } from "../theme/theme";
+import AdminSidebar from "../components/AdminSidebar";
+import POSView from "../components/POSView";
+import DraftView from "../components/DraftView";
+import POSSalesView from "../components/POSSalesView";
 
 const SIDEBAR_WIDTH = 280;
-const SIDEBAR_HOVER = "rgba(255, 255, 255, 0.08)";
-const TABLE_HEADER_BG = "#f8faf9";
+const SIDEBAR_BG = "#f8f9fa";
+const SIDEBAR_ACTIVE_BG = "rgba(13, 87, 49, 0.08)";
+const TABLE_HEADER_BG = "#f4f6f8";
 
 const chartConfigBase = (mainColor) => ({
   backgroundColor: "#ffffff",
@@ -38,12 +43,28 @@ const chartConfigBase = (mainColor) => ({
   propsForDots: { r: "5", strokeWidth: "2", stroke: "#fff" }
 });
 
-const ORDER_LIFECYCLE_OPTIONS = [
-  { label: "Packed", value: "packed" },
-  { label: "Shipped", value: "shipped" },
-  { label: "Out for Delivery", value: "out_for_delivery" },
-  { label: "Delivered", value: "delivered" },
-  { label: "Return / Refund", value: "return_refund" },
+// Manual constants removed - now fetched from API
+const INDIAN_STATES = []; 
+const GENDER_OPTIONS = [];
+const USER_CATEGORIES = [];
+const ORDER_LIFECYCLE_OPTIONS = [];
+const ORDER_ANALYTICS_STAGES = [];
+const APPROVED_COLORS = [];
+const APPROVED_SIZES = [];
+const APPROVED_UNITS = [];
+
+const APPROVED_UNIT_COLUMNS = [
+  { name: "id", dataType: "int" },
+  { name: "name", dataType: "varchar" },
+  { name: "is_active", dataType: "tinyint" },
+];
+
+const APPROVED_SHOP_COLUMNS = [
+  { name: "id", dataType: "int" },
+  { name: "name", dataType: "varchar" },
+  { name: "email", dataType: "varchar" },
+  { name: "phone", dataType: "varchar" },
+  { name: "is_active", dataType: "tinyint" },
 ];
 
 const StatCardContainer = ({ metric, isActive, styleMeta, onPress, dashboardReveal, data }) => {
@@ -54,7 +75,7 @@ const StatCardContainer = ({ metric, isActive, styleMeta, onPress, dashboardReve
   useEffect(() => {
     const targetData = Array.isArray(data) && data.length > 0 ? data.slice(-7) : [12, 18, 15, 22, 19, 25, 24]; // Fallback to semi-random trend if no data
     animValue.setValue(0);
-    
+
     const anim = Animated.timing(animValue, {
       toValue: 1,
       duration: 1200,
@@ -80,16 +101,6 @@ const StatCardContainer = ({ metric, isActive, styleMeta, onPress, dashboardReve
   const handlePressOut = () => {
     Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
   };
-  const handleHoverIn = () => {
-    if (Platform.OS === 'web') {
-      Animated.spring(scale, { toValue: 1.04, tension: 80, friction: 5, useNativeDriver: true }).start();
-    }
-  };
-  const handleHoverOut = () => {
-    if (Platform.OS === 'web') {
-      Animated.spring(scale, { toValue: 1, tension: 80, friction: 5, useNativeDriver: true }).start();
-    }
-  };
 
   return (
     <Animated.View
@@ -101,76 +112,28 @@ const StatCardContainer = ({ metric, isActive, styleMeta, onPress, dashboardReve
           }),
           transform: [
             { scale },
-            {
-              translateY: dashboardReveal.interpolate({
-                inputRange: [0, 1],
-                outputRange: [26, 0],
-              }),
-            },
           ],
         },
         isActive && { zIndex: 10 }
       ]}
     >
       <Pressable
-        onHoverIn={handleHoverIn}
-        onHoverOut={handleHoverOut}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={() => onPress(metric.label)}
         style={[
           styles.statCard,
-          isActive && styles.statCardActive,
-          isActive && { borderColor: styleMeta.color, borderWidth: 1.5, ...(Platform.OS === "web" ? { boxShadow: `0 12px 28px ${styleMeta.color}33` } : {}) }
+          { borderLeftWidth: 4, borderLeftColor: styleMeta.color }
         ]}
       >
         <View style={styles.statCardHeader}>
           <View>
-            <Text style={styles.statLabel}>{metric.label}</Text>
             <Text style={styles.statValue}>{metric.value}</Text>
-            <Text style={styles.statTrend}>
-              <Text style={{ color: styleMeta.color, fontWeight: "800" }}>+12.5% </Text>vs last month
-            </Text>
+            <Text style={styles.statLabel}>{metric.label}</Text>
           </View>
           <View style={[styles.statIconContainer, { backgroundColor: `${styleMeta.color}1A` }]}>
-            <Ionicons name={styleMeta.icon} size={18} color={styleMeta.color} />
+            <Ionicons name={styleMeta.icon} size={22} color={styleMeta.color} />
           </View>
-        </View>
-
-        <View style={styles.miniChartContainer}>
-           {animatedData.length > 0 && (
-             <LineChart
-                data={{
-                   labels: ["1", "2", "3", "4", "5", "6", "7"],
-                   datasets: [{ data: animatedData }]
-                }}
-                width={Dimensions.get("window").width / 3}
-                height={70}
-                withHorizontalLabels={false}
-                withVerticalLabels={false}
-                withInnerLines={false}
-                withOuterLines={false}
-                withDots={false}
-                withShadow={false}
-                chartConfig={{
-                  backgroundColor: "#ffffff",
-                  backgroundGradientFrom: "#ffffff",
-                  backgroundGradientTo: "#ffffff",
-                  color: () => styleMeta.color,
-                  labelColor: () => "transparent",
-                  propsForBackgroundLines: { strokeWidth: 0 },
-                  strokeWidth: 3,
-                }}
-                bezier
-                style={{ 
-                  paddingRight: 0, 
-                  paddingLeft: 0,
-                  marginLeft: -64, 
-                  marginBottom: -16, 
-                  marginTop: 15 
-                }}
-             />
-           )}
         </View>
       </Pressable>
     </Animated.View>
@@ -189,7 +152,7 @@ const AnimatedChartRevealer = ({ width, height, children, delay = 0 }) => {
       easing: Easing.out(Easing.exp),
       useNativeDriver: true,
     }).start();
-  }, [width, children]); 
+  }, [width, children]);
 
   return (
     <View style={{ overflow: "hidden", position: "relative", borderRadius: 16 }}>
@@ -200,13 +163,13 @@ const AnimatedChartRevealer = ({ width, height, children, delay = 0 }) => {
           top: 0,
           bottom: 0,
           left: 0,
-          width: width + 50, 
+          width: width + 50,
           backgroundColor: "#ffffff",
           transform: [
             {
               translateX: slideAnim.interpolate({
-                 inputRange: [0, 1],
-                 outputRange: [0, width + 50],
+                inputRange: [0, 1],
+                outputRange: [0, width + 50],
               })
             }
           ]
@@ -216,6 +179,35 @@ const AnimatedChartRevealer = ({ width, height, children, delay = 0 }) => {
   );
 };
 
+function formatCurrency(value) {
+  return `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
+function formatCompactNumber(value) {
+  return new Intl.NumberFormat("en-IN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(Number(value || 0));
+}
+
+const sanitizeTableData = (data) => {
+  if (!data) return {};
+  const cleaned = { ...data };
+  // Remove read-only, calculated or virtual fields that backends often reject during updates
+  const toRemove = [
+    "product_count", 
+    "order_count", 
+    "category_name", 
+    "user_name",
+    "user_email",
+    "visibility"
+  ];
+  toRemove.forEach(field => {
+    delete cleaned[field];
+  });
+  return cleaned;
+};
+
 export default function AdminPanelScreen() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -223,18 +215,9 @@ export default function AdminPanelScreen() {
   const { user, token, logout } = useAuth();
   const { products, reloadProducts } = useProducts();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSectionFilter, setActiveSectionFilter] = useState("all"); 
+  const [activeSectionFilter, setActiveSectionFilter] = useState("all");
+  const [activeOrderStatusFilter, setActiveOrderStatusFilter] = useState("all_orders");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const HOME_SECTION_FILTERS = [
-    { id: "all", label: "All Products", color: colors.accent, icon: "grid-outline" },
-    { id: "is_featured", label: "Featured Edit", color: "#6366f1", icon: "star-outline" },
-    { id: "is_auspicious", label: "Auspicious", color: "#f59e0b", icon: "leaf-outline" },
-    { id: "is_popular_jewellery", label: "Popular Jewellery", color: "#06b6d4", icon: "diamond-outline" },
-    { id: "is_mens_shirts", label: "Men's Shirts", color: "#10b981", icon: "shirt-outline" },
-    { id: "is_womens_highlights", label: "Women's Highlights", color: "#f43f5e", icon: "female-outline" },
-    { id: "is_premium_sarees", label: "Premium Sarees", color: "#ec4899", icon: "color-palette-outline" },
-    { id: "is_flash_sale", label: "Flash Sale", color: "#ef4444", icon: "flash-outline" },
-  ];
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [contentLoading, setContentLoading] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -243,55 +226,88 @@ export default function AdminPanelScreen() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenericModalOpen, setIsGenericModalOpen] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
+  const [isManageShopsOpen, setIsManageShopsOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [genericFormData, setGenericFormData] = useState({});
   const [tables, setTables] = useState([]);
   const [selectedTable, setSelectedTable] = useState(null);
   const [tableData, setTableData] = useState({ rows: [], columns: [] });
+  const [activeView, setActiveView] = useState("dashboard");
   const [loading, setLoading] = useState(true);
-  const sampleDashboard = {
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedStock, setSelectedStock] = useState("all");
+  const [expandedMenus, setExpandedMenus] = useState({ "All Orders": true, "Categories": true });
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // View Modal State
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingItem, setViewingItem] = useState(null);
+  const [orderStatusUpdatingKey, setOrderStatusUpdatingKey] = useState("");
+
+  const [metadata, setMetadata] = useState({
+    categories: [],
+    indianStates: [],
+    genders: [],
+    orderStatuses: [],
+    homeFilters: [],
+    sizes: [],
+    units: [],
+    colors: []
+  });
+
+  const toggleMenu = (menuLabel) => {
+    setExpandedMenus(prev => ({ ...prev, [menuLabel]: !prev[menuLabel] }));
+  };
+  const emptyDashboard = {
     metrics: [
-       { label: "Earnings", value: "Rs 42,151.6" },
-       { label: "Products", value: "368" },
-       { label: "Orders", value: "33" },
-       { label: "Users", value: "33" },
+      { label: "Earnings", value: "Rs 0" },
+      { label: "Products", value: "0" },
+      { label: "Orders", value: "0" },
+      { label: "Users", value: "0" },
     ],
     analytics: {
-       labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-       datasets: {
-          revenue: [15000, 22000, 18000, 32000, 28000, 42000, 38000, 52000, 45000, 62000, 55000, 72000],
-          products: [120, 145, 130, 210, 195, 280, 260, 340, 310, 368, 350, 390],
-          orders: [5, 8, 4, 12, 10, 18, 15, 22, 18, 33, 28, 40],
-          users: [8, 12, 10, 22, 18, 35, 30, 45, 38, 33, 30, 50],
-       }
-    }
+      labels: [],
+      datasets: {
+        revenue: [],
+        products: [],
+        orders: [],
+        users: [],
+      }
+    },
+    categoryDistribution: [],
+    recentOrders: [],
+    topProducts: [],
   };
 
-  const [dashboardData, setDashboardData] = useState(sampleDashboard);
+  const [dashboardData, setDashboardData] = useState(emptyDashboard);
   const [activeMetric, setActiveMetric] = useState("Earnings");
-  const [displayChartData, setDisplayChartData] = useState(sampleDashboard.analytics.datasets.revenue);
+  const [displayChartData, setDisplayChartData] = useState([]);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [recentReviews, setRecentReviews] = useState([]);
+  const [statusUpdatingKey, setStatusUpdatingKey] = useState("");
   const chartAnimValue = React.useRef(new Animated.Value(0)).current;
 
   // Animation for chart values "0 to increase"
   useEffect(() => {
     if (!dashboardData) return;
-    
+
     const metricKey = String(activeMetric).trim().toLowerCase();
     const datasets = dashboardData?.analytics?.datasets || {};
     let targetData = [];
-    
+
     if (metricKey.includes("earning") || metricKey.includes("revenue")) {
-       targetData = datasets.revenue || [];
+      targetData = datasets.revenue || [];
     } else if (metricKey.includes("profit")) {
-       targetData = (datasets.revenue || []).map(v => v * 0.72);
+      targetData = (datasets.revenue || []).map(v => v * 0.72);
     } else if (metricKey.includes("product")) {
-       targetData = datasets.products || [];
+      targetData = datasets.products || [];
     } else if (metricKey.includes("order")) {
-       targetData = datasets.orders || [];
+      targetData = datasets.orders || [];
     } else {
-       targetData = datasets.users || [];
+      targetData = datasets.users || [];
     }
 
     if (!Array.isArray(targetData) || targetData.length === 0) return;
@@ -317,8 +333,8 @@ export default function AdminPanelScreen() {
       anim.stop();
     };
   }, [activeMetric, dashboardData]);
+
   const [dashboardError, setDashboardError] = useState(null);
-  const [orderStatusUpdatingKey, setOrderStatusUpdatingKey] = useState("");
   const dashboardReveal = React.useRef(new Animated.Value(0)).current;
 
   // Security check: Redirect if not admin
@@ -350,17 +366,17 @@ export default function AdminPanelScreen() {
       setDashboardError(null);
       try {
         const [dash, rev] = await Promise.all([
-           apiRequest("/admin/dashboard", { token }),
-           apiRequest("/products/reviews/all", { token })
+          apiRequest("/admin/dashboard", { token }),
+          apiRequest("/products/reviews/all", { token })
         ]);
-        
+
         if (dash && dash.analytics && dash.metrics) {
           setDashboardData(dash);
           setActiveMetric(dash.metrics[0].label);
         }
-        
+
         if (rev && rev.reviews) {
-           setRecentReviews(rev.reviews.slice(0, 5));
+          setRecentReviews(rev.reviews.slice(0, 5));
         }
       } catch (err) {
         console.error("Dashboard hit error:", err);
@@ -385,14 +401,13 @@ export default function AdminPanelScreen() {
   useEffect(() => {
     async function loadMetadata() {
       try {
-        const [catData, colorData, sizeData] = await Promise.all([
-          apiRequest("/admin/data/tables/categories", { token }),
-          apiRequest("/admin/data/tables/colors", { token }),
-          apiRequest("/admin/data/tables/sizes", { token })
-        ]);
-        setCategories(catData.rows || []);
-        setAvailableColors(colorData.rows || []);
-        setAvailableSizes(sizeData.rows || []);
+        const metaRes = await apiRequest("/admin/data/metadata", { token });
+        if (metaRes && metaRes.metadata) {
+          setMetadata(metaRes.metadata);
+          setCategories(metaRes.metadata.categories || []);
+          setAvailableColors(metaRes.metadata.colors || []);
+          setAvailableSizes(metaRes.metadata.sizes || []);
+        }
       } catch (err) {
         console.error("Failed to load metadata:", err);
       }
@@ -404,18 +419,57 @@ export default function AdminPanelScreen() {
     setSelectedTable(tableName);
     setContentLoading(true);
     setSearchQuery(""); // Clear search on table change
+    setActiveOrderStatusFilter("all_orders"); // Reset order filter
     try {
       const limitParam = tableName === "products" ? "?limit=1000&orderColumn=id&orderType=DESC" : "";
-      const data = await apiRequest(`/admin/data/tables/${tableName}${limitParam}`, { token });
+      let data = await apiRequest(`/admin/data/tables/${tableName}${limitParam}`, { token });
+      
       if (tableName === "products" && data.columns) {
         // Add virtual visibility column if it doesn't exist
         if (!data.columns.find(c => c.name === "visibility")) {
           data.columns.push({ name: "visibility", dataType: "virtual" });
         }
       }
-      setTableData(data);
+      if (Array.isArray(data)) {
+        setTableData({ 
+          columns: tableData?.columns || [], 
+          rows: data 
+        });
+      } else {
+        setTableData(data || { columns: [], rows: [] });
+      }
     } catch (err) {
       console.error("Failed to load table content:", err);
+      setTableData({ columns: [], rows: [] });
+    } finally {
+      setContentLoading(false);
+    }
+  };
+
+  const handleSystemSync = async () => {
+    try {
+      setContentLoading(true);
+      const res = await apiRequest("/admin/data/seed", {
+        method: "POST",
+        token,
+      });
+      if (res.success) {
+        Alert.alert("Success", "Database synchronized successfully! All catalogs (Colors, Sizes, Units, Shops) are updated.");
+        const tablesData = await apiRequest("/admin/data/tables", { token });
+        setTables(tablesData.tables || []);
+        // Refresh metadata after seed
+        const metaRes = await apiRequest("/admin/data/metadata", { token });
+        if (metaRes && metaRes.metadata) {
+          setMetadata(metaRes.metadata);
+          setCategories(metaRes.metadata.categories || []);
+          setAvailableColors(metaRes.metadata.colors || []);
+          setAvailableSizes(metaRes.metadata.sizes || []);
+        }
+      } else {
+        Alert.alert("Error", "Synchronization failed: " + (res.message || "Unknown error"));
+      }
+    } catch (err) {
+      Alert.alert("Error", "Error during synchronization: " + err.message);
     } finally {
       setContentLoading(false);
     }
@@ -477,14 +531,47 @@ export default function AdminPanelScreen() {
       matchesSection = row[activeSectionFilter] === 1;
     }
 
-    return matchesSearch && matchesSection;
+    // 3. Category filter (for products table only)
+    let matchesCategory = true;
+    if (selectedTable === "products" && selectedCategory) {
+      matchesCategory = String(row.category_id) === String(selectedCategory);
+    }
+
+    // 4. Stock filter (for products table only)
+    let matchesStock = true;
+    if (selectedTable === "products" && selectedStock !== "all") {
+      if (selectedStock === "in_stock") matchesStock = row.stock > 0;
+      else if (selectedStock === "out_of_stock") matchesStock = row.stock <= 0;
+    }
+
+    // 5. Order Status filter
+    let matchesOrderStatus = true;
+    if (selectedTable === "orders" && activeOrderStatusFilter !== "all_orders") {
+        const rowStatus = String(row.order_status || "").toLowerCase().replace(/_/g, ' ').replace('/', '').trim();
+        const filterVal = activeOrderStatusFilter.toLowerCase().replace(/_/g, ' ').replace('/', '').trim();
+        
+        if (filterVal === "pickup") {
+            matchesOrderStatus = rowStatus === "pickup" || rowStatus === "packed";
+        } else if (filterVal === "on the way") {
+            matchesOrderStatus = rowStatus === "on the way" || rowStatus === "shipped" || rowStatus === "out for delivery";
+        } else {
+            matchesOrderStatus = rowStatus === filterVal;
+        }
+    }
+
+    return matchesSearch && matchesSection && matchesCategory && matchesStock && matchesOrderStatus;
   });
+
+  const displayRows =
+    selectedTable === "colors" && filteredRows.length === 0 && !searchQuery
+      ? APPROVED_COLORS
+      : filteredRows;
 
   const handleSaveProduct = async (formData) => {
     try {
       const endpoint = editingItem ? `/products/${editingItem.id}` : "/products";
       const method = editingItem ? "PUT" : "POST";
-      
+
       const res = await apiRequest(endpoint, {
         method,
         body: formData,
@@ -497,89 +584,51 @@ export default function AdminPanelScreen() {
       setIsModalOpen(false);
       setEditingItem(null);
     } catch (err) {
-      alert("Failed to save product: " + err.message);
+      Alert.alert("Error", "Failed to save product: " + err.message);
     }
   };
 
-  const handleDeleteProduct = async (id) => {
-     if (!confirm("Are you sure you want to delete this product?")) return;
-     try {
-       await apiRequest(`/products/${id}`, { method: "DELETE", token });
-       pickTable("products");
-       reloadProducts();
-     } catch (err) {
-       alert("Delete failed: " + err.message);
-     }
+  const handleDeleteProduct = (id) => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this product?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiRequest(`/products/${id}`, { method: "DELETE", token });
+              pickTable("products");
+              reloadProducts();
+            } catch (err) {
+              Alert.alert("Error", "Delete failed: " + err.message);
+            }
+          }
+        }
+      ]
+    );
   }
-
-  const handleQuickRemoveFromSection = async (id, sectionKey) => {
-    try {
-      const response = await apiRequest(`/admin/data/tables/products/${id}`, {
-        method: "PUT",
-        token,
-        body: { [sectionKey]: 0 },
-      });
-
-      if (response && response.success) {
-        // Update local state instead of re-fetching everything
-        setTableData({
-          ...tableData,
-          rows: tableData.rows.map((r) => 
-            r.id === id ? { ...r, [sectionKey]: 0 } : r
-          ),
-        });
-        reloadProducts();
-      }
-    } catch (err) {
-      console.error("Quick remove error:", err);
-      alert("Failed to remove from section");
-    }
-  };
-
-  const handleToggleFlashSale = async (id, currentStatus) => {
-    try {
-      const newStatus = currentStatus === 1 ? 0 : 1;
-      // We use the specialized products endpoint because it handles the join table sync
-      await apiRequest(`/products/${id}`, {
-        method: "PUT",
-        token,
-        body: { is_flash_sale: newStatus },
-      });
-
-      // Update local state for immediate feedback
-      setTableData({
-        ...tableData,
-        rows: tableData.rows.map((r) => 
-          r.id === id ? { ...r, is_flash_sale: newStatus } : r
-        ),
-      });
-      reloadProducts();
-    } catch (err) {
-      console.error("Flash sale toggle error:", err);
-      alert("Failed to toggle Flash Sale status");
-    }
-  };
 
   const handleSaveGenericEntry = async () => {
     try {
-      const endpoint = editingItem 
-        ? `/admin/data/tables/${selectedTable}/${editingItem.id}` 
+      const endpoint = editingItem
+        ? `/admin/data/tables/${selectedTable}/${editingItem.id}`
         : `/admin/data/tables/${selectedTable}`;
       const method = editingItem ? "PUT" : "POST";
-      
+
       const res = await apiRequest(endpoint, {
         method,
-        body: genericFormData,
+        body: sanitizeTableData(genericFormData),
         token
       });
 
-      if (res && res.success) {
-        Alert.alert("Success", editingItem ? "Updated successfully" : "Created successfully");
-        pickTable(selectedTable);
-        setIsGenericModalOpen(false);
-        setEditingItem(null);
-        setGenericFormData({});
-      }
+      Alert.alert("Success", editingItem ? "Updated successfully" : "Created successfully");
+      pickTable(selectedTable);
+      setIsGenericModalOpen(false);
+      setEditingItem(null);
+      setGenericFormData({});
     } catch (err) {
       console.error("Save generic error:", err);
       Alert.alert("Error", "Failed to save record");
@@ -589,7 +638,7 @@ export default function AdminPanelScreen() {
   const handleSaveCategories = async (updates) => {
     try {
       await Promise.all(
-        updates.map(update => 
+        updates.map(update =>
           apiRequest(`/admin/data/tables/categories/${update.id}`, {
             method: "PUT",
             body: { image_url: update.image_url },
@@ -598,8 +647,11 @@ export default function AdminPanelScreen() {
         )
       );
       // Reload metadata
-      const catData = await apiRequest("/admin/data/tables/categories", { token });
-      setCategories(catData.rows || []);
+      const metaRes = await apiRequest("/admin/data/metadata", { token });
+      if (metaRes && metaRes.metadata) {
+        setMetadata(metaRes.metadata);
+        setCategories(metaRes.metadata.categories || []);
+      }
       Alert.alert("Success", "Categories updated successfully!");
       setIsManageCategoriesOpen(false);
     } catch (err) {
@@ -608,27 +660,67 @@ export default function AdminPanelScreen() {
     }
   };
 
-  const handleDeleteGenericEntry = async (id) => {
-    if (!confirm(`Are you sure you want to delete this record from ${selectedTable}?`)) return;
+  const handleDeleteGenericEntry = (id) => {
+    Alert.alert(
+      "Confirm Delete",
+      `Are you sure you want to delete this record from ${selectedTable}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const res = await apiRequest(`/admin/data/tables/${selectedTable}/${id}`, {
+                method: "DELETE",
+                token
+              });
+              if (res && res.success) {
+                Alert.alert("Success", "Deleted successfully");
+                setTableData({
+                  ...tableData,
+                  rows: tableData.rows.filter(r => r.id !== id)
+                });
+              }
+            } catch (err) {
+              console.error("Delete generic error:", err);
+              Alert.alert("Error", "Failed to delete record");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleToggleTableStatus = async (row, fieldName = "is_active") => {
+    if (!row?.id || !selectedTable) return;
+
+    const updateKey = `${selectedTable}:${row.id}:${fieldName}`;
+    const nextValue = Number(row[fieldName]) === 1 ? 0 : 1;
+    setStatusUpdatingKey(updateKey);
+
     try {
-      const res = await apiRequest(`/admin/data/tables/${selectedTable}/${id}`, {
-        method: "DELETE",
-        token
+      const res = await apiRequest(`/admin/data/tables/${selectedTable}/${row.id}`, {
+        method: "PUT",
+        token,
+        body: { [fieldName]: nextValue },
       });
 
       if (res && res.success) {
-        Alert.alert("Success", "Deleted successfully");
-        setTableData({
-          ...tableData,
-          rows: tableData.rows.filter(r => r.id !== id)
-        });
+        setTableData((prev) => ({
+          ...prev,
+          rows: (prev?.rows || []).map((item) =>
+            item.id === row.id ? { ...item, [fieldName]: nextValue } : item
+          ),
+        }));
       }
     } catch (err) {
-      console.error("Delete generic error:", err);
-      Alert.alert("Error", "Failed to delete record");
+      console.error("Toggle status error:", err);
+      Alert.alert("Error", "Failed to update status");
+    } finally {
+      setStatusUpdatingKey("");
     }
   };
-
 
   const handleOrderLifecycleUpdate = async (orderId, status) => {
     if (!orderId || !status) return;
@@ -658,16 +750,17 @@ export default function AdminPanelScreen() {
     orders: { color: "#3b82f6", icon: "cart" },
     users: { color: "#06b6d4", icon: "people" },
   };
+
   const metricCards = dashboardData?.metrics || [];
   const lineLabels = dashboardData?.analytics?.labels || [];
   const selectedMetricKey = String(activeMetric || "").trim().toLowerCase();
-  
-  const selectedChartColor = 
-    selectedMetricKey.includes("earning") || selectedMetricKey.includes("revenue") ? "#10b981" : 
-    selectedMetricKey.includes("order") ? "#3b82f6" : 
-    selectedMetricKey.includes("user") ? "#06b6d4" : 
-    selectedMetricKey.includes("product") ? "#f59e0b" : "#6366f1";
-    
+
+  const selectedChartColor =
+    selectedMetricKey.includes("earning") || selectedMetricKey.includes("revenue") ? "#10b981" :
+      selectedMetricKey.includes("order") ? "#3b82f6" :
+        selectedMetricKey.includes("user") ? "#06b6d4" :
+          selectedMetricKey.includes("product") ? "#f59e0b" : "#6366f1";
+
   const overviewPanelAnimatedStyle = {
     opacity: dashboardReveal,
     transform: [
@@ -679,6 +772,7 @@ export default function AdminPanelScreen() {
       },
     ],
   };
+
   const chartAnimatedStyle = {
     opacity: dashboardReveal.interpolate({
       inputRange: [0, 0.2, 1],
@@ -693,6 +787,204 @@ export default function AdminPanelScreen() {
       },
     ],
   };
+
+  const SIDEBAR_STRUCTURE = [
+    {
+      header: "MAIN",
+      items: [{ name: "dashboard", label: "Dashboard", icon: "stats-chart-outline", table: null }]
+    },
+    {
+      header: "POS MANAGEMENT",
+      items: [
+        { name: "pos", label: "POS", icon: "hardware-chip-outline", table: null },
+        { name: "draft", label: "Draft", icon: "layers-outline", table: null },
+        { name: "pos_sales", label: "POS Sales", icon: "wallet-outline", table: null },
+      ]
+    },
+    {
+      header: "ORDER HANDLING",
+      items: [
+        {
+          name: "orders",
+          label: "All Orders",
+          icon: "receipt-outline",
+          subItems: [
+            { name: "all_orders", label: "All", count: dashboardData?.businessOverview?.orders || 0, countColor: "#94a3b8", table: "orders" },
+            { name: "pending", label: "Pending", count: dashboardData?.orderAnalytics?.pending || 0, countColor: "#f59e0b", table: "orders" },
+            { name: "confirm", label: "Confirm", count: dashboardData?.orderAnalytics?.confirm || 0, countColor: "#38bdf8", table: "orders" },
+            { name: "processing", label: "Processing", count: dashboardData?.orderAnalytics?.processing || 0, countColor: "#a855f7", table: "orders" },
+            { name: "pickup", label: "Pickup", count: dashboardData?.orderAnalytics?.pickup || 0, countColor: "#64748b", table: "orders" },
+            { name: "on_the_way", label: "On The Way", count: dashboardData?.orderAnalytics?.onTheWay || 0, countColor: "#475569", table: "orders" },
+            { name: "delivered", label: "Delivered", count: dashboardData?.orderAnalytics?.delivered || 0, countColor: "#10b981", table: "orders" },
+            { name: "cancelled", label: "Cancelled", count: dashboardData?.orderAnalytics?.cancelled || 0, countColor: "#ef4444", table: "orders" },
+          ]
+        }
+      ]
+    },
+    {
+      header: "PRODUCT MANAGEMENT",
+      items: [
+        {
+          name: "categories_menu",
+          label: "Categories",
+          icon: "file-tray-full-outline",
+          subItems: [
+            { name: "category", label: "Category", table: "categories" },
+            { name: "sub_category", label: "Sub Category", table: "sub_categories" }
+          ]
+        },
+        { name: "products", label: "Products", icon: "diamond-outline", table: "products" },
+      ]
+    },
+    {
+      header: "PRODUCT VARIANTS",
+      items: [
+        { name: "brand", label: "Brand", icon: "ribbon-outline", table: "brands" },
+        { name: "specification", label: "Specification", icon: "list-outline", table: "specifications" },
+        { name: "specification_values", label: "Specification Values", icon: "options-outline", table: "specificationvalues" },
+        { name: "colors", label: "Color", icon: "color-palette-outline", table: "colors" },
+        { name: "sizes", label: "Sizes", icon: "resize-outline", table: "sizes" },
+        { name: "unit", label: "Unit", icon: "scale-outline", table: "units" },
+      ]
+    },
+    {
+      header: "MANAGE SHOP",
+      items: [
+        { name: "all_shops", label: "All Shops", icon: "storefront-outline", table: "shops" },
+        {
+          name: "shop_products",
+          label: "Shop Products",
+          icon: "basket-outline",
+          subItems: [
+            { name: "item_request", label: "Item Request", table: "products" },
+            { name: "update_request", label: "Update Request", table: "products" },
+            { name: "accepted_item", label: "Accepted Item", table: "products" }
+          ]
+        },
+        { name: "flash_sales", label: "Flash Sales", icon: "flash-outline", table: "flash_sales" },
+      ]
+    },
+    {
+      header: "USER SUPERVISION",
+      items: [
+        { name: "riders", label: "Riders", icon: "bicycle-outline", table: "drivers" },
+        { name: "customers", label: "Customers", icon: "people-outline", table: "users" },
+        { name: "employees", label: "Employees", icon: "person-outline", table: "admin_users" },
+      ]
+    },
+    {
+      header: "MARKETING PROMOTIONS",
+      items: [
+        { name: "promotional_banner", label: "Promotional Banner", icon: "image-outline", table: "banners" },
+        { name: "ads", label: "Ads", icon: "megaphone-outline", table: "ads" },
+        { name: "promo_code", label: "Promo Code", icon: "ticket-outline", table: "coupons" },
+        { name: "push_notification", label: "Push Notification", icon: "notifications-outline", table: "notifications" },
+        { name: "blogs", label: "Blogs", icon: "create-outline", table: "blogs" },
+      ]
+    },
+    {
+      header: "ACCOUNTS",
+      items: [
+        { name: "withdraws", label: "Withdraws", icon: "cash-outline", table: "withdraws" },
+      ]
+    },
+    {
+      header: "DATABASE & REVIEWS",
+      items: [
+        { name: "reviews", label: "Reviews", icon: "star-half-outline", table: "reviews" },
+      ]
+    },
+    {
+      header: "ASSISTANCE/ SUPPORT",
+      items: [
+        { name: "help_requests", label: "Help Requests", icon: "help-buoy-outline", table: "support_tickets" },
+        { name: "enquires", label: "Enquires", icon: "chatbubble-ellipses-outline", table: "contact_us" },
+      ]
+    },
+    {
+      header: "LANGUAGE SETTINGS",
+      items: [
+        { name: "languages", label: "Languages", icon: "language-outline", table: "languages" },
+      ]
+    },
+    {
+      header: "STORE MANAGEMENT",
+      items: [
+        { name: "shop_profile", label: "Shop Profile", icon: "person-circle-outline", table: "shops" },
+      ]
+    },
+    {
+      header: "IMPORT / EXPORT",
+      items: [
+        { name: "bulk_export", label: "Bulk Export", icon: "download-outline", table: null },
+        { name: "bulk_import", label: "Bulk Import", icon: "push-outline", table: null },
+        { name: "gallery_import", label: "Gallery Import", icon: "images-outline", table: "galleries" },
+      ]
+    },
+    {
+      header: "BUSINESS ADMINISTRATION",
+      items: [
+        {
+          name: "business_settings",
+          label: "Business Settings",
+          icon: "settings-outline",
+          subItems: [
+            { name: "general_settings", label: "General Settings", table: "generate_settings" },
+            { name: "business_setup", label: "Business Setup", table: "generate_settings" },
+            { name: "manage_verification", label: "Manage Verification", table: "verify_manages" },
+            { name: "currency", label: "Currency", table: "currencies" },
+            { name: "delivery_charge", label: "Delivery Charge", table: "delivery_charges" },
+            { name: "vat_tax", label: "VAT & Tax", table: "vat_taxes" },
+            { name: "theme_colors", label: "Theme Colors", table: "theme_colors" },
+            { name: "social_links", label: "Social Links", table: "social_links" },
+            { name: "ticket_issue_types", label: "Ticket Issue Types", table: "ticket_issue_types" },
+          ]
+        },
+        { name: "roles_permissions", label: "Roles & Permissions", icon: "key-outline", table: "roles" },
+        {
+          name: "legal_pages",
+          label: "Legal Pages",
+          icon: "document-lock-outline",
+          subItems: [
+            { name: "privacy_policy", label: "Privacy Policy", table: "legal_pages" },
+            { name: "terms_of_service", label: "Terms of Service", table: "legal_pages" },
+            { name: "return_policy", label: "Return policy / Refund Policy", table: "legal_pages" },
+            { name: "shipping_delivery_policy", label: "Shipping and Delivery Policy", table: "legal_pages" },
+            { name: "about_us", label: "About Us", table: "legal_pages" },
+            { name: "contact_us", label: "Contact Us", table: "contact_us" },
+            { name: "payment_gateway", label: "Payment Gateway", table: "payment_gateways" },
+            { name: "sms_gateway", label: "SMS Gateway", table: "s_m_s_configs" },
+            { name: "pusher_setup", label: "Pusher Setup", table: "generate_settings" },
+            { name: "mail_config", label: "Mail Config", table: "generate_settings" },
+            { name: "firebase_notification", label: "Firebase Notification", table: "generate_settings" },
+            { name: "google_recaptcha", label: "Google ReCaptcha", table: "google_re_captchas" },
+          ]
+        },
+      ]
+    }
+  ];
+
+  const orderBreakdownCards = [
+    { key: "pending", label: "Pending", value: dashboardData?.orderAnalytics?.pending || 0, color: "#64748b", bg: "#f8fafc", icon: "time-outline" },
+    { key: "confirm", label: "Confirm", value: dashboardData?.orderAnalytics?.confirm || 0, color: "#10b981", bg: "#ecfdf5", icon: "checkmark-circle-outline" },
+    { key: "processing", label: "Processing", value: dashboardData?.orderAnalytics?.processing || 0, color: "#3b82f6", bg: "#eff6ff", icon: "sync-outline" },
+    { key: "pickup", label: "Pickup", value: dashboardData?.orderAnalytics?.pickup || 0, color: "#f59e0b", bg: "#fffbeb", icon: "cube-outline" },
+    { key: "on_the_way", label: "On The Way", value: dashboardData?.orderAnalytics?.onTheWay || 0, color: "#8b5cf6", bg: "#f5f3ff", icon: "bicycle-outline" },
+    { key: "delivered", label: "Delivered", value: dashboardData?.orderAnalytics?.delivered || 0, color: "#059669", bg: "#ecfdf5", icon: "checkmark-done-outline" },
+    { key: "cancelled", label: "Cancelled", value: dashboardData?.orderAnalytics?.cancelled || 0, color: "#ef4444", bg: "#fef2f2", icon: "close-circle-outline" },
+  ];
+
+  const metricSeriesByLabel = {
+    earnings: dashboardData?.analytics?.datasets?.revenue || [],
+    products: dashboardData?.analytics?.datasets?.products || [],
+    orders: dashboardData?.analytics?.datasets?.orders || [],
+    users: dashboardData?.analytics?.datasets?.users || [],
+  };
+
+  const recentOrders = Array.isArray(dashboardData?.recentOrders) ? dashboardData.recentOrders : [];
+  const topProducts = Array.isArray(dashboardData?.topProducts) ? dashboardData.topProducts : [];
+  const dashboardPeriod = dashboardData?.meta?.period || "Live Data";
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -715,85 +1007,39 @@ export default function AdminPanelScreen() {
       )}
 
       {/* Sidebar */}
-      {(!isMobile || isSidebarOpen) && (
-        <View style={[
-          styles.sidebar, 
-          sidebarCollapsed && styles.sidebarCollapsed,
-          isMobile && styles.sidebarMobile
-        ]}>
-          <View style={styles.sidebarHeader}>
-            {!sidebarCollapsed && <Text style={styles.logoText}>VOGSTYA</Text>}
-            {isMobile ? (
-               <Pressable onPress={() => setIsSidebarOpen(false)} style={styles.collapseBtn}>
-                 <Ionicons name="close" size={24} color="rgba(255,255,255,0.7)" />
-               </Pressable>
-            ) : (
-              <Pressable onPress={() => setSidebarCollapsed(!sidebarCollapsed)} style={styles.collapseBtn}>
-                <Ionicons name="chevron-forward" size={22} color="rgba(255,255,255,0.7)" />
-              </Pressable>
-            )}
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.sidebarScroll}>
-            <Text style={styles.navHeader}>{sidebarCollapsed ? "•••" : "PLATFORM"}</Text>
-            
-            <Pressable 
-              style={[styles.navItem, !selectedTable && styles.navItemActive]}
-              onPress={() => {
-                setSelectedTable(null);
-                if(isMobile) setIsSidebarOpen(false);
-              }}
-            >
-              <Ionicons name="grid" size={20} color={!selectedTable ? colors.white : "rgba(255,255,255,0.5)"} />
-              {!sidebarCollapsed && <Text style={[styles.navItemText, !selectedTable && styles.navItemTextActive]}>Overview</Text>}
-            </Pressable>
-
-            <View style={styles.divider} />
-            <Text style={styles.navHeader}>{sidebarCollapsed ? "•••" : "DATABASE"}</Text>
-
-            {tables.map((table) => (
-              <Pressable
-                key={table.name}
-                style={[styles.navItem, selectedTable === table.name && styles.navItemActive]}
-                onPress={() => {
-                  pickTable(table.name);
-                  if(isMobile) setIsSidebarOpen(false);
-                }}
-              >
-                <Ionicons 
-                  name={getTableIcon(table.name)} 
-                  size={20} 
-                  color={selectedTable === table.name ? colors.white : "rgba(255,255,255,0.5)"} 
-                />
-                {!sidebarCollapsed && (
-                  <>
-                    <Text style={[styles.navItemText, selectedTable === table.name && styles.navItemTextActive]}>
-                      {table.name.charAt(0).toUpperCase() + table.name.slice(1)}
-                    </Text>
-                    {table.count > 0 && (
-                      <View style={styles.countBadge}>
-                        <Text style={styles.countText}>{table.count}</Text>
-                      </View>
-                    )}
-                  </>
-                )}
-              </Pressable>
-            ))}
-          </ScrollView>
-
-          <View style={styles.sidebarFooter}>
-            <Pressable style={styles.logoutBtn} onPress={logout}>
-              <Ionicons name="log-out" size={20} color={colors.danger} />
-              {!sidebarCollapsed && <Text style={styles.logoutText}>Logout</Text>}
-            </Pressable>
-          </View>
-        </View>
-      )}
+      <AdminSidebar
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        isMobile={isMobile}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        expandedMenus={expandedMenus}
+        toggleMenu={toggleMenu}
+        selectedTable={selectedTable}
+        activeView={activeView}
+        pickTable={pickTable}
+        setActiveView={setActiveView}
+        setSelectedTable={setSelectedTable}
+        setSearchQuery={setSearchQuery}
+        logout={logout}
+        dashboardData={dashboardData}
+        colors={colors}
+        activeOrderStatusFilter={activeOrderStatusFilter}
+        setActiveOrderStatusFilter={setActiveOrderStatusFilter}
+      />
 
       {isMobile && isSidebarOpen && (
-        <Pressable 
-          style={styles.sidebarBackdrop} 
-          onPress={() => setIsSidebarOpen(false)} 
+        <Pressable
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 999,
+          }}
+          onPress={() => setIsSidebarOpen(false)}
         />
       )}
 
@@ -803,19 +1049,35 @@ export default function AdminPanelScreen() {
           <View>
             <View style={styles.contentHeaderTitleGroup}>
               <Text style={styles.contentTitle}>
-                {selectedTable ? `${selectedTable.charAt(0).toUpperCase() + selectedTable.slice(1)} Management` : "Dashboard Overview"}
+                {selectedTable
+                  ? `${selectedTable.charAt(0).toUpperCase() + selectedTable.slice(1)} Management`
+                  : activeView === "pos"
+                    ? "POS Terminal"
+                    : activeView === "draft"
+                      ? "POS Drafts"
+                      : activeView === "pos_sales"
+                        ? "POS Sales History"
+                        : "Dashboard Overview"}
               </Text>
               {selectedTable && tableData?.rows && (
                 <Text style={styles.contentSubtitle}>
-                  Showing {filteredRows.length} of {tableData.rows.length} total records
+                  Showing {displayRows.length} of {selectedTable === "colors" && (!tableData?.rows || tableData.rows.length === 0) ? APPROVED_COLORS.length : (tableData?.rows?.length || 0)} total records
                 </Text>
               )}
             </View>
             <Text style={styles.contentSub}>
-              {selectedTable ? `Viewing all records from ${selectedTable} table.` : "Welcome back to your administration suite."}
+              {selectedTable
+                ? `Viewing all records from ${selectedTable} table.`
+                : activeView === "pos"
+                  ? "Process new in-store orders efficiently."
+                  : activeView === "draft"
+                    ? "Resume or delete saved point-of-sale sessions."
+                    : activeView === "pos_sales"
+                      ? "Review all completed terminal transactions."
+                      : "Welcome back to your administration suite."}
             </Text>
           </View>
-          
+
           <View style={styles.headerActions}>
             <Pressable style={styles.headerCircle}>
               <Ionicons name="notifications-outline" size={20} color={colors.ink} />
@@ -832,25 +1094,34 @@ export default function AdminPanelScreen() {
           </View>
         </View>
 
+        {activeView === "pos" ? (
+          <View style={[styles.contentScroll, { flex: 1, backgroundColor: "#f8fafc" }]}>
+             <POSView colors={colors} token={token} apiRequest={apiRequest} />
+          </View>
+        ) : (
         <ScrollView style={styles.contentScroll} contentContainerStyle={styles.contentPadding}>
-           {contentLoading ? (
+          {contentLoading ? (
             <View style={styles.tableCardLoading}>
               <ActivityIndicator color={colors.accent} />
               <Text style={styles.loadingDataText}>Optimizing records...</Text>
             </View>
+          ) : activeView === "draft" ? (
+            <DraftView colors={colors} token={token} apiRequest={apiRequest} setActiveView={setActiveView} />
+          ) : activeView === "pos_sales" ? (
+            <POSSalesView colors={colors} token={token} apiRequest={apiRequest} />
           ) : selectedTable && tableData ? (
             <Animated.View style={[styles.tableCard, overviewPanelAnimatedStyle]}>
               {/* Context Specific Graphs for Tables */}
               {selectedTable === "orders" && dashboardData?.analytics?.labels?.length > 0 && (
                 <View style={styles.tableGraphSection}>
                   <Text style={styles.tableGraphTitle}>Orders Performance</Text>
-                  <AnimatedChartRevealer width={Dimensions.get("window").width - (sidebarCollapsed ? 140 : 380)} height={180} delay={100}>
+                  <AnimatedChartRevealer width={width - (sidebarCollapsed ? 140 : 380)} height={180} delay={100}>
                     <BarChart
                       data={{
                         labels: dashboardData.analytics.labels,
                         datasets: [{ data: dashboardData.analytics.datasets.orders }]
                       }}
-                      width={Dimensions.get("window").width - (sidebarCollapsed ? 140 : 380)}
+                      width={width - (sidebarCollapsed ? 140 : 380)}
                       height={180}
                       chartConfig={chartConfigBase(colors.warning)}
                       style={styles.tableGraphStyle}
@@ -862,13 +1133,13 @@ export default function AdminPanelScreen() {
               {selectedTable === "users" && dashboardData?.analytics?.labels?.length > 0 && (
                 <View style={styles.tableGraphSection}>
                   <Text style={styles.tableGraphTitle}>User Growth Trend</Text>
-                  <AnimatedChartRevealer width={Dimensions.get("window").width - (sidebarCollapsed ? 140 : 380)} height={180} delay={100}>
+                  <AnimatedChartRevealer width={width - (sidebarCollapsed ? 140 : 380)} height={180} delay={100}>
                     <LineChart
                       data={{
                         labels: dashboardData.analytics.labels,
                         datasets: [{ data: dashboardData.analytics.datasets.users }]
                       }}
-                      width={Dimensions.get("window").width - (sidebarCollapsed ? 140 : 380)}
+                      width={width - (sidebarCollapsed ? 140 : 380)}
                       height={180}
                       chartConfig={chartConfigBase(colors.highlight)}
                       bezier
@@ -878,22 +1149,69 @@ export default function AdminPanelScreen() {
                 </View>
               )}
 
+              {selectedTable === "products" && (
+                <View style={styles.filterSection}>
+                  <Text style={styles.sectionTitle}>Filter Products</Text>
+                  <View style={{ flexDirection: isMobile ? "column" : "row", gap: 16 }}>
+                    <View style={styles.filterGroup}>
+                      <Text style={styles.filterLabel}>Category</Text>
+                      <View style={styles.filterPicker}>
+                        <Text style={{ fontSize: 13, color: colors.ink }}>{selectedCategory ? categories.find(c => String(c.id) === String(selectedCategory))?.name : "All Categories"}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.filterGroup}>
+                      <Text style={styles.filterLabel}>Stock Status</Text>
+                      <View style={styles.filterPicker}>
+                        <Text style={{ fontSize: 13, color: colors.ink }}>{selectedStock === "all" ? "All Status" : (selectedStock === "in_stock" ? "In Stock" : "Out of Stock")}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.filterActionRow}>
+                    <Pressable
+                      style={styles.resetBtn}
+                      onPress={() => {
+                        setSelectedCategory("");
+                        setSelectedStock("all");
+                        setSearchQuery("");
+                        setActiveSectionFilter("all");
+                      }}
+                    >
+                      <Text style={styles.resetBtnText}>Reset Filters</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginTop: 4 }}>
+                 <Text style={{ fontSize: 18, fontWeight: '700', color: colors.ink, textTransform: 'capitalize' }}>
+                   {selectedTable ? `${selectedTable.replace(/_/g, ' ').replace('specificationvalues', 'specification values')} List` : "Data Records"}
+                 </Text>
+                 <View style={{ backgroundColor: "rgba(13, 87, 49, 0.1)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginLeft: 12 }}>
+                   <Text style={{ fontSize: 12, fontWeight: '700', color: colors.accent }}>{displayRows.length} Items</Text>
+                 </View>
+              </View>
+
               <View style={styles.tableToolbar}>
                 <View style={styles.toolbarTop}>
-                  <View style={styles.searchBox}>
+                  <View style={styles.searchContainer}>
                     <Ionicons name="search" size={18} color={colors.muted} />
                     <TextInput
                       style={styles.searchInput}
-                      placeholder={`Search in ${selectedTable}...`}
-                      placeholderTextColor={colors.muted}
+                      placeholder="Search anything..."
+                      placeholderTextColor="#94a3b8"
                       value={searchQuery}
-                      onChangeText={setSearchQuery}
+                      onChangeText={(txt) => {
+                        setSearchQuery(txt);
+                        setCurrentPage(1); // Reset to page 1 on search
+                      }}
                     />
                   </View>
                   <View style={styles.toolbarActions}>
                     {(selectedTable === "products" || selectedTable !== "orders") && (
-                      <Pressable 
-                        style={styles.addBtn} 
+                      <Pressable
+                        style={[styles.addBtn, { backgroundColor: "#0d5731", borderRadius: 8, paddingHorizontal: 16 }]}
                         onPress={() => {
                           setEditingItem(null);
                           if (selectedTable === "products") setIsModalOpen(true);
@@ -903,25 +1221,25 @@ export default function AdminPanelScreen() {
                           }
                         }}
                       >
-                          <Ionicons name="add" size={20} color="white" />
-                          <Text style={styles.addBtnText}>New {selectedTable?.replace(/s$/, "") || "Item"}</Text>
+                        <Ionicons name="add-circle" size={18} color="white" />
+                        <Text style={[styles.addBtnText, { fontWeight: "700" }]}>Create New</Text>
                       </Pressable>
                     )}
                     {selectedTable === "products" && (
-                      <Pressable 
-                        style={[styles.addBtn, { backgroundColor: colors.surface, marginLeft: 8, borderWidth: 1, borderColor: colors.accent }]} 
+                      <Pressable
+                        style={[styles.addBtn, { backgroundColor: colors.surface, marginLeft: 8, borderWidth: 1, borderColor: colors.accent }]}
                         onPress={async () => {
                           try {
-                            const catData = await apiRequest("/admin/data/tables/categories", { token });
-                            if (catData && catData.rows) setCategories(catData.rows);
-                          } catch(err) {
+                            const metaRes = await apiRequest("/admin/data/metadata", { token });
+                            if (metaRes && metaRes.metadata) setCategories(metaRes.metadata.categories || []);
+                          } catch (err) {
                             console.error(err);
                           }
                           setIsManageCategoriesOpen(true);
                         }}
                       >
-                          <Ionicons name="folder-open" size={18} color={colors.ink} />
-                          <Text style={[styles.addBtnText, { color: colors.ink }]}>Manage Categories</Text>
+                        <Ionicons name="folder-open" size={18} color={colors.ink} />
+                        <Text style={[styles.addBtnText, { color: colors.ink }]}>Manage Categories</Text>
                       </Pressable>
                     )}
                     <Pressable style={styles.refreshBtn} onPress={() => pickTable(selectedTable)}>
@@ -929,26 +1247,36 @@ export default function AdminPanelScreen() {
                     </Pressable>
                   </View>
                 </View>
-                
-                {selectedTable === "products" && (
+
+                {selectedTable === "products" && metadata.homeFilters && (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipsRow}>
-                    {HOME_SECTION_FILTERS.map((f) => (
-                      <Pressable 
-                        key={f.id} 
+                    <Pressable
+                        onPress={() => setActiveSectionFilter("all")}
+                        style={[
+                          styles.filterChip,
+                          activeSectionFilter === "all" && { backgroundColor: colors.accent, borderColor: colors.accent }
+                        ]}
+                      >
+                        <Ionicons name="grid-outline" size={14} color={activeSectionFilter === "all" ? "white" : colors.subtleText} style={{ marginRight: 6 }} />
+                        <Text style={[styles.filterChipText, activeSectionFilter === "all" && { color: "white" }]}>All Products</Text>
+                    </Pressable>
+                    {metadata.homeFilters.map((f) => (
+                      <Pressable
+                        key={f.id}
                         onPress={() => setActiveSectionFilter(f.id)}
                         style={[
-                          styles.filterChip, 
+                          styles.filterChip,
                           activeSectionFilter === f.id && { backgroundColor: f.color, borderColor: f.color }
                         ]}
                       >
-                        <Ionicons 
-                          name={f.icon} 
-                          size={14} 
-                          color={activeSectionFilter === f.id ? "white" : colors.subtleText} 
+                        <Ionicons
+                          name={f.icon}
+                          size={14}
+                          color={activeSectionFilter === f.id ? "white" : colors.subtleText}
                           style={{ marginRight: 6 }}
                         />
                         <Text style={[
-                          styles.filterChipText, 
+                          styles.filterChipText,
                           activeSectionFilter === f.id && { color: "white" }
                         ]}>
                           {f.label}
@@ -959,178 +1287,424 @@ export default function AdminPanelScreen() {
                 )}
               </View>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-                <View style={styles.tableContainer}>
-                  <View style={styles.tableHeaderRow}>
-                    {tableData.columns.slice(0, 10).map((col) => (
-                      <View key={col.name} style={[styles.cell, { width: 140 }]}>
-                        <Text style={styles.columnName}>{col.name.toUpperCase()}</Text>
+              <View style={styles.tableHeader}>
+                <View style={styles.contentHeaderTitleGroup}>
+                  <Text style={styles.tableTitle}>{String(selectedTable || "Overview").replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Text>
+                  <Text style={styles.tableSubtitle}>
+                    {selectedTable === "shops" ? "Manage your store locations and vendor information." : `Manage your ${String(selectedTable || "").replace(/_/g, ' ')} and operational data.`}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                  {selectedTable === "shops" && (
+                    <View style={styles.viewToggle}>
+                      <Pressable style={[styles.toggleBtn, styles.toggleBtnActive]}>
+                        <Ionicons name="grid-outline" size={18} color="white" />
+                      </Pressable>
+                      <Pressable style={styles.toggleBtn}>
+                        <Ionicons name="list-outline" size={18} color={colors.subtleText} />
+                      </Pressable>
+                    </View>
+                  )}
+                  <Pressable 
+                    style={styles.createBtn}
+                    onPress={() => {
+                      setEditingItem({});
+                      setGenericFormData({});
+                      if (selectedTable === "products") setIsModalOpen(true);
+                      else if (selectedTable === "shops") setIsManageShopsOpen(true);
+                      else setIsGenericModalOpen(true);
+                    }}
+                  >
+                    <Ionicons name="add-circle" size={20} color="white" />
+                    <Text style={styles.createBtnText}>Create New {selectedTable === "shops" ? "Shop" : "Record"}</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {selectedTable === "shops" ? (
+                <View style={styles.shopsGrid}>
+                  {filteredRows.map((shop) => (
+                    <View key={shop.id} style={styles.shopCard}>
+                      <View style={styles.shopCardBanner}>
+                        <Image source={{ uri: shop.banner_url }} style={styles.shopBannerImg} />
+                        <View style={styles.shopCardOverlay}>
+                          <Pressable 
+                            style={styles.shopActionBtn} 
+                            onPress={() => {
+                              setEditingItem(shop);
+                              setGenericFormData(shop);
+                              setIsManageShopsOpen(true);
+                            }}
+                          >
+                            <Ionicons name="create-outline" size={18} color="#0d5731" />
+                          </Pressable>
+                          <Pressable style={styles.shopActionBtn} onPress={() => { setViewingItem(shop); setIsViewModalOpen(true); }}>
+                            <Ionicons name="eye-outline" size={18} color="#0d5731" />
+                          </Pressable>
+                        </View>
                       </View>
-                    ))}
-                    <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 150 }]}>
-                      <Text style={styles.columnName}>ACTIONS</Text>
+                      <View style={styles.shopLogoContainer}>
+                        <Image source={{ uri: shop.logo_url }} style={styles.shopLogoImg} />
+                      </View>
+                      <View style={styles.shopCardContent}>
+                        <Text style={styles.shopCardName} numberOfLines={1}>{shop.name}</Text>
+                        <Text style={styles.shopCardEmail} numberOfLines={1}>{shop.email}</Text>
+                        
+                        <View style={styles.shopStatRow}>
+                          <Text style={styles.shopStatLabel}>Status</Text>
+                          <Pressable
+                            onPress={() => handleToggleTableStatus(shop, "is_active")}
+                            disabled={statusUpdatingKey === `shops:${shop.id}:is_active`}
+                          >
+                            <View style={[styles.toggleTrack, styles.colorToggleTrack, shop.is_active === 1 && styles.toggleTrackActive, { width: 50, height: 26, opacity: statusUpdatingKey === `shops:${shop.id}:is_active` ? 0.6 : 1 }]}>
+                              <View style={[styles.toggleThumb, { width: 18, height: 18 }, shop.is_active === 1 && styles.toggleThumbActive]} />
+                            </View>
+                          </Pressable>
+                        </View>
+
+                        <View style={styles.shopStatRow}>
+                          <Text style={styles.shopStatLabel}>Products</Text>
+                          <View style={styles.shopStatBadge}>
+                            <Text style={styles.shopStatBadgeText}>{shop.product_count || 0}</Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.shopStatRow}>
+                          <Text style={styles.shopStatLabel}>Orders</Text>
+                          <View style={[styles.shopStatBadge, { backgroundColor: "#064e3b" }]}>
+                            <Text style={styles.shopStatBadgeText}>{shop.order_count || 0}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                <View style={styles.tableContainer}>
+                  {/* Table Header Row */}
+                  <View style={styles.tableHeaderRow}>
+                    <View style={[styles.cell, { width: 60 }]}>
+                      <Text style={styles.columnName}>SL</Text>
+                    </View>
+                    {(() => {
+                      if (selectedTable === "colors") {
+                        return [
+                          { name: "name", label: "Name", width: 240 },
+                          { name: "color_code", label: "Color", width: 180 },
+                          { name: "is_active", label: "Status", width: 180 },
+                        ].map(col => (
+                          <View key={col.name} style={[styles.cell, { width: col.width }]}>
+                            <Text style={styles.columnName}>{col.label}</Text>
+                          </View>
+                        ));
+                      }
+                      if (selectedTable === "sizes") {
+                        return [
+                          { name: "name", label: "Name", width: 240 },
+                          { name: "size", label: "Size", width: 180 },
+                          { name: "is_active", label: "Status", width: 180 },
+                        ].map(col => (
+                          <View key={col.name} style={[styles.cell, { width: col.width }]}>
+                            <Text style={styles.columnName}>{col.label}</Text>
+                          </View>
+                        ));
+                      }
+                      if (selectedTable === "units") {
+                        return [
+                          { name: "name", label: "Name", width: 420 },
+                          { name: "is_active", label: "Status", width: 180 },
+                        ].map(col => (
+                          <View key={col.name} style={[styles.cell, { width: col.width }]}>
+                            <Text style={styles.columnName}>{col.label}</Text>
+                          </View>
+                        ));
+                      }
+                      return (tableData?.columns?.slice(0, 15) || []).map((col) => {
+                        if (!col) return null;
+                        return (
+                          <View key={col.name} style={[styles.cell, { width: col.name === "visibility" ? 220 : 140 }]}>
+                            <Text style={styles.columnName}>{col.name.replace(/_/g, ' ').toUpperCase()}</Text>
+                          </View>
+                        );
+                      });
+                    })()}
+                    <View style={[styles.cell, { width: (selectedTable === "orders" ? 360 : 150) }]}>
+                      <Text style={styles.columnName}>Action</Text>
                     </View>
                   </View>
 
-                  {filteredRows.length > 0 ? (
-                    filteredRows.map((row, idx) => (
-                      <View key={idx} style={[styles.tableRow, idx % 2 === 1 && { backgroundColor: "#fcfcfd" }]}>
-                        {tableData.columns.slice(0, 10).map((col) => (
-                      <View key={col.name} style={[styles.cell, { width: col.name === "visibility" ? 220 : 140 }]}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                          {col.name === "visibility" && selectedTable === "products" ? (
-                            <View style={{ flexDirection: "column", gap: 4 }}>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_featured === 1 ? colors.accent + "1A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_featured === 1 ? colors.accent : colors.subtleText }]}>
-                                  {row.is_featured === 1 ? "Showing on Home" : "Not on Home Screen"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_auspicious === 1 ? "#f59e0b1A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_auspicious === 1 ? "#f59e0b" : colors.subtleText }]}>
-                                  {row.is_auspicious === 1 ? "In Auspicious" : "Not in Auspicious"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_banner_main === 1 ? "#3b82f61A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_banner_main === 1 ? "#3b82f6" : colors.subtleText }]}>
-                                  {row.is_banner_main === 1 ? "Main Banner" : "Not Main Banner"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_banner_earrings === 1 ? "#ec48991A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_banner_earrings === 1 ? "#ec4899" : colors.subtleText }]}>
-                                  {row.is_banner_earrings === 1 ? "Earrings Banner" : "Not in Earrings"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_banner_necklaces === 1 ? "#8b5cf61A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_banner_necklaces === 1 ? "#8b5cf6" : colors.subtleText }]}>
-                                  {row.is_banner_necklaces === 1 ? "Necklace Banner" : "Not in Necklaces"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_popular_jewellery === 1 ? "#06b6d41A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_popular_jewellery === 1 ? "#06b6d4" : colors.subtleText }]}>
-                                  {row.is_popular_jewellery === 1 ? "In Popular Jewellery" : "Not in Popular Jewellery"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_mens_shirts === 1 ? "#10b9811A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_mens_shirts === 1 ? "#10b981" : colors.subtleText }]}>
-                                  {row.is_mens_shirts === 1 ? "In Men's Shirts" : "Not in Men's Shirts"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_womens_highlights === 1 ? "#f43f5e1A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_womens_highlights === 1 ? "#f43f5e" : colors.subtleText }]}>
-                                  {row.is_womens_highlights === 1 ? "In Women's Highlights" : "Not in Women's Highlights"}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: (row.is_premium_sarees === 1 || row.is_flash_sale === 1) ? "#ec48991A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: (row.is_premium_sarees === 1 || row.is_flash_sale === 1) ? "#ec4899" : colors.subtleText }]}>
-                                  {row.is_flash_sale === 1 ? "FLASH SALE" : (row.is_premium_sarees === 1 ? "In Premium Sarees" : "Not in Collection")}
-                                </Text>
-                              </View>
-                              <View style={[styles.statusBadge, { backgroundColor: row.is_ad === 1 ? colors.warning + "1A" : "#f1f5f9" }]}>
-                                <Text style={[styles.statusBadgeText, { color: row.is_ad === 1 ? colors.warning : colors.subtleText }]}>
-                                  {row.is_ad === 1 ? "In Advertisement" : "Not in Ad"}
-                                </Text>
-                              </View>
-                            </View>
-                          ) : (
-                            <Text style={styles.cellText} numberOfLines={1}>
-                               {row[col.name] === null ? "—" : String(row[col.name])}
-                            </Text>
-                          )}
+                  {/* Table Body with Pagination */}
+                  {(() => {
+                    const filtered = displayRows;
+                    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+                    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+                    const paginatedRows = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+                    if (paginatedRows.length === 0) {
+                      return (
+                        <View style={styles.emptyState}>
+                          <Ionicons name="search-outline" size={48} color="#e2e8f0" />
+                          <Text style={styles.emptyText}>No matching records found</Text>
                         </View>
-                      </View>
-                        ))}
-                         <View style={[styles.cell, { width: selectedTable === "orders" ? 360 : 150, flexDirection: "row", gap: 12, flexWrap: "nowrap", alignItems: "center" }]}>
-                          {selectedTable === "products" ? (
-                            <>
-                              <Pressable onPress={() => setEditingItem(row)} hitSlop={8} title="Edit">
-                                <Ionicons name="create-outline" size={18} color={colors.accent} />
-                              </Pressable>
-                              <Pressable 
-                                onPress={() => handleToggleFlashSale(row.id, row.is_flash_sale)} 
-                                hitSlop={8} 
-                                title={row.is_flash_sale === 1 ? "Remove from Flash Sale" : "Add to Flash Sale"}
-                              >
-                                <Ionicons 
-                                  name={row.is_flash_sale === 1 ? "flash" : "flash-outline"} 
-                                  size={18} 
-                                  color={row.is_flash_sale === 1 ? "#e03131" : colors.subtleText} 
-                                />
-                              </Pressable>
-                              {activeSectionFilter !== "all" && (
-                                <Pressable 
-                                  onPress={() => handleQuickRemoveFromSection(row.id, activeSectionFilter)} 
-                                  hitSlop={8}
-                                  title="Remove from Section"
-                                >
-                                  <Ionicons name="close-circle-outline" size={18} color="#f43f5e" />
-                                </Pressable>
-                              )}
-                              <Pressable onPress={() => handleDeleteProduct(row.id)} hitSlop={8} title="Delete">
-                                <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                              </Pressable>
-                            </>
-                          ) : selectedTable === "orders" ? (
-                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                              {ORDER_LIFECYCLE_OPTIONS.map((option) => {
-                                const opKey = `${row.id}:${option.value}`;
-                                const isBusy = orderStatusUpdatingKey === opKey;
-                                const isActive = String(row.order_status || "").toLowerCase() === option.label.toLowerCase();
+                      );
+                    }
+
+                    return (
+                      <>
+                        {paginatedRows.map((row, index) => (
+                          <View key={row.id || index} style={[styles.tableRow, (selectedTable === "colors" || selectedTable === "sizes") ? styles.colorTableRow : (index % 2 === 1 && { backgroundColor: "#fcfcfd" })]}>
+                            <View style={[styles.cell, { width: 60 }]}>
+                              <Text style={styles.cellText}>{row.id}</Text>
+                            </View>
+
+                            {(() => {
+                              if (selectedTable === "colors") {
+                                return [
+                                  { name: "name", width: 240, type: "text" },
+                                  { name: "color_code", width: 180, type: "colorBox" },
+                                  { name: "is_active", width: 180, type: "status" },
+                                ].map(col => (
+                                  <View key={col.name} style={[styles.cell, { width: col.width }]}>
+                                    {col.type === "colorBox" ? (
+                                      row.name === "Multi Colour" ? (
+                                        <View style={styles.multiColorSwatch}>
+                                          <View style={{ width: "50%", height: "50%", backgroundColor: "#ef4444" }} />
+                                          <View style={{ width: "50%", height: "50%", backgroundColor: "#3b82f6" }} />
+                                          <View style={{ width: "50%", height: "50%", backgroundColor: "#22c55e" }} />
+                                          <View style={{ width: "50%", height: "50%", backgroundColor: "#f59e0b" }} />
+                                        </View>
+                                      ) : (
+                                        <View
+                                          style={[
+                                            styles.colorSwatch,
+                                            {
+                                              backgroundColor: row[col.name] || "#ccc",
+                                              borderWidth: String(row[col.name] || "").toUpperCase() === "#FFFFFF" ? 1 : 0,
+                                            }
+                                          ]}
+                                        />
+                                      )
+                                    ) : col.type === "status" ? (
+                                      <Pressable
+                                        onPress={() => handleToggleTableStatus(row, col.name)}
+                                        disabled={statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}`}
+                                      >
+                                        <View style={[styles.toggleTrack, styles.colorToggleTrack, row[col.name] === 1 && styles.toggleTrackActive, { opacity: statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}` ? 0.6 : 1 }]}>
+                                          <View style={[styles.toggleThumb, row[col.name] === 1 && styles.toggleThumbActive]} />
+                                        </View>
+                                      </Pressable>
+                                    ) : (
+                                      <Text style={styles.cellText} numberOfLines={1}>{row[col.name] || "—"}</Text>
+                                    )}
+                                  </View>
+                                ));
+                              }
+                              if (selectedTable === "sizes") {
+                                return [
+                                  { name: "name", width: 240, type: "text" },
+                                  { name: "size", width: 180, type: "text" },
+                                  { name: "is_active", width: 180, type: "status" },
+                                ].map(col => (
+                                  <View key={col.name} style={[styles.cell, { width: col.width }]}>
+                                    {col.type === "status" ? (
+                                      <Pressable
+                                        onPress={() => handleToggleTableStatus(row, col.name)}
+                                        disabled={statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}`}
+                                      >
+                                        <View style={[styles.toggleTrack, styles.colorToggleTrack, row[col.name] === 1 && styles.toggleTrackActive, { opacity: statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}` ? 0.6 : 1 }]}>
+                                          <View style={[styles.toggleThumb, row[col.name] === 1 && styles.toggleThumbActive]} />
+                                        </View>
+                                      </Pressable>
+                                    ) : (
+                                      <Text style={styles.cellText} numberOfLines={1}>{row[col.name] || "—"}</Text>
+                                    )}
+                                  </View>
+                                ));
+                              }
+                              if (selectedTable === "units") {
+                                return [
+                                  { name: "name", width: 420, type: "text" },
+                                  { name: "is_active", width: 180, type: "status" },
+                                ].map(col => (
+                                  <View key={col.name} style={[styles.cell, { width: col.width }]}>
+                                    {col.type === "status" ? (
+                                      <Pressable
+                                        onPress={() => handleToggleTableStatus(row, col.name)}
+                                        disabled={statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}`}
+                                      >
+                                        <View style={[styles.toggleTrack, styles.colorToggleTrack, row[col.name] === 1 && styles.toggleTrackActive, { opacity: statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}` ? 0.6 : 1 }]}>
+                                          <View style={[styles.toggleThumb, row[col.name] === 1 && styles.toggleThumbActive]} />
+                                        </View>
+                                      </Pressable>
+                                    ) : (
+                                      <Text style={styles.cellText} numberOfLines={1}>{row[col.name] || "—"}</Text>
+                                    )}
+                                  </View>
+                                ));
+                              }
+                              return (tableData?.columns?.slice(0, 15) || []).map((col) => {
+                                if (!col) return null;
+                                const isImageCol = ["image_url", "image", "thumbnail", "thumb"].includes(col.name.toLowerCase());
+                                const isCatCol = ["category_id", "category"].includes(col.name.toLowerCase());
+                                const isStatusCol = col.name.toLowerCase() === "status" || col.name.toLowerCase() === "is_active";
                                 
                                 return (
-                                  <Pressable
-                                    key={option.value}
-                                    style={[
-                                      styles.orderStatusBtn,
-                                      isActive && { backgroundColor: colors.highlight, borderColor: colors.highlight }
-                                    ]}
-                                    onPress={() => handleOrderLifecycleUpdate(row.id, option.value)}
-                                    disabled={Boolean(orderStatusUpdatingKey)}
-                                  >
-                                    {isBusy ? (
-                                      <ActivityIndicator size="small" color={isActive ? colors.ink : colors.white} />
+                                  <View key={col.name} style={[styles.cell, { width: col.name === "visibility" ? 220 : isImageCol ? 100 : 140 }]}>
+                                    {isImageCol ? (
+                                      <View style={styles.thumbnailContainer}>
+                                        {row[col.name] ? (
+                                          <Image source={{ uri: row[col.name] }} style={styles.thumbnailImg} />
+                                        ) : (
+                                          <Ionicons name="image-outline" size={20} color="#cbd5e1" />
+                                        )}
+                                      </View>
+                                    ) : isCatCol ? (
+                                      <View style={styles.categoryBadge}>
+                                        <Text style={styles.categoryBadgeText}>{row.category_name || row[col.name] || "Uncategorized"}</Text>
+                                      </View>
+                                    ) : isStatusCol ? (
+                                      <Pressable
+                                        onPress={() => handleToggleTableStatus(row, col.name)}
+                                        disabled={statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}`}
+                                      >
+                                        <View style={[styles.toggleTrack, row[col.name] === 1 && styles.toggleTrackActive, { opacity: statusUpdatingKey === `${selectedTable}:${row.id}:${col.name}` ? 0.6 : 1 }]}>
+                                          <View style={[styles.toggleThumb, row[col.name] === 1 && styles.toggleThumbActive]} />
+                                        </View>
+                                      </Pressable>
+                                    ) : col.name === "visibility" && selectedTable === "products" ? (
+                                      <View style={{ flexDirection: "column", gap: 4 }}>
+                                        <View style={[styles.statusBadge, { backgroundColor: row.is_featured === 1 ? colors.accent + "1A" : "#f1f5f9" }]}>
+                                          <Text style={[styles.statusBadgeText, { color: row.is_featured === 1 ? colors.accent : colors.subtleText }]}>
+                                            {row.is_featured === 1 ? "Showing on Home" : "Not on Home Screen"}
+                                          </Text>
+                                        </View>
+                                      </View>
                                     ) : (
-                                      <Text style={[
-                                        styles.orderStatusBtnText,
-                                        isActive && { color: colors.ink, fontWeight: "900" }
-                                      ]}>
-                                        {option.label}
+                                      <Text style={styles.cellText} numberOfLines={1}>
+                                        {row[col.name] === null ? "—" : String(row[col.name])}
                                       </Text>
                                     )}
+                                  </View>
+                                );
+                              });
+                            })()}
+
+                            <View style={[styles.cell, { width: (selectedTable === "orders" ? 360 : 150), flexDirection: "row", gap: 8, alignItems: "center" }]}>
+                                <Pressable 
+                                  style={[styles.pageBtn, { backgroundColor: "#f0f9ff", borderColor: "#bae6fd" }]} 
+                                  onPress={() => { setViewingItem(row); setIsViewModalOpen(true); }}
+                                >
+                                  <Ionicons name="eye-outline" size={18} color="#0369a1" />
+                                </Pressable>
+
+                                {selectedTable !== "orders" && (
+                                  <>
+                                    <Pressable style={[styles.pageBtn, { backgroundColor: "#f8fafc" }]} onPress={() => {
+                                      setEditingItem(row);
+                                      if (selectedTable === "products") setIsModalOpen(true);
+                                      else if (selectedTable === "shops") {
+                                        setGenericFormData(row);
+                                        setIsManageShopsOpen(true);
+                                      } else {
+                                        setGenericFormData(row);
+                                        setIsGenericModalOpen(true);
+                                      }
+                                    }}>
+                                      <Ionicons name="create-outline" size={18} color={colors.accent} />
+                                    </Pressable>
+                                    <Pressable style={[styles.pageBtn, { backgroundColor: "#fff1f2", borderColor: "#fee2e2" }]} onPress={() => {
+                                      if (selectedTable === "products") handleDeleteProduct(row.id);
+                                      else handleDeleteGenericEntry(row.id);
+                                    }}>
+                                      <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                                    </Pressable>
+                                  </>
+                                )}
+
+                                {selectedTable === "orders" && metadata.orderStatuses && (
+                                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, flex: 1 }}>
+                                    {metadata.orderStatuses.map((opt) => {
+                                      const rs = String(row.order_status || "").toLowerCase().trim();
+                                      const ov = String(opt.value || "").toLowerCase().trim();
+                                      const isActiveStatus = rs === ov;
+                                      return (
+                                      <Pressable
+                                        key={opt.value}
+                                        style={[
+                                          styles.statusBadge,
+                                          { backgroundColor: isActiveStatus ? "#10b981" : "#f1f5f9" }
+                                        ]}
+                                        onPress={() => handleOrderLifecycleUpdate(row.id, opt.value)}
+                                      >
+                                        <Text style={[styles.statusBadgeText, { color: isActiveStatus ? "white" : colors.subtleText, fontSize: 10 }]}>
+                                          {opt.label}
+                                        </Text>
+                                      </Pressable>
+                                      );
+                                    })}
+                                  </View>
+                                )}
+                            </View>
+                          </View>
+                        ))}
+
+                        <View style={styles.paginationContainer}>
+                          <Text style={styles.paginationInfo}>
+                            Showing <Text style={{ fontWeight: "700" }}>{startIndex + 1}</Text> to <Text style={{ fontWeight: "700" }}>{Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)}</Text> of <Text style={{ fontWeight: "700" }}>{filtered.length}</Text> entries
+                          </Text>
+                          <View style={styles.paginationControls}>
+                            <Pressable 
+                              style={[styles.pageBtn, currentPage === 1 && styles.pageBtnDisabled]} 
+                              onPress={() => setCurrentPage(p => Math.max(1, p - 1))}
+                              disabled={currentPage === 1}
+                            >
+                              <Ionicons name="chevron-back" size={18} color={currentPage === 1 ? "#cbd5e1" : colors.ink} />
+                            </Pressable>
+                            
+                            {(() => {
+                              const pages = [];
+                              const maxVisible = 5;
+                              let start = Math.max(1, currentPage - 2);
+                              let end = Math.min(totalPages, start + maxVisible - 1);
+                              if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+
+                              for (let i = start; i <= end; i++) {
+                                pages.push(
+                                  <Pressable 
+                                    key={i} 
+                                    style={[styles.pageNumber, currentPage === i && styles.pageNumberActive]}
+                                    onPress={() => setCurrentPage(i)}
+                                  >
+                                    <Text style={[styles.pageNumberText, currentPage === i && styles.pageNumberTextActive]}>{i}</Text>
                                   </Pressable>
                                 );
-                              })}
-                            </View>
-                          ) : (
-                            <>
-                              <Pressable onPress={() => {
-                                setEditingItem(row);
-                                setGenericFormData(row);
-                                setIsGenericModalOpen(true);
-                              }} hitSlop={8}>
-                                <Ionicons name="create-outline" size={18} color={colors.accent} />
-                              </Pressable>
-                              <Pressable onPress={() => handleDeleteGenericEntry(row.id)} hitSlop={8}>
-                                <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                              </Pressable>
-                            </>
-                          )}
+                              }
+                              return pages;
+                            })()}
+
+                            <Pressable 
+                              style={[styles.pageBtn, currentPage === totalPages && styles.pageBtnDisabled]} 
+                              onPress={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                              disabled={currentPage === totalPages}
+                            >
+                              <Ionicons name="chevron-forward" size={18} color={currentPage === totalPages ? "#cbd5e1" : colors.ink} />
+                            </Pressable>
+                          </View>
                         </View>
-                      </View>
-                    ))
-                  ) : (
-                    <View style={styles.emptyState}>
-                      <Text style={styles.emptyText}>No results matching "{searchQuery}"</Text>
-                    </View>
-                  )}
+                      </>
+                    );
+                  })()}
                 </View>
               </ScrollView>
+              )}
             </Animated.View>
           ) : (
             <Animated.View style={[styles.dashboardContainer, overviewPanelAnimatedStyle]}>
               {dashboardLoading ? (
                 <View style={styles.tableCardLoading}>
                   <ActivityIndicator color={colors.accent} />
-                  <Text style={styles.loadingDataText}>Loading dashboard analytics...</Text>
+                  <Text style={styles.loadingDataText}>Synchronizing with live analytics...</Text>
                 </View>
               ) : dashboardError ? (
                 <View style={styles.emptyState}>
@@ -1138,92 +1712,222 @@ export default function AdminPanelScreen() {
                 </View>
               ) : (
                 <>
-                  <View style={styles.dashboardGrid}>
-                    {metricCards.map((metric) => {
-                      const key = String(metric.label || "").toLowerCase();
-                      const styleMeta = metricStyleByLabel[key] || { color: colors.accent, icon: "stats-chart" };
-                      const isActive = metric.label === activeMetric;
-                      
-                      const trendData = 
-                        key.includes("earning") || key.includes("revenue") ? dashboardData?.analytics?.datasets?.revenue :
-                        key.includes("order") ? dashboardData?.analytics?.datasets?.orders :
-                        key.includes("user") ? dashboardData?.analytics?.datasets?.users :
-                        key.includes("product") ? dashboardData?.analytics?.datasets?.products : [];
+                  <View style={styles.welcomeSection}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.welcomeTitle}>Welcome Back, {user?.name || "Admin"}</Text>
+                      <Text style={styles.welcomeSub}>Monitor your business analytics, order flow, and catalogue performance with live store data.</Text>
+                    </View>
+                    <Pressable 
+                      style={styles.syncBtn} 
+                      onPress={handleSystemSync}
+                    >
+                      <Ionicons name="sync-outline" size={20} color="white" />
+                      <Text style={styles.syncBtnText}>Sync Database</Text>
+                    </Pressable>
+                  </View>
 
+                  <View style={styles.metricsGrid}>
+                    {metricCards.map((metric) => {
+                      const metricKey = String(metric.label || "").toLowerCase();
+                      const styleMeta = metricStyleByLabel[metricKey] || { color: "#6366f1", icon: "stats-chart" };
                       return (
                         <StatCardContainer
                           key={metric.label}
                           metric={metric}
-                          isActive={isActive}
+                          isActive={activeMetric === metric.label}
                           styleMeta={styleMeta}
                           onPress={handleMetricCardPress}
                           dashboardReveal={dashboardReveal}
-                          data={trendData}
+                          data={metricSeriesByLabel[metricKey] || []}
                         />
                       );
                     })}
                   </View>
 
+                  {/* Business Overview Section */}
+                  <View style={styles.overviewSection}>
+                    <View style={styles.sectionHeaderInline}>
+                      <Text style={styles.sectionTitle}>Business Overview</Text>
+                      <View style={styles.liveBadge}>
+                        <View style={styles.liveDot} />
+                        <Text style={styles.liveBadgeText}>{dashboardPeriod}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.statsGrid}>
+                      <View style={[styles.overviewCard, { borderLeftColor: '#0d5731' }]}>
+                        <Ionicons name="storefront-outline" size={28} color="#0d5731" style={styles.overviewIcon} />
+                        <View>
+                          <Text style={styles.overviewValue}>{dashboardData?.businessOverview?.shops || 0}</Text>
+                          <Text style={styles.overviewLabel}>Total Shops</Text>
+                        </View>
+                      </View>
+                      <View style={[styles.overviewCard, { borderLeftColor: '#f6b51e' }]}>
+                        <Ionicons name="cube-outline" size={28} color="#f6b51e" style={styles.overviewIcon} />
+                        <View>
+                          <Text style={styles.overviewValue}>{dashboardData?.businessOverview?.products || 0}</Text>
+                          <Text style={styles.overviewLabel}>Total Products</Text>
+                        </View>
+                      </View>
+                      <View style={[styles.overviewCard, { borderLeftColor: '#3b82f6' }]}>
+                        <Ionicons name="cart-outline" size={28} color="#3b82f6" style={styles.overviewIcon} />
+                        <View>
+                          <Text style={styles.overviewValue}>{dashboardData?.businessOverview?.orders || 0}</Text>
+                          <Text style={styles.overviewLabel}>Total Orders</Text>
+                        </View>
+                      </View>
+                      <View style={[styles.overviewCard, { borderLeftColor: '#10b981' }]}>
+                        <Ionicons name="people-outline" size={28} color="#10b981" style={styles.overviewIcon} />
+                        <View>
+                          <Text style={styles.overviewValue}>{dashboardData?.businessOverview?.customers || 0}</Text>
+                          <Text style={styles.overviewLabel}>Total Customers</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Order Analytics Section */}
+                  <View style={styles.overviewSection}>
+                    <Text style={styles.sectionTitle}>Order Analytics</Text>
+                    <View style={styles.orderGrid}>
+                      {orderBreakdownCards.map((item) => (
+                        <View key={item.key} style={[styles.orderCard, { backgroundColor: item.bg }]}>
+                          <View style={[styles.orderIconBadge, { backgroundColor: `${item.color}18` }]}>
+                            <Ionicons name={item.icon} size={16} color={item.color} />
+                          </View>
+                          <Text style={[styles.orderValue, { color: item.color }]}>{item.value}</Text>
+                          <Text style={styles.orderLabel}>{item.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Admin Wallet Section */}
+                  <View style={styles.adminWalletSection}>
+                    <Text style={styles.sectionTitle}>Admin Wallet</Text>
+                    <View style={styles.walletGrid}>
+                      <View style={[styles.walletCard, styles.walletMainCard]}>
+                        <View style={styles.walletHeader}>
+                          <Text style={styles.walletCurrency}>{formatCurrency(dashboardData?.adminWallet?.totalEarning || 0)}</Text>
+                          <View style={styles.walletIconMain}>
+                            <Ionicons name="wallet" size={24} color={colors.primary} />
+                          </View>
+                        </View>
+                        <Text style={styles.walletTrend}>Live gross order revenue</Text>
+                        <Text style={styles.walletLabel}>Total Earning</Text>
+                      </View>
+
+                      <View style={styles.walletSubGrid}>
+                        <View style={styles.walletSmallCard}>
+                          <View style={styles.walletHeader}>
+                            <Text style={styles.walletSmallCurrency}>{formatCurrency(dashboardData?.adminWallet?.alreadyWithdraw || 0)}</Text>
+                            <Ionicons name="cash-outline" size={18} color={colors.primary} />
+                          </View>
+                          <Text style={styles.walletSmallLabel}>Already Withdraw</Text>
+                        </View>
+                        <View style={styles.walletSmallCard}>
+                          <View style={styles.walletHeader}>
+                            <Text style={styles.walletSmallCurrency}>{formatCurrency(dashboardData?.adminWallet?.pendingWithdraw || 0)}</Text>
+                            <Ionicons name="time-outline" size={18} color="#f59e0b" />
+                          </View>
+                          <Text style={styles.walletSmallLabel}>Pending Withdraw</Text>
+                        </View>
+                        <View style={styles.walletSmallCard}>
+                          <View style={styles.walletHeader}>
+                            <Text style={styles.walletSmallCurrency}>{formatCurrency(dashboardData?.adminWallet?.totalCommission || 0)}</Text>
+                            <Ionicons name="bar-chart-outline" size={18} color={colors.highlight} />
+                          </View>
+                          <Text style={styles.walletSmallLabel}>Total Commission</Text>
+                        </View>
+                        <View style={styles.walletSmallCard}>
+                          <View style={styles.walletHeader}>
+                            <Text style={styles.walletSmallCurrency}>{formatCurrency(dashboardData?.adminWallet?.rejectedWithdraw || 0)}</Text>
+                            <Ionicons name="close-circle-outline" size={18} color="#ef4444" />
+                          </View>
+                          <Text style={styles.walletSmallLabel}>Rejected Withdraw</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.statisticsSection}>
+                    <View style={styles.statisticsHeader}>
+                      <Text style={styles.sectionTitle}>Statistics</Text>
+                      <Text style={styles.statisticsMeta}>{dashboardPeriod} performance snapshot</Text>
+                    </View>
+
+                    <View style={styles.statisticsContent}>
+                      <View style={styles.statsOverviewColumn}>
+                        <View style={styles.statInfoBlock}>
+                          <Text style={styles.statBigNumber}>{formatCompactNumber(dashboardData?.businessOverview?.orders || 0)}</Text>
+                          <Text style={styles.statSmallLabel}>Orders Processed</Text>
+                        </View>
+                        <View style={[styles.statInfoBlock, { borderLeftWidth: 1, borderColor: '#f1f5f9', paddingLeft: 30 }]}>
+                          <Text style={styles.statBigNumber}>{formatCompactNumber(dashboardData?.businessOverview?.customers || 0)}</Text>
+                          <Text style={styles.statSmallLabel}>Customer Base</Text>
+                        </View>
+                      </View>
+                      <View style={styles.statisticsHighlights}>
+                        <View style={styles.statisticsHighlightCard}>
+                          <Text style={styles.statisticsHighlightLabel}>Products in catalogue</Text>
+                          <Text style={styles.statisticsHighlightValue}>{formatCompactNumber(dashboardData?.businessOverview?.products || 0)}</Text>
+                        </View>
+                        <View style={styles.statisticsHighlightCard}>
+                          <Text style={styles.statisticsHighlightLabel}>Revenue tracked</Text>
+                          <Text style={styles.statisticsHighlightValue}>{formatCurrency(dashboardData?.adminWallet?.totalEarning || 0)}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
+
                   <Animated.View style={[styles.chartCard, chartAnimatedStyle]}>
                     <View style={[styles.chartHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }]}>
                       <View>
                         <Text style={styles.chartTitle}>Overview</Text>
-                        <Text style={styles.chartSub}>Monthly performance for the current year</Text>
+                        <Text style={styles.chartSub}>{dashboardPeriod} performance stats</Text>
                       </View>
                       <View style={styles.chartTabsContainer}>
-                         <Pressable 
-                           onPress={() => setActiveMetric("Earnings")}
-                           style={activeMetric.toLowerCase().includes("earning") ? styles.chartTabActive : styles.chartTab}
-                         >
-                           <Text style={activeMetric.toLowerCase().includes("earning") ? styles.chartTabTextActive : styles.chartTabText}>Revenue</Text>
-                         </Pressable>
-                         <Pressable 
-                           onPress={() => setActiveMetric("Orders")}
-                           style={activeMetric.toLowerCase().includes("order") ? styles.chartTabActive : styles.chartTab}
-                         >
-                           <Text style={activeMetric.toLowerCase().includes("order") ? styles.chartTabTextActive : styles.chartTabText}>Orders</Text>
-                         </Pressable>
-                         <Pressable 
-                           onPress={() => setActiveMetric("Profit")} 
-                           style={activeMetric.toLowerCase().includes("profit") ? styles.chartTabActive : styles.chartTab}
-                         >
-                           <Text style={activeMetric.toLowerCase().includes("profit") ? styles.chartTabTextActive : styles.chartTabText}>Profit</Text>
-                         </Pressable>
+                        <Pressable
+                          onPress={() => setActiveMetric("Earnings")}
+                          style={activeMetric.toLowerCase().includes("earning") ? styles.chartTabActive : styles.chartTab}
+                        >
+                          <Text style={activeMetric.toLowerCase().includes("earning") ? styles.chartTabTextActive : styles.chartTabText}>Revenue</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => setActiveMetric("Orders")}
+                          style={activeMetric.toLowerCase().includes("order") ? styles.chartTabActive : styles.chartTab}
+                        >
+                          <Text style={activeMetric.toLowerCase().includes("order") ? styles.chartTabTextActive : styles.chartTabText}>Orders</Text>
+                        </Pressable>
                       </View>
                     </View>
-                    <LineChart
+                    <BarChart
                       data={{
-                        labels: lineLabels.length ? lineLabels : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-                        datasets: [{ data: displayChartData.length ? displayChartData : [10, 20, 15, 30, 25, 40, 35, 50, 45, 60, 55, 70] }],
+                        labels: lineLabels.length ? lineLabels : ["-", "-", "-", "-", "-", "-", "-"],
+                        datasets: [{ data: displayChartData.length ? displayChartData : [0, 0, 0, 0, 0, 0, 0] }],
                       }}
-                      width={Math.max(340, Dimensions.get("window").width - (sidebarCollapsed ? 220 : 520))}
+                      width={Math.max(340, width - (sidebarCollapsed ? 220 : 520))}
                       height={260}
                       chartConfig={{
                         ...chartConfigBase(selectedChartColor),
                         fillShadowGradientFrom: selectedChartColor,
-                        fillShadowGradientFromOpacity: 0.2,
-                        fillShadowGradientTo: "#ffffff",
-                        fillShadowGradientToOpacity: 0,
+                        fillShadowGradientFromOpacity: 0.6,
+                        fillShadowGradientTo: selectedChartColor,
+                        fillShadowGradientToOpacity: 0.1,
                       }}
-                      bezier
                       style={styles.chartStyle}
                     />
                   </Animated.View>
 
                   <View style={styles.chartsGrid}>
-                    {/* Traffic Sources Pie Chart */}
                     <Animated.View style={[styles.chartCard, { flex: 1.5, minWidth: 380 }, chartAnimatedStyle]}>
-                       <View style={styles.chartHeader}>
-                          <Text style={styles.chartTitle}>Traffic Sources</Text>
-                          <Text style={styles.chartSub}>Where your visitors come from</Text>
-                       </View>
-                       <PieChart
-                          data={[
-                            { name: "Direct", population: 35, color: "#10b981", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-                            { name: "Organic", population: 28, color: "#3b82f6", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-                            { name: "Referral", population: 22, color: "#f59e0b", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-                            { name: "Social", population: 15, color: "#6366f1", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-                          ]}
+                      <View style={styles.chartHeader}>
+                        <Text style={styles.chartTitle}>Category Breakdown</Text>
+                        <Text style={styles.chartSub}>Product distribution</Text>
+                      </View>
+                      {dashboardData?.categoryDistribution?.length > 0 ? (
+                        <PieChart
+                          data={dashboardData.categoryDistribution}
                           width={340}
                           height={200}
                           chartConfig={chartConfigBase("#10b981")}
@@ -1233,67 +1937,112 @@ export default function AdminPanelScreen() {
                           center={[0, 0]}
                           absolute
                           hasLegend={true}
-                       />
+                        />
+                      ) : (
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                          <Text style={{ color: colors.muted }}>No category data available</Text>
+                        </View>
+                      )}
                     </Animated.View>
 
-                    {/* Monthly Goals Progress bars */}
-                    <Animated.View style={[styles.chartCard, { flex: 1, minWidth: 300 }, chartAnimatedStyle]}>
-                       <View style={styles.chartHeader}>
-                          <Text style={styles.chartTitle}>Monthly Goals</Text>
-                          <Text style={styles.chartSub}>Track progress toward targets</Text>
-                       </View>
-                       <View style={styles.goalsList}>
-                          {[
-                            { label: "Monthly Revenue", value: "88%", color: "#10b981", progress: 0.88 },
-                            { label: "New Customers", value: "62%", color: "#3b82f6", progress: 0.62 },
-                            { label: "Review Score", value: "94%", color: "#f59e0b", progress: 0.94 },
-                          ].map(goal => (
-                            <View key={goal.label} style={styles.goalItem}>
-                               <View style={goal.label === "Review Score" ? { flexDirection: 'row', justifyContent: 'space-between' } : styles.goalHeader}>
-                                  <Text style={styles.goalLabel}>{goal.label}</Text>
-                                  <Text style={styles.goalValue}>{goal.value}</Text>
-                               </View>
-                               <View style={styles.progressBarBg}>
-                                  <View style={[styles.progressBarFill, { width: goal.value, backgroundColor: goal.color }]} />
+                    <Animated.View style={[styles.chartCard, { flex: 1.5, minWidth: 380, maxHeight: 400 }, chartAnimatedStyle]}>
+                      <View style={[styles.chartHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+                        <View>
+                          <Text style={styles.chartTitle}>Recent Feedback</Text>
+                          <Text style={styles.chartSub}>Latest customer reviews</Text>
+                        </View>
+                        <Pressable onPress={() => pickTable("product_reviews")}>
+                          <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13 }}>View All</Text>
+                        </Pressable>
+                      </View>
+                      <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 280 }}>
+                        {recentReviews.length === 0 ? (
+                          <View style={{ padding: 20, alignItems: 'center' }}>
+                            <Text style={{ color: colors.muted }}>No reviews yet</Text>
+                          </View>
+                        ) : (
+                          recentReviews.map((rev) => (
+                            <View key={rev.id} style={styles.reviewSnippet}>
+                              <View style={styles.reviewSnippetHeader}>
+                                <Text style={styles.reviewSnippetUser}>{rev.user_name}</Text>
+                                <View style={styles.reviewSnippetStars}>
+                                  {[1, 2, 3, 4, 5].map(i => (
+                                    <Ionicons key={i} name={i <= rev.rating ? "star" : "star-outline"} size={10} color="#ffa41c" />
+                                  ))}
                                 </View>
+                              </View>
+                              <Text style={styles.reviewSnippetTitle} numberOfLines={1}>{rev.title}</Text>
+                              <Text style={styles.reviewSnippetText} numberOfLines={2}>{rev.comment}</Text>
+                            </View>
+                          ))
+                        )}
+                      </ScrollView>
+                    </Animated.View>
+                  </View>
+
+                  <View style={styles.chartsGrid}>
+                    <Animated.View style={[styles.chartCard, { minWidth: 420 }, chartAnimatedStyle]}>
+                      <View style={[styles.chartHeader, styles.dataListHeader]}>
+                        <View>
+                          <Text style={styles.chartTitle}>Recent Orders</Text>
+                          <Text style={styles.chartSub}>Latest live order activity</Text>
+                        </View>
+                        <Pressable onPress={() => pickTable("orders")}>
+                          <Text style={styles.linkText}>View Orders</Text>
+                        </Pressable>
+                      </View>
+                      {recentOrders.length === 0 ? (
+                        <View style={styles.emptyState}>
+                          <Text style={styles.emptyText}>No recent orders found.</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.dataList}>
+                          {recentOrders.map((order) => (
+                            <View key={order.id} style={styles.dataRow}>
+                              <View style={styles.dataRowMain}>
+                                <Text style={styles.dataRowTitle}>{order.order_code || `Order #${order.id}`}</Text>
+                                <Text style={styles.dataRowSub}>{order.customer_name || "Customer"} • {order.payment_status || "Unknown payment"}</Text>
+                              </View>
+                              <View style={styles.dataRowMeta}>
+                                <Text style={styles.dataRowValue}>{formatCurrency(order.payable_amount)}</Text>
+                                <Text style={styles.dataRowStatus}>{order.order_status || "Pending"}</Text>
+                              </View>
                             </View>
                           ))}
-                       </View>
+                        </View>
+                      )}
                     </Animated.View>
 
-                    {/* NEW: Recent Reviews Widget */}
-                    <Animated.View style={[styles.chartCard, { flex: 1.5, minWidth: 380, maxHeight: 400 }, chartAnimatedStyle]}>
-                       <View style={[styles.chartHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-                          <View>
-                            <Text style={styles.chartTitle}>Recent Feedback</Text>
-                            <Text style={styles.chartSub}>Latest customer reviews</Text>
-                          </View>
-                          <Pressable onPress={() => pickTable("product_reviews")}>
-                             <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13 }}>View All</Text>
-                          </Pressable>
-                       </View>
-                       <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 280 }}>
-                          {recentReviews.length === 0 ? (
-                             <View style={{ padding: 20, alignItems: 'center' }}>
-                                <Text style={{ color: colors.muted }}>No reviews yet</Text>
-                             </View>
-                          ) : (
-                            recentReviews.map((rev) => (
-                               <View key={rev.id} style={styles.reviewSnippet}>
-                                  <View style={styles.reviewSnippetHeader}>
-                                     <Text style={styles.reviewSnippetUser}>{rev.user_name}</Text>
-                                     <View style={styles.reviewSnippetStars}>
-                                        {[1,2,3,4,5].map(i => (
-                                           <Ionicons key={i} name={i <= rev.rating ? "star" : "star-outline"} size={10} color="#ffa41c" />
-                                        ))}
-                                     </View>
-                                  </View>
-                                  <Text style={styles.reviewSnippetTitle} numberOfLines={1}>{rev.title}</Text>
-                                  <Text style={styles.reviewSnippetText} numberOfLines={2}>{rev.comment}</Text>
-                               </View>
-                            ))
-                          )}
-                       </ScrollView>
+                    <Animated.View style={[styles.chartCard, { minWidth: 420 }, chartAnimatedStyle]}>
+                      <View style={[styles.chartHeader, styles.dataListHeader]}>
+                        <View>
+                          <Text style={styles.chartTitle}>Latest Products</Text>
+                          <Text style={styles.chartSub}>Newest catalogue additions</Text>
+                        </View>
+                        <Pressable onPress={() => pickTable("products")}>
+                          <Text style={styles.linkText}>Manage Products</Text>
+                        </Pressable>
+                      </View>
+                      {topProducts.length === 0 ? (
+                        <View style={styles.emptyState}>
+                          <Text style={styles.emptyText}>No products found.</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.dataList}>
+                          {topProducts.map((product) => (
+                            <View key={product.id} style={styles.dataRow}>
+                              <View style={styles.dataRowMain}>
+                                <Text style={styles.dataRowTitle}>{product.name || "Product"}</Text>
+                                <Text style={styles.dataRowSub}>Stock: {product.quantity || 0}</Text>
+                              </View>
+                              <View style={styles.dataRowMeta}>
+                                <Text style={styles.dataRowValue}>{formatCurrency(product.price)}</Text>
+                                <Text style={styles.dataRowStatus}>ID {product.id}</Text>
+                              </View>
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </Animated.View>
                   </View>
                 </>
@@ -1301,33 +2050,30 @@ export default function AdminPanelScreen() {
             </Animated.View>
           )}
         </ScrollView>
+        )}
       </View>
 
-      {/* Product Modal */}
-      {(isModalOpen || editingItem) && (
-        <ProductModal 
-          visible={isModalOpen || editingItem}
-          item={editingItem}
-          categories={categories}
-          colors={availableColors}
-          sizes={availableSizes}
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingItem(null);
-          }}
-          onSave={handleSaveProduct}
-        />
-      )}
+      {/* Modals */}
+      <ProductModal
+        visible={isModalOpen || (editingItem && selectedTable === "products")}
+        item={editingItem}
+        categories={categories}
+        colorOptions={availableColors}
+        sizeOptions={availableSizes}
+        onClose={() => { setIsModalOpen(false); setEditingItem(null); }}
+        onSave={handleSaveProduct}
+      />
 
       <GenericEntryModal
         visible={isGenericModalOpen}
         tableName={selectedTable}
-        columns={tableData.columns}
+        columns={tableData?.columns}
         formData={genericFormData}
         onClose={() => { setIsGenericModalOpen(false); setEditingItem(null); setGenericFormData({}); }}
         onSave={handleSaveGenericEntry}
         onChange={setGenericFormData}
       />
+
       <ManageCategoriesModal
         visible={isManageCategoriesOpen}
         categories={categories}
@@ -1335,6 +2081,94 @@ export default function AdminPanelScreen() {
         onClose={() => setIsManageCategoriesOpen(false)}
         onSave={handleSaveCategories}
       />
+
+      <ViewEntryModal
+        visible={isViewModalOpen}
+        item={viewingItem}
+        tableName={selectedTable}
+        onClose={() => { setIsViewModalOpen(false); setViewingItem(null); }}
+      />
+
+      <ManageShopsModal
+        visible={isManageShopsOpen}
+        item={editingItem}
+        onClose={() => { setIsManageShopsOpen(false); setEditingItem(null); }}
+        onSave={async (updatedShop) => {
+          try {
+            setContentLoading(true);
+            const shopId = updatedShop.id || editingItem?.id;
+            const endpoint = shopId 
+              ? `/admin/data/tables/shops/${shopId}` 
+              : `/admin/data/tables/shops`;
+            const method = shopId ? "PUT" : "POST";
+
+            const res = await apiRequest(endpoint, {
+              method,
+              token,
+              body: sanitizeTableData(updatedShop)
+            });
+            Alert.alert("Success", shopId ? "Shop updated successfully!" : "Shop created successfully!");
+            setIsManageShopsOpen(false);
+            setEditingItem(null);
+            pickTable("shops");
+          } catch (err) {
+            Alert.alert("Error", "Error saving shop: " + err.message);
+          } finally {
+            setContentLoading(false);
+          }
+        }}
+      />
+    </View>
+  );
+}
+
+// Sub-components
+
+function ViewEntryModal({ visible, item, tableName, onClose }) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+  if (!visible || !item) return null;
+
+  return (
+    <View style={modalStyles.overlay}>
+      <View style={[modalStyles.container, { width: isMobile ? '90%' : 500 }]}>
+        <View style={modalStyles.header}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="information-circle-outline" size={20} color={colors.accent} />
+            <Text style={modalStyles.title}>Details: {tableName?.replace(/s$/, "") || "Entry"}</Text>
+          </View>
+          <Pressable onPress={onClose}><Ionicons name="close" size={24} color={colors.muted} /></Pressable>
+        </View>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={modalStyles.body} showsVerticalScrollIndicator={false}>
+          {Object.entries(item).map(([key, value]) => {
+            if (key === 'id') return null;
+            const label = key.replace(/_/g, " ").toUpperCase();
+            const isImage = ["image_url", "image", "thumbnail"].includes(key.toLowerCase());
+            
+            return (
+              <View key={key} style={{ marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#f8fafc', paddingBottom: 10 }}>
+                <Text style={[modalStyles.label, { marginBottom: 4 }]}>{label}</Text>
+                {isImage && value ? (
+                  <View style={[styles.thumbnailContainer, { width: 120, height: 120, borderRadius: 12 }]}>
+                    <Image source={{ uri: String(value) }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                  </View>
+                ) : (
+                  <Text style={[styles.cellText, { fontSize: 15, color: '#334155' }]}>
+                    {value === null || value === undefined ? "—" : String(value)}
+                  </Text>
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        <View style={modalStyles.footer}>
+          <Pressable style={[modalStyles.saveBtn, { backgroundColor: colors.accent }]} onPress={onClose}>
+            <Text style={modalStyles.saveBtnText}>Close View</Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 }
@@ -1372,20 +2206,20 @@ function ManageCategoriesModal({ visible, categories, products, onClose, onSave 
     let filterCat = activeCategory.name;
     if (filterCat === "Women's Wear") filterCat = "Women";
     if (filterCat === "Men's Wear") filterCat = "Men";
-    if (filterCat.toLowerCase() === "browse all") return true; 
-    
+    if (filterCat.toLowerCase() === "browse all") return true;
+
     const pCat = p.category ? String(p.category).toLowerCase() : "";
     return pCat === filterCat.toLowerCase();
   });
 
   return (
     <View style={modalStyles.overlay}>
-      <View style={[modalStyles.container, { 
-        width: isMobile ? '95%' : 900, 
-        height: isMobile ? '90%' : 600, 
-        flexDirection: 'column', 
-        padding: 0, 
-        overflow: 'hidden' 
+      <View style={[modalStyles.container, {
+        width: isMobile ? '95%' : 900,
+        height: isMobile ? '90%' : 600,
+        flexDirection: 'column',
+        padding: 0,
+        overflow: 'hidden'
       }]}>
         <View style={[modalStyles.header, { padding: 20, borderBottomWidth: 1, borderColor: colors.border, marginBottom: 0 }]}>
           <Text style={modalStyles.title}>Manage Category Images</Text>
@@ -1394,57 +2228,57 @@ function ManageCategoriesModal({ visible, categories, products, onClose, onSave 
 
         <View style={{ flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
           {/* LEFT SIDEBAR: CATEGORIES */}
-          <View style={{ 
-            width: isMobile ? '100%' : 250, 
+          <View style={{
+            width: isMobile ? '100%' : 250,
             height: isMobile ? 180 : 'auto',
-            borderRightWidth: isMobile ? 0 : 1, 
+            borderRightWidth: isMobile ? 0 : 1,
             borderBottomWidth: isMobile ? 1 : 0,
-            borderColor: colors.border, 
-            backgroundColor: '#fcfcfd' 
+            borderColor: colors.border,
+            backgroundColor: '#fcfcfd'
           }}>
             <ScrollView showsVerticalScrollIndicator={false} horizontal={isMobile}>
               {(categories || []).map(cat => {
-                 const isActive = cat.id === activeCategoryId;
-                 return (
-                   <Pressable
-                     key={cat.id}
-                     onPress={() => setActiveCategoryId(cat.id)}
-                     style={{
-                        padding: 16,
-                        borderBottomWidth: isMobile ? 0 : 1,
-                        borderRightWidth: isMobile ? 1 : 0,
-                        borderColor: colors.border,
-                        backgroundColor: isActive ? 'white' : 'transparent',
-                        borderLeftWidth: isMobile ? 0 : 4,
-                        borderBottomWidth: isMobile ? 4 : 0,
-                        borderLeftColor: (isActive && !isMobile) ? colors.accent : 'transparent',
-                        borderBottomColor: (isActive && isMobile) ? colors.accent : 'transparent',
-                        flexDirection: isMobile ? 'row' : 'column',
-                        minWidth: isMobile ? 140 : 'auto'
-                     }}
-                   >
-                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                       <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#f1f5f9", marginRight: 10, overflow: 'hidden' }}>
-                          {formData[cat.id] ? (
-                            <Image source={{ uri: formData[cat.id] }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                          ) : (
-                            <Ionicons name="image-outline" size={16} color={colors.muted} style={{ alignSelf: 'center', marginTop: 8 }} />
-                          )}
-                       </View>
-                       <Text 
-                         numberOfLines={1}
-                         style={{ 
-                           fontSize: 13,
-                           fontWeight: isActive ? '700' : '500', 
-                           color: isActive ? colors.ink : colors.subtleText, 
-                           flex: 1 
-                         }}
-                       >
-                         {cat.name}
-                       </Text>
-                     </View>
-                   </Pressable>
-                 )
+                const isActive = cat.id === activeCategoryId;
+                return (
+                  <Pressable
+                    key={cat.id}
+                    onPress={() => setActiveCategoryId(cat.id)}
+                    style={{
+                      padding: 16,
+                      borderBottomWidth: isMobile ? 0 : 1,
+                      borderRightWidth: isMobile ? 1 : 0,
+                      borderColor: colors.border,
+                      backgroundColor: isActive ? 'white' : 'transparent',
+                      borderLeftWidth: isMobile ? 0 : 4,
+                      borderBottomWidth: isMobile ? 4 : 0,
+                      borderLeftColor: (isActive && !isMobile) ? colors.accent : 'transparent',
+                      borderBottomColor: (isActive && isMobile) ? colors.accent : 'transparent',
+                      flexDirection: isMobile ? 'row' : 'column',
+                      minWidth: isMobile ? 140 : 'auto'
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#f1f5f9", marginRight: 10, overflow: 'hidden' }}>
+                        {formData[cat.id] ? (
+                          <Image source={{ uri: formData[cat.id] }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                        ) : (
+                          <Ionicons name="image-outline" size={16} color={colors.muted} style={{ alignSelf: 'center', marginTop: 8 }} />
+                        )}
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: isActive ? '700' : '500',
+                          color: isActive ? colors.ink : colors.subtleText,
+                          flex: 1
+                        }}
+                      >
+                        {cat.name}
+                      </Text>
+                    </View>
+                  </Pressable>
+                )
               })}
             </ScrollView>
           </View>
@@ -1453,75 +2287,75 @@ function ManageCategoriesModal({ visible, categories, products, onClose, onSave 
           <View style={{ flex: 1, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
             {activeCategory ? (
               <>
-                  <View style={{ 
-                    flexDirection: isMobile ? 'column' : 'row', 
-                    justifyContent: 'space-between', 
-                    alignItems: isMobile ? 'flex-start' : 'center', 
-                    padding: 16, 
-                    gap: 12,
-                    borderBottomWidth: 1, 
-                    borderColor: "rgba(0,0,0,0.05)" 
+                <View style={{
+                  flexDirection: isMobile ? 'column' : 'row',
+                  justifyContent: 'space-between',
+                  alignItems: isMobile ? 'flex-start' : 'center',
+                  padding: 16,
+                  gap: 12,
+                  borderBottomWidth: 1,
+                  borderColor: "rgba(0,0,0,0.05)"
+                }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.ink }}>
+                    Select image for <Text style={{ color: colors.accent }}>{activeCategory.name}</Text>
+                  </Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    width: isMobile ? '100%' : 'auto'
                   }}>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: colors.ink }}>
-                      Select image for <Text style={{ color: colors.accent }}>{activeCategory.name}</Text>
-                    </Text>
-                    <View style={{ 
-                      flexDirection: 'row', 
-                      alignItems: 'center', 
-                      backgroundColor: '#f1f5f9', 
-                      borderRadius: 8, 
-                      paddingHorizontal: 12,
-                      width: isMobile ? '100%' : 'auto'
-                    }}>
-                       <Ionicons name="search" size={16} color={colors.muted} />
-                       <TextInput
-                          style={{ padding: 8, flex: isMobile ? 1 : 0, width: isMobile ? 'auto' : 200, fontSize: 13 }}
-                          placeholder="Search products..."
-                          value={searchQuery}
-                          onChangeText={setSearchQuery}
-                       />
-                    </View>
-                 </View>
+                    <Ionicons name="search" size={16} color={colors.muted} />
+                    <TextInput
+                      style={{ padding: 8, flex: isMobile ? 1 : 0, width: isMobile ? 'auto' : 200, fontSize: 13 }}
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                  </View>
+                </View>
 
-                 <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 16 }}>
-                    {filteredProducts.map(product => {
-                       const isSelected = formData[activeCategoryId] === product.image;
-                       return (
-                         <Pressable
-                           key={product.id}
-                           onPress={() => setFormData({ ...formData, [activeCategoryId]: product.image })}
-                           style={{
-                              width: isMobile ? '47%' : '23%',
-                              aspectRatio: 1,
-                              borderRadius: 8,
-                              borderWidth: 2,
-                              borderColor: isSelected ? colors.accent : 'transparent',
-                              overflow: 'hidden',
-                              position: 'relative',
-                              backgroundColor: '#f1f5f9'
-                           }}
-                         >
-                           <Image source={{ uri: product.image }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                           {isSelected && (
-                             <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: colors.accent, borderRadius: 12 }}>
-                               <Ionicons name="checkmark-circle" size={24} color="white" />
-                             </View>
-                           )}
-                           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4 }}>
-                              <Text style={{ color: 'white', fontSize: 10, textAlign: 'center' }} numberOfLines={1}>{product.name}</Text>
-                           </View>
-                         </Pressable>
-                       )
-                    })}
-                    {filteredProducts.length === 0 && (
-                      <Text style={{ color: colors.muted, marginTop: 20, textAlign: 'center', width: '100%' }}>No products found.</Text>
-                    )}
-                 </ScrollView>
+                <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 16 }}>
+                  {filteredProducts.map(product => {
+                    const isSelected = formData[activeCategoryId] === product.image;
+                    return (
+                      <Pressable
+                        key={product.id}
+                        onPress={() => setFormData({ ...formData, [activeCategoryId]: product.image })}
+                        style={{
+                          width: isMobile ? '47%' : '23%',
+                          aspectRatio: 1,
+                          borderRadius: 8,
+                          borderWidth: 2,
+                          borderColor: isSelected ? colors.accent : 'transparent',
+                          overflow: 'hidden',
+                          position: 'relative',
+                          backgroundColor: '#f1f5f9'
+                        }}
+                      >
+                        <Image source={{ uri: product.image }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                        {isSelected && (
+                          <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: colors.accent, borderRadius: 12 }}>
+                            <Ionicons name="checkmark-circle" size={24} color="white" />
+                          </View>
+                        )}
+                        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4 }}>
+                          <Text style={{ color: 'white', fontSize: 10, textAlign: 'center' }} numberOfLines={1}>{product.name}</Text>
+                        </View>
+                      </Pressable>
+                    )
+                  })}
+                  {filteredProducts.length === 0 && (
+                    <Text style={{ color: colors.muted, marginTop: 20, textAlign: 'center', width: '100%' }}>No products found.</Text>
+                  )}
+                </ScrollView>
               </>
             ) : (
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                 <Ionicons name="images-outline" size={48} color={colors.muted} />
-                 <Text style={{ marginTop: 16, color: colors.subtleText }}>Select a category on the left to pick its image</Text>
+                <Ionicons name="images-outline" size={48} color={colors.muted} />
+                <Text style={{ marginTop: 16, color: colors.subtleText }}>Select a category on the left to pick its image</Text>
               </View>
             )}
           </View>
@@ -1530,7 +2364,7 @@ function ManageCategoriesModal({ visible, categories, products, onClose, onSave 
         <View style={[modalStyles.footer, { padding: 20, borderTopWidth: 1, borderColor: colors.border, backgroundColor: 'white' }]}>
           <Pressable style={modalStyles.cancelBtn} onPress={onClose}><Text style={modalStyles.cancelBtnText}>Cancel</Text></Pressable>
           <Pressable style={modalStyles.saveBtn} onPress={handleSave}>
-             <Text style={modalStyles.saveBtnText}>Save Images</Text>
+            <Text style={modalStyles.saveBtnText}>Save Images</Text>
           </Pressable>
         </View>
       </View>
@@ -1543,7 +2377,7 @@ function GenericEntryModal({ visible, tableName, columns, formData, onClose, onS
   const isMobile = width < 768;
   if (!visible) return null;
 
-  const editableColumns = (columns || []).filter(c => 
+  const editableColumns = (columns || []).filter(c =>
     !["id", "created_at", "updated_at", "visibility"].includes(c.name.toLowerCase())
   );
 
@@ -1559,20 +2393,20 @@ function GenericEntryModal({ visible, tableName, columns, formData, onClose, onS
           {editableColumns.map((col) => {
             const label = col.name.replace(/_/g, " ").toUpperCase();
             const value = formData[col.name] !== undefined ? String(formData[col.name]) : "";
-            const isBoolean = col.dataType?.toLowerCase().includes("tinyint") || col.name.startsWith("is_");
+            const isBoolean = col.dataType?.toLowerCase().includes("tinyint") || col.name.startsWith("is_") || col.name === "status";
 
             return (
               <View key={col.name} style={{ marginBottom: 16 }}>
                 <Text style={modalStyles.label}>{label}</Text>
                 {isBoolean ? (
                   <View style={modalStyles.optionsRow}>
-                    <Pressable 
+                    <Pressable
                       style={[modalStyles.pill, formData[col.name] == 1 && modalStyles.pillActive]}
                       onPress={() => onChange({ ...formData, [col.name]: 1 })}
                     >
                       <Text style={[modalStyles.pillText, formData[col.name] == 1 && modalStyles.pillTextActive]}>Yes / Active</Text>
                     </Pressable>
-                    <Pressable 
+                    <Pressable
                       style={[modalStyles.pill, (formData[col.name] == 0 || !formData[col.name]) && modalStyles.pillActive]}
                       onPress={() => onChange({ ...formData, [col.name]: 0 })}
                     >
@@ -1603,7 +2437,7 @@ function GenericEntryModal({ visible, tableName, columns, formData, onClose, onS
         <View style={modalStyles.footer}>
           <Pressable style={modalStyles.cancelBtn} onPress={onClose}><Text style={modalStyles.cancelBtnText}>Cancel</Text></Pressable>
           <Pressable style={modalStyles.saveBtn} onPress={onSave}>
-             <Text style={modalStyles.saveBtnText}>Save Changes</Text>
+            <Text style={modalStyles.saveBtnText}>Save Changes</Text>
           </Pressable>
         </View>
       </View>
@@ -1611,33 +2445,62 @@ function GenericEntryModal({ visible, tableName, columns, formData, onClose, onS
   );
 }
 
-
-function ProductModal({ visible, item, categories, colors, sizes, onClose, onSave }) {
+function ProductModal({ visible, item, categories, colorOptions, sizeOptions, onClose, onSave }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const [name, setName] = useState(item?.name || "");
-  const [price, setPrice] = useState(String(item?.price || ""));
-  const [discountPrice, setDiscountPrice] = useState(String(item?.discount_price || "0"));
-  const [quantity, setQuantity] = useState(String(item?.quantity || "0"));
-  const [metal, setMetal] = useState(item?.metal || "");
-  const [weight, setWeight] = useState(item?.weight || "");
-  const [size, setSize] = useState(item?.size || "");
-  const [desc, setDesc] = useState(item?.description || "");
-  const [img, setImg] = useState(item?.image || "");
-  const [catId, setCatId] = useState(item?.category_id || "");
-  const [isFeatured, setIsFeatured] = useState(Boolean(item?.is_featured));
-  const [isAuspicious, setIsAuspicious] = useState(Boolean(item?.is_auspicious));
-  const [isFlashSale, setIsFlashSale] = useState(Boolean(item?.is_flash_sale));
-  const [isBannerMain, setIsBannerMain] = useState(Boolean(item?.is_banner_main));
-  const [isBannerEarrings, setIsBannerEarrings] = useState(Boolean(item?.is_banner_earrings));
-  const [isBannerNecklaces, setIsBannerNecklaces] = useState(Boolean(item?.is_banner_necklaces));
-  const [isPopularJewellery, setIsPopularJewellery] = useState(Boolean(item?.is_popular_jewellery));
-  const [isMensShirts, setIsMensShirts] = useState(Boolean(item?.is_mens_shirts));
-  const [isWomensHighlights, setIsWomensHighlights] = useState(Boolean(item?.is_womens_highlights));
-  const [isPremiumSarees, setIsPremiumSarees] = useState(Boolean(item?.is_premium_sarees));
-  const [isAd, setIsAd] = useState(Boolean(item?.is_ad));
-  const [selColors, setSelColors] = useState([]); // would need mapping for existing
-  const [selSizes, setSelSizes] = useState([]);   // would need mapping for existing
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [discountPrice, setDiscountPrice] = useState("0");
+  const [quantity, setQuantity] = useState("0");
+  const [metal, setMetal] = useState("");
+  const [weight, setWeight] = useState("");
+  const [size, setSize] = useState("");
+  const [desc, setDesc] = useState("");
+  const [img, setImg] = useState("");
+  const [catId, setCatId] = useState("");
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [isAuspicious, setIsAuspicious] = useState(false);
+  const [isFlashSale, setIsFlashSale] = useState(false);
+  const [isBannerMain, setIsBannerMain] = useState(false);
+  const [isBannerEarrings, setIsBannerEarrings] = useState(false);
+  const [isBannerNecklaces, setIsBannerNecklaces] = useState(false);
+  const [isPopularJewellery, setIsPopularJewellery] = useState(false);
+  const [isMensShirts, setIsMensShirts] = useState(false);
+  const [isWomensHighlights, setIsWomensHighlights] = useState(false);
+  const [isPremiumSarees, setIsPremiumSarees] = useState(false);
+  const [isAd, setIsAd] = useState(false);
+  const [selColors, setSelColors] = useState([]);
+  const [selSizes, setSelSizes] = useState([]);
+
+  useEffect(() => {
+    if (visible) {
+      setName(item?.name || "");
+      setPrice(String(item?.price || ""));
+      setDiscountPrice(String(item?.discount_price || "0"));
+      setQuantity(String(item?.quantity || "0"));
+      setMetal(item?.metal || "");
+      setWeight(item?.weight || "");
+      setSize(item?.size || "");
+      setDesc(item?.description || "");
+      setImg(item?.image || "");
+      setCatId(item?.category_id || "");
+      setIsFeatured(Boolean(item?.is_featured));
+      setIsAuspicious(Boolean(item?.is_auspicious));
+      setIsFlashSale(Boolean(item?.is_flash_sale));
+      setIsBannerMain(Boolean(item?.is_banner_main));
+      setIsBannerEarrings(Boolean(item?.is_banner_earrings));
+      setIsBannerNecklaces(Boolean(item?.is_banner_necklaces));
+      setIsPopularJewellery(Boolean(item?.is_popular_jewellery));
+      setIsMensShirts(Boolean(item?.is_mens_shirts));
+      setIsWomensHighlights(Boolean(item?.is_womens_highlights));
+      setIsPremiumSarees(Boolean(item?.is_premium_sarees));
+      setIsAd(Boolean(item?.is_ad));
+      setSelColors(item?.colors ? (Array.isArray(item.colors) ? item.colors : []) : []);
+      setSelSizes(item?.sizes ? (Array.isArray(item.sizes) ? item.sizes : []) : []);
+    }
+  }, [visible, item]);
+
+  if (!visible) return null;
 
   return (
     <View style={modalStyles.overlay}>
@@ -1647,7 +2510,7 @@ function ProductModal({ visible, item, categories, colors, sizes, onClose, onSav
           <Pressable onPress={onClose}><Ionicons name="close" size={24} color={colors.subtleText} /></Pressable>
         </View>
 
-        <ScrollView style={modalStyles.body}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={modalStyles.body}>
           <Text style={modalStyles.label}>Product Name</Text>
           <TextInput value={name} onChangeText={setName} style={modalStyles.input} placeholder="e.g. Diamond Necklace" />
 
@@ -1674,251 +2537,546 @@ function ProductModal({ visible, item, categories, colors, sizes, onClose, onSav
           </View>
 
           <Text style={modalStyles.label}>Image URL</Text>
-          <TextInput value={img} onChangeText={setImg} style={modalStyles.input} placeholder="https://..." />
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <TextInput 
+              value={img} 
+              onChangeText={setImg} 
+              style={[modalStyles.input, { flex: 1 }]} 
+              placeholder="https://..." 
+            />
+            <Pressable 
+              style={[styles.createBtn, { backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0', minHeight: 46 }]}
+              onPress={() => {
+                if (Platform.OS === "web" && typeof document !== "undefined") {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => setImg(event.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                } else {
+                  Alert.alert("Notice", "Local file picking is optimized for Web.");
+                }
+              }}
+            >
+              <Ionicons name="image-outline" size={18} color={colors.ink} />
+              <Text style={{ color: colors.ink, fontWeight: '700', marginLeft: 6 }}>Pick</Text>
+            </Pressable>
+          </View>
 
           <Text style={modalStyles.label}>Description</Text>
           <TextInput value={desc} onChangeText={setDesc} style={[modalStyles.input, { height: 100 }]} multiline numberOfLines={4} />
 
           <Text style={modalStyles.label}>Visibility & Home Section</Text>
           <View style={modalStyles.optionsRow}>
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isFeatured && modalStyles.pillActive]}
               onPress={() => setIsFeatured(!isFeatured)}
-             >
-               <Ionicons name={isFeatured ? "home" : "home-outline"} size={14} color={isFeatured ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isFeatured && modalStyles.pillTextActive]}>
-                 {isFeatured ? "Featured on Home" : "Not on Home Screen"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isFeatured ? "home" : "home-outline"} size={14} color={isFeatured ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isFeatured && modalStyles.pillTextActive]}>
+                {isFeatured ? "Featured on Home" : "Not on Home Screen"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isAuspicious && modalStyles.pillActive]}
               onPress={() => setIsAuspicious(!isAuspicious)}
-             >
-               <Ionicons name={isAuspicious ? "star" : "star-outline"} size={14} color={isAuspicious ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isAuspicious && modalStyles.pillTextActive]}>
-                 {isAuspicious ? "Auspicious Section" : "Not in Auspicious"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isAuspicious ? "star" : "star-outline"} size={14} color={isAuspicious ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isAuspicious && modalStyles.pillTextActive]}>
+                {isAuspicious ? "Auspicious Section" : "Not in Auspicious"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isBannerMain && modalStyles.pillActive]}
               onPress={() => setIsBannerMain(!isBannerMain)}
-             >
-               <Ionicons name={isBannerMain ? "image" : "image-outline"} size={14} color={isBannerMain ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isBannerMain && modalStyles.pillTextActive]}>
-                 {isBannerMain ? "Main Banner" : "Not Main Banner"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isBannerMain ? "image" : "image-outline"} size={14} color={isBannerMain ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isBannerMain && modalStyles.pillTextActive]}>
+                {isBannerMain ? "Main Banner" : "Not Main Banner"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isBannerEarrings && modalStyles.pillActive]}
               onPress={() => setIsBannerEarrings(!isBannerEarrings)}
-             >
-               <Ionicons name={isBannerEarrings ? "easel" : "easel-outline"} size={14} color={isBannerEarrings ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isBannerEarrings && modalStyles.pillTextActive]}>
-                 {isBannerEarrings ? "Earrings Banner" : "Not Earrings"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isBannerEarrings ? "easel" : "easel-outline"} size={14} color={isBannerEarrings ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isBannerEarrings && modalStyles.pillTextActive]}>
+                {isBannerEarrings ? "Earrings Banner" : "Not Earrings"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isBannerNecklaces && modalStyles.pillActive]}
               onPress={() => setIsBannerNecklaces(!isBannerNecklaces)}
-             >
-               <Ionicons name={isBannerNecklaces ? "grid" : "grid-outline"} size={14} color={isBannerNecklaces ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isBannerNecklaces && modalStyles.pillTextActive]}>
-                 {isBannerNecklaces ? "Necklace Banner" : "Not Necklace"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isBannerNecklaces ? "grid" : "grid-outline"} size={14} color={isBannerNecklaces ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isBannerNecklaces && modalStyles.pillTextActive]}>
+                {isBannerNecklaces ? "Necklace Banner" : "Not Necklace"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isPopularJewellery && modalStyles.pillActive]}
               onPress={() => setIsPopularJewellery(!isPopularJewellery)}
-             >
-               <Ionicons name={isPopularJewellery ? "diamond" : "diamond-outline"} size={14} color={isPopularJewellery ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isPopularJewellery && modalStyles.pillTextActive]}>
-                 {isPopularJewellery ? "In Popular Jewellery" : "Not Popular Jewellery"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isPopularJewellery ? "diamond" : "diamond-outline"} size={14} color={isPopularJewellery ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isPopularJewellery && modalStyles.pillTextActive]}>
+                {isPopularJewellery ? "In Popular Jewellery" : "Not Popular Jewellery"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isMensShirts && modalStyles.pillActive]}
               onPress={() => setIsMensShirts(!isMensShirts)}
-             >
-               <Ionicons name={isMensShirts ? "shirt" : "shirt-outline"} size={14} color={isMensShirts ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isMensShirts && modalStyles.pillTextActive]}>
-                 {isMensShirts ? "In Men's Shirts" : "Not in Men's Shirts"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isMensShirts ? "shirt" : "shirt-outline"} size={14} color={isMensShirts ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isMensShirts && modalStyles.pillTextActive]}>
+                {isMensShirts ? "In Men's Shirts" : "Not in Men's Shirts"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isWomensHighlights && modalStyles.pillActive]}
               onPress={() => setIsWomensHighlights(!isWomensHighlights)}
-             >
-               <Ionicons name={isWomensHighlights ? "female" : "female-outline"} size={14} color={isWomensHighlights ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isWomensHighlights && modalStyles.pillTextActive]}>
-                 {isWomensHighlights ? "In Women's Highlights" : "Not Women's Highlights"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isWomensHighlights ? "female" : "female-outline"} size={14} color={isWomensHighlights ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isWomensHighlights && modalStyles.pillTextActive]}>
+                {isWomensHighlights ? "In Women's Highlights" : "Not Women's Highlights"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isPremiumSarees && modalStyles.pillActive]}
               onPress={() => setIsPremiumSarees(!isPremiumSarees)}
-             >
-               <Ionicons name={isPremiumSarees ? "color-palette" : "color-palette-outline"} size={14} color={isPremiumSarees ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isPremiumSarees && modalStyles.pillTextActive]}>
-                 {isPremiumSarees ? "In Premium Sarees" : "Not Premium Sarees"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isPremiumSarees ? "color-palette" : "color-palette-outline"} size={14} color={isPremiumSarees ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isPremiumSarees && modalStyles.pillTextActive]}>
+                {isPremiumSarees ? "In Premium Sarees" : "Not Premium Sarees"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isFlashSale && modalStyles.pillActive]}
               onPress={() => setIsFlashSale(!isFlashSale)}
-             >
-               <Ionicons name={isFlashSale ? "flash" : "flash-outline"} size={14} color={isFlashSale ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isFlashSale && modalStyles.pillTextActive]}>
-                 {isFlashSale ? "FLASH SALE" : "Not Flash Sale"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isFlashSale ? "flash" : "flash-outline"} size={14} color={isFlashSale ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isFlashSale && modalStyles.pillTextActive]}>
+                {isFlashSale ? "FLASH SALE" : "Not Flash Sale"}
+              </Text>
+            </Pressable>
 
-             <Pressable 
+            <Pressable
               style={[modalStyles.pill, isAd && modalStyles.pillActive]}
               onPress={() => setIsAd(!isAd)}
-             >
-               <Ionicons name={isAd ? "megaphone" : "megaphone-outline"} size={14} color={isAd ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
-               <Text style={[modalStyles.pillText, isAd && modalStyles.pillTextActive]}>
-                 {isAd ? "In Advertisement" : "Not in Ad"}
-               </Text>
-             </Pressable>
+            >
+              <Ionicons name={isAd ? "megaphone" : "megaphone-outline"} size={14} color={isAd ? "white" : colors.subtleText} style={{ marginRight: 4 }} />
+              <Text style={[modalStyles.pillText, isAd && modalStyles.pillTextActive]}>
+                {isAd ? "In Advertisement" : "Not in Ad"}
+              </Text>
+            </Pressable>
           </View>
 
           <Text style={modalStyles.label}>Category</Text>
           <View style={modalStyles.optionsRow}>
-             {categories.map(cat => (
-               <Pressable 
-                key={cat.id} 
+            {categories.map(cat => (
+              <Pressable
+                key={cat.id}
                 style={[modalStyles.pill, catId === cat.id && modalStyles.pillActive]}
                 onPress={() => setCatId(cat.id)}
-               >
-                 <Text style={[modalStyles.pillText, catId === cat.id && modalStyles.pillTextActive]}>{cat.name}</Text>
-               </Pressable>
-             ))}
+              >
+                <Text style={[modalStyles.pillText, catId === cat.id && modalStyles.pillTextActive]}>{cat.name}</Text>
+              </Pressable>
+            ))}
           </View>
 
           <Text style={modalStyles.label}>Variations (Select Colors)</Text>
           <View style={modalStyles.optionsRow}>
-             {colors.map(c => (
-               <Pressable 
-                key={c.id} 
+            {colorOptions.map(c => (
+              <Pressable
+                key={c.id}
                 style={[modalStyles.pill, selColors.includes(c.id) && modalStyles.pillActive]}
                 onPress={() => {
                   if (selColors.includes(c.id)) setSelColors(selColors.filter(id => id !== c.id));
                   else setSelColors([...selColors, c.id]);
                 }}
-               >
-                 <Text style={[modalStyles.pillText, selColors.includes(c.id) && modalStyles.pillTextActive]}>{c.name}</Text>
-               </Pressable>
-             ))}
+              >
+                <Text style={[modalStyles.pillText, selColors.includes(c.id) && modalStyles.pillTextActive]}>{c.name}</Text>
+              </Pressable>
+            ))}
           </View>
 
           <Text style={modalStyles.label}>Variations (Select Sizes)</Text>
           <View style={modalStyles.optionsRow}>
-             {sizes.map(s => (
-               <Pressable 
-                key={s.id} 
+            {sizeOptions.map(s => (
+              <Pressable
+                key={s.id}
                 style={[modalStyles.pill, selSizes.includes(s.id) && modalStyles.pillActive]}
                 onPress={() => {
                   if (selSizes.includes(s.id)) setSelSizes(selSizes.filter(id => id !== s.id));
                   else setSelSizes([...selSizes, s.id]);
                 }}
-               >
-                 <Text style={[modalStyles.pillText, selSizes.includes(s.id) && modalStyles.pillTextActive]}>{s.name || s.size}</Text>
-               </Pressable>
-             ))}
+              >
+                <Text style={[modalStyles.pillText, selSizes.includes(s.id) && modalStyles.pillTextActive]}>{s.name || s.size}</Text>
+              </Pressable>
+            ))}
           </View>
         </ScrollView>
 
         <View style={modalStyles.footer}>
-           <Pressable style={modalStyles.cancelBtn} onPress={onClose}><Text style={modalStyles.cancelBtnText}>Cancel</Text></Pressable>
-           <Pressable style={modalStyles.saveBtn} onPress={() => onSave({
-             name, price: Number(price), discount_price: Number(discountPrice), quantity: Number(quantity),
-             metal, weight, size, description: desc, image: img, category_id: Number(catId),
-             is_featured: isFeatured ? 1 : 0,
-             is_auspicious: isAuspicious ? 1 : 0,
-             is_banner_main: isBannerMain ? 1 : 0,
-             is_banner_earrings: isBannerEarrings ? 1 : 0,
-             is_banner_necklaces: isBannerNecklaces ? 1 : 0,
-             is_popular_jewellery: isPopularJewellery ? 1 : 0,
-             is_mens_shirts: isMensShirts ? 1 : 0,
-             is_womens_highlights: isWomensHighlights ? 1 : 0,
-             is_premium_sarees: isPremiumSarees ? 1 : 0,
-             is_flash_sale: isFlashSale ? 1 : 0,
-             is_ad: isAd ? 1 : 0,
-             colors: selColors, sizes: selSizes
-           })}>
-             <Text style={modalStyles.saveBtnText}>Save Product</Text>
-           </Pressable>
+          <Pressable style={modalStyles.cancelBtn} onPress={onClose}><Text style={modalStyles.cancelBtnText}>Cancel</Text></Pressable>
+          <Pressable style={modalStyles.saveBtn} onPress={() => onSave({
+            name, price: Number(price), discount_price: Number(discountPrice), quantity: Number(quantity),
+            metal, weight, size, description: desc, image: img, category_id: Number(catId),
+            is_featured: isFeatured ? 1 : 0,
+            is_auspicious: isAuspicious ? 1 : 0,
+            is_banner_main: isBannerMain ? 1 : 0,
+            is_banner_earrings: isBannerEarrings ? 1 : 0,
+            is_banner_necklaces: isBannerNecklaces ? 1 : 0,
+            is_popular_jewellery: isPopularJewellery ? 1 : 0,
+            is_mens_shirts: isMensShirts ? 1 : 0,
+            is_womens_highlights: isWomensHighlights ? 1 : 0,
+            is_premium_sarees: isPremiumSarees ? 1 : 0,
+            is_flash_sale: isFlashSale ? 1 : 0,
+            is_ad: isAd ? 1 : 0,
+            colors: selColors, sizes: selSizes
+          })}>
+            <Text style={modalStyles.saveBtnText}>Save Product</Text>
+          </Pressable>
         </View>
       </View>
     </View>
   );
 }
 
+function ManageShopsModal({ visible, item, onClose, onSave }) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+  const [formData, setFormData] = useState({});
+
+  useEffect(() => {
+    if (visible && item) {
+      setFormData({ ...item });
+    }
+  }, [visible, item]);
+
+  if (!visible) return null;
+
+  const updateField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePickImage = (field) => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            updateField(field, event.target.result);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    } else {
+      Alert.alert("Notice", "Local file picking is currently supported on Web. For other platforms, please paste an image URL.");
+    }
+  };
+
+  const SectionTitle = ({ title, icon }) => (
+    <View style={modalStyles.sectionHeader}>
+      <Ionicons name={icon} size={18} color={colors.ink} />
+      <Text style={modalStyles.sectionTitleText}>{title}</Text>
+    </View>
+  );
+
+  return (
+    <View style={modalStyles.overlay}>
+      <View style={[modalStyles.container, { width: isMobile ? '95%' : 900, maxHeight: '90%' }]}>
+        <View style={modalStyles.header}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="storefront-outline" size={20} color={colors.accent} />
+            <Text style={modalStyles.title}>{formData.id ? "Edit Shop" : "New Shop"}</Text>
+          </View>
+          <Pressable onPress={onClose}><Ionicons name="close" size={24} color={colors.muted} /></Pressable>
+        </View>
+
+        <ScrollView style={modalStyles.body} showsVerticalScrollIndicator={false}>
+          <View style={{ paddingBottom: 30 }}>
+            <SectionTitle title="User Information" icon="person-outline" />
+            <View style={styles.formRow}>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>First Name <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={formData.first_name}
+                  onChangeText={(v) => updateField("first_name", v)}
+                  placeholder="First Name"
+                />
+              </View>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>Last Name</Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={formData.last_name}
+                  onChangeText={(v) => updateField("last_name", v)}
+                  placeholder="Last Name"
+                />
+              </View>
+              <View style={{ width: 180, alignItems: 'center' }}>
+                <View style={[styles.shopLogoContainer, { marginTop: 0, marginLeft: 0, width: 120, height: 120, borderRadius: 12 }]}>
+                   <Image source={{ uri: formData.user_profile_url || formData.logo_url }} style={{ width: '100%', height: '100%' }} />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>Phone Number <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={formData.phone}
+                  onChangeText={(v) => updateField("phone", v)}
+                  placeholder="Phone Number"
+                />
+              </View>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>Gender</Text>
+                <View style={modalStyles.input}>
+                  <Text style={{ fontSize: 14 }}>{formData.gender || "Select Gender"}</Text>
+                </View>
+              </View>
+              <View style={{ width: 180 }}>
+                <Text style={modalStyles.label}>User profile URL</Text>
+                <TextInput
+                  style={[modalStyles.input, { marginBottom: 8 }]}
+                  value={formData.user_profile_url}
+                  onChangeText={(v) => updateField("user_profile_url", v)}
+                  placeholder="https://..."
+                />
+                <Pressable 
+                  style={styles.filePicker}
+                  onPress={() => handlePickImage("user_profile_url")}
+                >
+                  <Text style={styles.filePickerBtn}>Choose File</Text>
+                  <Text style={styles.filePickerText} numberOfLines={1}>
+                    {formData.user_profile_url?.startsWith("data:") ? "Local file selected" : "No file chosen"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formColFull}>
+                <Text style={modalStyles.label}>Email <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={formData.email}
+                  onChangeText={(v) => updateField("email", v)}
+                  placeholder="Email"
+                />
+              </View>
+            </View>
+
+            <View style={{ height: 20 }} />
+
+            <SectionTitle title="Shop Information" icon="business-outline" />
+            <View style={styles.formRow}>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>Shop Name <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={formData.name}
+                  onChangeText={(v) => updateField("name", v)}
+                  placeholder="Shop Name"
+                />
+              </View>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>State</Text>
+                <View style={modalStyles.input}>
+                  <Text style={{ fontSize: 14 }}>{formData.state || "Select State"}</Text>
+                </View>
+              </View>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>Address</Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={formData.address}
+                  onChangeText={(v) => updateField("address", v)}
+                  placeholder="Address"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formCol}>
+                <Text style={modalStyles.label}>GST</Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={formData.gst_id}
+                  onChangeText={(v) => updateField("gst_id", v)}
+                  placeholder="Enter gst id"
+                />
+              </View>
+              <View style={{ flex: 2, alignItems: 'center' }}>
+                <View style={[styles.shopLogoContainer, { marginTop: 0, marginLeft: 0, width: 120, height: 120, borderRadius: 12 }]}>
+                   <Image source={{ uri: formData.logo_url }} style={{ width: '100%', height: '100%' }} />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={modalStyles.label}>Shop logo URL</Text>
+                <TextInput
+                  style={[modalStyles.input, { marginBottom: 8 }]}
+                  value={formData.logo_url}
+                  onChangeText={(v) => updateField("logo_url", v)}
+                  placeholder="https://..."
+                />
+                <Pressable 
+                  style={styles.filePicker}
+                  onPress={() => handlePickImage("logo_url")}
+                >
+                  <Text style={styles.filePickerBtn}>Choose File</Text>
+                  <Text style={styles.filePickerText} numberOfLines={1}>
+                    {formData.logo_url?.startsWith("data:") ? "Local file selected" : "No file chosen"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+               <View style={{ flex: 1 }}>
+                  <View style={[styles.shopCardBanner, { height: 160, borderRadius: 12, marginBottom: 12 }]}>
+                    <Image source={{ uri: formData.banner_url }} style={styles.shopBannerImg} />
+                  </View>
+                  <Text style={modalStyles.label}>Shop banner URL (Ratio 4:1)</Text>
+                  <TextInput
+                    style={[modalStyles.input, { marginBottom: 8 }]}
+                    value={formData.banner_url}
+                    onChangeText={(v) => updateField("banner_url", v)}
+                    placeholder="https://..."
+                  />
+                  <Pressable 
+                    style={styles.filePicker}
+                    onPress={() => handlePickImage("banner_url")}
+                  >
+                    <Text style={styles.filePickerBtn}>Choose File</Text>
+                    <Text style={styles.filePickerText} numberOfLines={1}>
+                      {formData.banner_url?.startsWith("data:") ? "Local file selected" : "No file chosen"}
+                    </Text>
+                  </Pressable>
+               </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formColFull}>
+                <Text style={modalStyles.label}>Description</Text>
+                <TextInput
+                  style={[modalStyles.input, { height: 80, textAlignVertical: 'top' }]}
+                  value={formData.description}
+                  onChangeText={(v) => updateField("description", v)}
+                  placeholder="Enter Description"
+                  multiline
+                />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+
+        <View style={modalStyles.footer}>
+          <Pressable style={[modalStyles.saveBtn, { backgroundColor: '#0d5731' }]} onPress={() => onSave(formData)}>
+            <Text style={modalStyles.saveBtnText}>Update</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// Consolidated Styles
+
 const modalStyles = StyleSheet.create({
   overlay: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
   },
   container: {
-    width: 600,
-    maxHeight: "90%",
     backgroundColor: "white",
     borderRadius: 16,
     overflow: "hidden",
-    boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
+    maxHeight: "90%",
+    ...(Platform.OS === "web" ? { boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" } : {}),
   },
   header: {
-    padding: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
   },
-  title: { fontSize: 18, fontWeight: "800", color: colors.ink },
-  body: { padding: 20 },
-  footer: { 
-    padding: 20, 
-    borderTopWidth: 1, 
-    borderTopColor: "#f1f5f9", 
-    flexDirection: "row", 
-    justifyContent: "flex-end", 
-    gap: 12 
+  title: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.ink,
   },
-  label: { fontSize: 12, fontWeight: "700", color: colors.subtleText, marginBottom: 6, marginTop: 12 },
+  body: {
+    padding: 20,
+  },
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.subtleText,
+    marginBottom: 8,
+    marginTop: 12
+  },
   input: {
     backgroundColor: "#f8fafc",
     borderWidth: 1,
     borderColor: "#e2e8f0",
     borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
+    padding: 12,
+    fontSize: 15,
     color: colors.ink,
-    outlineStyle: "none",
+    ...(Platform.OS === "web" ? { outlineStyle: "none" } : {}),
   },
   row: { flexDirection: "row", gap: 16 },
   optionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
-  pill: { 
-    paddingHorizontal: 10, 
-    paddingVertical: 6, 
-    borderRadius: 8, 
-    backgroundColor: "#f8fafc", 
-    borderWidth: 1, 
-    borderColor: "#e2e8f0" 
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    flexDirection: "row",
+    alignItems: "center",
   },
   pillActive: {
     backgroundColor: colors.accent,
@@ -1930,6 +3088,20 @@ const modalStyles = StyleSheet.create({
   cancelBtnText: { color: colors.subtleText, fontWeight: "700", fontSize: 14 },
   saveBtn: { backgroundColor: colors.accent, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
   saveBtnText: { color: "white", fontWeight: "700", fontSize: 14 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    paddingBottom: 8,
+  },
+  sectionTitleText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.ink,
+  },
 });
 
 const styles = StyleSheet.create({
@@ -1964,120 +3136,9 @@ const styles = StyleSheet.create({
   },
   mobileMenuBtn: { padding: 4 },
   mobileLogoText: { fontSize: 18, fontWeight: "900", color: colors.ink, letterSpacing: 1.5 },
-  sidebar: {
-    width: SIDEBAR_WIDTH,
-    backgroundColor: "#111822",
-    height: "100%",
-    paddingTop: spacing.xl,
-    zIndex: 1000,
-  },
-  sidebarMobile: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    boxShadow: "10px 0px 30px rgba(0,0,0,0.3)",
-  },
-  sidebarBackdrop: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    zIndex: 900,
-  },
-  sidebarCollapsed: {
-    width: 70,
-  },
-  sidebarHeader: {
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.xxl,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: colors.white,
-    letterSpacing: 2,
-    fontFamily: Platform.OS === "web" ? "Inter, sans-serif" : undefined,
-  },
-  collapseBtn: {
-    padding: 4,
-  },
-  sidebarScroll: {
-    flex: 1,
-  },
-  navHeader: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "rgba(255, 255, 255, 0.3)",
-    letterSpacing: 1.5,
-    paddingHorizontal: spacing.xl,
-    marginBottom: 10,
-    marginTop: 24,
-  },
-  navItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: spacing.xl,
-    gap: 12,
-    marginHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  navItemActive: {
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
-  },
-  navItemText: {
-    color: "rgba(255, 255, 255, 0.6)",
-    fontSize: 14,
-    fontWeight: "600",
-    flex: 1,
-  },
-  navItemTextActive: {
-    color: colors.accent,
-    fontWeight: "700",
-  },
-  countBadge: {
-    backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  countText: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 9,
-    fontWeight: "800",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    marginVertical: 10,
-    marginHorizontal: spacing.xl,
-  },
-  sidebarFooter: {
-    padding: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.05)",
-  },
-  logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-  },
-  logoutText: {
-    color: colors.danger,
-    fontWeight: "700",
-    fontSize: 14,
-  },
   content: {
     flex: 1,
+    height: "100%",
   },
   contentHeader: {
     height: 70,
@@ -2088,6 +3149,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
+  },
+  contentHeaderTitleGroup: {
+    gap: 2,
+  },
+  contentTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: colors.ink,
+    letterSpacing: -0.5,
+  },
+  contentSubtitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.accent,
+    textTransform: "uppercase",
   },
   contentSub: {
     fontSize: 12,
@@ -2154,48 +3230,66 @@ const styles = StyleSheet.create({
   dashboardContainer: {
     gap: 16,
   },
-  dashboardGrid: {
+  welcomeSection: {
+    marginBottom: 32,
+    marginTop: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: colors.ink,
+    letterSpacing: -0.5,
+  },
+  welcomeSub: {
+    fontSize: 15,
+    color: colors.subtleText,
+    marginTop: 4,
+  },
+  syncBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#0d5731",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  syncBtnText: { color: "white", fontSize: 14, fontWeight: "700" },
+  metricsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 16,
+    marginBottom: 32,
   },
   statCard: {
     backgroundColor: colors.white,
-    borderRadius: 20,
+    borderRadius: 12,
+    padding: 20,
     flex: 1,
-    minWidth: 280,
-    minHeight: 180,
+    minWidth: 260,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
-    overflow: "hidden",
+    borderColor: "#f1f5f9",
     justifyContent: "space-between",
-    marginRight: 10,
-    ...(Platform.OS === "web" ? { boxShadow: "0 4px 12px rgba(0,0,0,0.03)", transition: "all 0.3s ease" } : {}),
+    ...(Platform.OS === "web" ? { boxShadow: "0 4px 12px rgba(0,0,0,0.03)" } : {}),
   },
   statCardHeader: {
-    padding: 20,
-    paddingBottom: 0,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-  },
-  statLabel: {
-    fontSize: 13,
-    color: colors.subtleText,
-    fontWeight: "700",
   },
   statValue: {
     fontSize: 26,
     fontWeight: "900",
     color: colors.ink,
-    marginTop: 8,
-    letterSpacing: -0.5,
   },
-  statTrend: {
-    fontSize: 11,
-    color: colors.muted,
-    marginTop: 6,
-    fontWeight: "600",
+  statLabel: {
+    fontSize: 13,
+    color: colors.subtleText,
+    fontWeight: "700",
+    marginTop: 4,
   },
   statIconContainer: {
     width: 42,
@@ -2204,207 +3298,257 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  miniChartContainer: {
-    height: 70,
-    marginTop: 20,
-    alignItems: "center",
+  overviewSection: {
+    marginBottom: 24,
   },
-  statCardActive: {
-    backgroundColor: "#ffffff",
-  },
-  activeIndicator: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: colors.accent,
-    textTransform: "uppercase",
-    marginTop: 8,
-    letterSpacing: 0.5,
-  },
-  tableGraphSection: {
-    padding: 20,
-    backgroundColor: "#fcfcfd",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  tableGraphTitle: {
-    fontSize: 14,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: "800",
     color: colors.ink,
-    marginBottom: 16,
   },
-  tableGraphStyle: {
-    borderRadius: 12,
-  },
-  tableCardLoading: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-  },
-  loadingDataText: {
-    marginTop: 10,
-    color: colors.subtleText,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  tableCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    ...(Platform.OS === "web" ? { boxShadow: "0 8px 20px rgba(13, 87, 49, 0.08)" } : {}),
-  },
-  tableToolbar: {
-    padding: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-    gap: 12,
-  },
-  toolbarTop: {
+  sectionHeaderInline: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
   },
-  filterChipsRow: {
-    paddingVertical: 4,
+  liveBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-  },
-  filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "#f1f5f9",
+    borderRadius: 999,
+    backgroundColor: "#ecfdf5",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#bbf7d0",
   },
-  filterChipText: {
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#16a34a",
+  },
+  liveBadgeText: {
+    color: "#166534",
     fontSize: 12,
     fontWeight: "700",
-    color: colors.subtleText,
   },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    width: 300,
-    height: 38,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 13,
-    color: colors.ink,
-    outlineStyle: "none",
-  },
-  toolbarActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.accent,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  addBtnText: {
-    color: "white",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  orderStatusBtn: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 7,
-    minWidth: 72,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  orderStatusBtnText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  refreshBtn: {
-    padding: 8,
-    backgroundColor: "#f8fafc",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  tableContainer: {
-    padding: 12,
-  },
-  tableHeaderRow: {
-    flexDirection: "row",
-    backgroundColor: "#f8fafc",
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  cell: {
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    justifyContent: "center",
-  },
-  contentHeaderTitleGroup: {
-    gap: 2,
-  },
-  contentTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.ink,
-    letterSpacing: -0.5,
-  },
-  contentSubtitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.accent,
-    textTransform: "uppercase",
-  },
-  columnName: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: colors.subtleText,
-    letterSpacing: 0.5,
-  },
-  cellText: {
-    fontSize: 13,
-    color: colors.ink,
-    fontWeight: "500",
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: colors.muted,
-    fontSize: 14,
-  },
-  chartsGrid: {
+  statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 24,
+    gap: 16,
+    marginTop: 12,
+  },
+  overviewCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 20,
+    flex: 1,
+    minWidth: 220,
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+    borderLeftWidth: 4,
+    gap: 16,
+    ...(Platform.OS === "web" ? { boxShadow: "0 4px 12px rgba(0,0,0,0.03)" } : {}),
+  },
+  overviewIcon: {
+    backgroundColor: "#f8fafc",
+    padding: 10,
+    borderRadius: 10,
+  },
+  overviewValue: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.ink,
+  },
+  overviewLabel: {
+    fontSize: 12,
+    color: colors.subtleText,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  orderGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 12,
+  },
+  orderCard: {
+    borderRadius: 12,
+    padding: 16,
+    flex: 1,
+    minWidth: 130,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.02)",
+  },
+  orderIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  orderValue: {
+    fontSize: 22,
+    fontWeight: "800",
+  },
+  orderLabel: {
+    fontSize: 12,
+    color: colors.ink,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  adminWalletSection: {
+    marginBottom: 20,
+  },
+  walletGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    flexWrap: 'wrap',
+  },
+  walletMainCard: {
+    flex: 1.2,
+    minWidth: 300,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    justifyContent: 'space-between',
+    ...(Platform.OS === "web" ? { boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)" } : {}),
+  },
+  walletHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  walletCurrency: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.ink,
+  },
+  walletIconMain: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(13, 87, 49, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walletTrend: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  walletLabel: {
+    color: colors.subtleText,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  walletSubGrid: {
+    flex: 2,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  walletSmallCard: {
+    flex: 1,
+    minWidth: 200,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    justifyContent: 'space-between',
+    ...(Platform.OS === "web" ? { boxShadow: "0 4px 12px rgba(0,0,0,0.03)" } : {}),
+  },
+  walletSmallCurrency: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: colors.ink,
+  },
+  walletSmallLabel: {
+    color: colors.subtleText,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statisticsSection: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    ...(Platform.OS === "web" ? { boxShadow: "0 4px 12px rgba(0,0,0,0.03)" } : {}),
+  },
+  statisticsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  statisticsMeta: {
+    color: colors.subtleText,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statisticsContent: {
+    flexDirection: 'row',
+    gap: 30,
+    flexWrap: 'wrap',
+  },
+  statsOverviewColumn: {
+    flexDirection: 'column',
+    gap: 20,
+    width: 150,
+  },
+  statInfoBlock: {
+    paddingBottom: 20,
+  },
+  statBigNumber: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.ink,
+    marginBottom: 4,
+  },
+  statSmallLabel: {
+    color: colors.subtleText,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statisticsHighlights: {
+    flex: 1,
+    minWidth: 240,
+    gap: 12,
+  },
+  statisticsHighlightCard: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  statisticsHighlightLabel: {
+    color: colors.subtleText,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  statisticsHighlightValue: {
+    color: colors.ink,
+    fontSize: 22,
+    fontWeight: "800",
   },
   chartCard: {
     backgroundColor: colors.white,
@@ -2415,6 +3559,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 320,
     justifyContent: "space-between",
+    marginBottom: 24,
     ...(Platform.OS === "web" ? { boxShadow: "0 10px 40px -8px rgba(0,0,0,0.06)" } : {}),
   },
   chartHeader: {
@@ -2424,6 +3569,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     color: colors.ink,
+  },
+  chartSub: {
+    fontSize: 12,
+    color: colors.subtleText,
+    marginTop: 4,
   },
   chartTabsContainer: {
     flexDirection: "row",
@@ -2453,82 +3603,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.ink,
   },
-  chartSub: {
-    fontSize: 12,
-    color: colors.subtleText,
-    marginTop: 4,
-  },
-  goalsList: {
-    marginTop: 10,
-    gap: 20,
-  },
-  goalItem: {
-    gap: 8,
-  },
-  goalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  goalLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.ink,
-  },
-  goalValue: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.subtleText,
-  },
-  miniBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: "#f1f5f9",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
   chartStyle: {
     marginVertical: 8,
     borderRadius: 16,
-    marginLeft: Platform.OS === "web" ? -44 : -40, // Pull chart to the left to align Y-axis labels with container edge
-    paddingRight: 0,
+    marginLeft: Platform.OS === "web" ? -44 : -40,
   },
-  insightList: {
-    marginTop: 20,
-    gap: 12,
-  },
-  insightItem: {
+  chartsGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#f8fafc",
-    padding: 12,
-    borderRadius: 10,
-  },
-  insightText: {
-    color: colors.subtleText,
-    fontSize: 12,
-    fontWeight: "600",
+    flexWrap: "wrap",
+    gap: 24,
+    marginBottom: 24,
   },
   reviewSnippet: {
     padding: 12,
@@ -2563,5 +3647,498 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.subtleText,
     lineHeight: 16,
+  },
+  dataListHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  linkText: {
+    color: colors.accent,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  dataList: {
+    gap: 12,
+  },
+  dataRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  dataRowMain: {
+    flex: 1,
+    gap: 4,
+  },
+  dataRowTitle: {
+    color: colors.ink,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  dataRowSub: {
+    color: colors.subtleText,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  dataRowMeta: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  dataRowValue: {
+    color: colors.ink,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  dataRowStatus: {
+    color: colors.accent,
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+  tableCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+    ...(Platform.OS === "web" ? { boxShadow: "0 8px 20px rgba(13, 87, 49, 0.08)" } : {}),
+  },
+  tableCardLoading: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+  },
+  loadingDataText: {
+    marginTop: 10,
+    color: colors.subtleText,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  tableToolbar: {
+    padding: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    gap: 12,
+  },
+  toolbarTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f1f5f9",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 48,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 14,
+    color: "#1e293b",
+    fontWeight: "600",
+    ...(Platform.OS === "web" ? { outlineStyle: "none" } : {}),
+  },
+  toolbarActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  addBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  addBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "white",
+  },
+  refreshBtn: {
+    padding: 8,
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  filterChipsRow: {
+    paddingVertical: 4,
+    gap: 8,
+  },
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.subtleText,
+  },
+  tableHeader: {
+    padding: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  tableTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.ink,
+  },
+  tableSubtitle: {
+    fontSize: 12,
+    color: colors.subtleText,
+    marginTop: 2,
+  },
+  createBtn: {
+    backgroundColor: "#0d5731",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  createBtnText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  tableContainer: {
+    padding: 12,
+  },
+  tableHeaderRow: {
+    flexDirection: "row",
+    backgroundColor: "#f8fafc",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  columnName: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.subtleText,
+    letterSpacing: 0.5,
+  },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    backgroundColor: "white",
+  },
+  colorTableRow: {
+    minHeight: 78,
+  },
+  cell: {
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+  cellText: {
+    fontSize: 15,
+    color: colors.ink,
+    fontWeight: "500",
+  },
+  thumbnailContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  thumbnailImg: {
+    width: "100%",
+    height: "100%",
+  },
+  categoryBadge: {
+    backgroundColor: "#f6b51e",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 99,
+  },
+  categoryBadgeText: {
+    color: "#0d5731",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  toggleTrack: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#e2e8f0",
+    padding: 2,
+    justifyContent: "center",
+  },
+  toggleTrackActive: {
+    backgroundColor: "#0d5731",
+    alignItems: "flex-end",
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "white",
+  },
+  toggleThumbActive: {
+    backgroundColor: "white",
+  },
+  colorToggleTrack: {
+    width: 72,
+    height: 36,
+    borderRadius: 18,
+    padding: 3,
+  },
+  multiColorSwatch: {
+    width: 64,
+    height: 42,
+    borderRadius: 6,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  colorSwatch: {
+    width: 64,
+    height: 42,
+    borderRadius: 6,
+    borderColor: "#d1d5db",
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    marginTop: 10,
+  },
+  paginationInfo: {
+    fontSize: 13,
+    color: "#64748b",
+  },
+  paginationControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  pageBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pageBtnDisabled: {
+    backgroundColor: "#f8fafc",
+    borderColor: "#f1f5f9",
+  },
+  pageNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pageNumberActive: {
+    backgroundColor: colors.accent,
+  },
+  pageNumberText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.ink,
+  },
+  pageNumberTextActive: {
+    color: "white",
+  },
+  shopsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: 20,
+    gap: 20,
+  },
+  shopCard: {
+    width: 280,
+    backgroundColor: "white",
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+    position: "relative",
+    ...(Platform.OS === "web" ? { boxShadow: "0 4px 12px rgba(0,0,0,0.03)" } : {}),
+  },
+  shopCardBanner: {
+    height: 120,
+    width: "100%",
+  },
+  shopBannerImg: {
+    width: "100%",
+    height: "100%",
+    contentFit: "cover",
+  },
+  shopCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.2)",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: 12,
+    gap: 8,
+    opacity: 0.8,
+  },
+  shopActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shopLogoContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "white",
+    borderWidth: 4,
+    borderColor: "white",
+    marginTop: -32,
+    marginLeft: 20,
+    overflow: "hidden",
+    zIndex: 10,
+    ...(Platform.OS === "web" ? { boxShadow: "0 4px 8px rgba(0,0,0,0.1)" } : {}),
+  },
+  shopLogoImg: {
+    width: "100%",
+    height: "100%",
+    contentFit: "cover",
+  },
+  shopCardContent: {
+    padding: 20,
+    paddingTop: 12,
+  },
+  shopCardName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.ink,
+  },
+  shopCardEmail: {
+    fontSize: 12,
+    color: colors.subtleText,
+    marginTop: 2,
+  },
+  shopStatRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f8fafc",
+  },
+  shopStatLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748b",
+  },
+  shopStatBadge: {
+    backgroundColor: "#0d5731",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  shopStatBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  formRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 16,
+    flexWrap: "wrap",
+  },
+  formCol: {
+    flex: 1,
+    minWidth: 200,
+  },
+  formColFull: {
+    width: "100%",
+  },
+  filePicker: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  filePickerBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#e2e8f0",
+    color: colors.ink,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  filePickerText: {
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: colors.subtleText,
+    flex: 1,
+  },
+  tableGraphStyle: {
+    borderRadius: 12,
+  },
+  emptyState: {
+    padding: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    marginTop: 12,
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

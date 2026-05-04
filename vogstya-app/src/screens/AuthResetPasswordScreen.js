@@ -184,7 +184,6 @@ export default function AuthResetPasswordScreen() {
             </Pressable>
           </View>
         </View>
-        <Footer bleed={spacing.lg} />
       </Animated.ScrollView>
     </View>
   );

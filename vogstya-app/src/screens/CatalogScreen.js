@@ -64,7 +64,9 @@ export default function CatalogScreen() {
     return products;
   }, [mode, products]);
 
-  const [selectedCategories, setSelectedCategories] = useState(initialCategory ? [initialCategory] : []);
+  const [selectedCategories, setSelectedCategories] = useState(
+    initialCategory ? (Array.isArray(initialCategory) ? initialCategory : [initialCategory]) : []
+  );
   const [priceMin, setPriceMin] = useState(0);
   const [priceMax, setPriceMax] = useState(2000);
   const [priceRangeInitialized, setPriceRangeInitialized] = useState(false);
@@ -112,7 +114,7 @@ export default function CatalogScreen() {
   }, [maxPrice]);
 
   useEffect(() => {
-    setSelectedCategories(initialCategory ? [initialCategory] : []);
+    setSelectedCategories(initialCategory ? (Array.isArray(initialCategory) ? initialCategory : [initialCategory]) : []);
   }, [initialCategory]);
 
   useEffect(() => {

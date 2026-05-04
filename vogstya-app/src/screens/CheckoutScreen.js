@@ -320,10 +320,10 @@ export default function CheckoutScreen() {
             </View>
 
             
-            <Row k="Subtotal" v={`₹${subtotal.toFixed(2)}`} />
-            <Row k="Delivery Fee" v={`₹${rows.length ? DELIVERY_FEE.toFixed(2) : "0.00"}`} />
+            <Row k="Subtotal" v={`Rs.${subtotal.toFixed(2)}`} />
+            <Row k="Delivery Fee" v={`Rs.${rows.length ? DELIVERY_FEE.toFixed(2) : "0.00"}`} />
             <View style={[styles.divider, { marginVertical: 12 }]} />
-            <Row k="Grand Total" v={`₹${grandTotal.toFixed(2)}`} strong />
+            <Row k="Grand Total" v={`Rs.${grandTotal.toFixed(2)}`} strong />
             
             <Pressable 
               style={({ pressed }) => [

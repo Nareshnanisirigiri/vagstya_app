@@ -1,4 +1,25 @@
 import { db } from "../config/db.js";
+import {
+  APPROVED_COLOR_COLUMNS,
+  getApprovedColorOrderClause,
+  getApprovedColorOrderParams,
+  synchronizeApprovedColors,
+} from "../utils/colorCatalog.js";
+import { synchronizeAllAdminData } from "../utils/adminDataSeeder.js";
+import { INDIAN_STATES, GENDER_OPTIONS, ORDER_STATUS_CATALOG, HOME_SECTION_FILTERS } from "../utils/metadataCatalog.js";
+
+export async function getMetadata(req, res) {
+  try {
+    return res.json({
+      states: INDIAN_STATES,
+      genders: GENDER_OPTIONS,
+      orderStatuses: ORDER_STATUS_CATALOG,
+      homeFilters: HOME_SECTION_FILTERS,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to load metadata.", error: error.message });
+  }
+}
 
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -26,6 +47,28 @@ async function getKnownTables() {
 }
 
 async function assertTableExists(tableName) {
+  if (tableName === "pos_drafts") {
+    const createDraftsTable = `
+    CREATE TABLE IF NOT EXISTS pos_drafts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customer VARCHAR(255),
+      total_products INT,
+      subtotal DECIMAL(10,2),
+      discount DECIMAL(10,2),
+      total DECIMAL(10,2),
+      items_json TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+    `;
+    try {
+      await query(createDraftsTable);
+    } catch (e) {
+      console.error("Failed to assert pos_drafts table:", e);
+    }
+    return { tableName: "pos_drafts" };
+  }
+
   const tables = await getKnownTables();
   return tables.find((table) => table.tableName === tableName) ?? null;
 }
@@ -46,13 +89,17 @@ export async function getCategories(req, res) {
 
 export async function getColors(req, res) {
   try {
+    await synchronizeApprovedColors(query);
+
     const colors = await query(
-      `SELECT id, name, code, created_at, updated_at
+      `SELECT id, name, name_ar, shop_id, color_code, is_active, color_code AS code, is_active AS status, created_at, updated_at
        FROM colors
-       ORDER BY id DESC`
+       WHERE is_active = 1
+       ORDER BY ${getApprovedColorOrderClause()}`,
+      getApprovedColorOrderParams()
     );
 
-    return res.json({ rows: colors });
+    return res.json({ columns: APPROVED_COLOR_COLUMNS, rows: colors });
   } catch (error) {
     return res.status(500).json({ message: "Failed to load colors.", error: error.message });
   }
@@ -61,14 +108,30 @@ export async function getColors(req, res) {
 export async function getSizes(req, res) {
   try {
     const sizes = await query(
-      `SELECT id, name, size, created_at, updated_at
+      `SELECT id, name, size, is_active, created_at, updated_at
        FROM sizes
-       ORDER BY id DESC`
+       WHERE is_active = 1
+       ORDER BY id ASC`
     );
 
     return res.json({ rows: sizes });
   } catch (error) {
     return res.status(500).json({ message: "Failed to load sizes.", error: error.message });
+  }
+}
+
+export async function getUnits(req, res) {
+  try {
+    const units = await query(
+      `SELECT id, name, is_active, created_at, updated_at
+       FROM units
+       WHERE is_active = 1
+       ORDER BY id ASC`
+    );
+
+    return res.json({ rows: units });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to load units.", error: error.message });
   }
 }
 
@@ -130,7 +193,25 @@ export async function getSqlTableContent(req, res) {
 
     const primaryColumn = columns.find((column) => column.columnKey === "PRI")?.name || columns[0]?.name;
     const safeOrderColumn = primaryColumn ? ` ORDER BY \`${primaryColumn}\` DESC` : "";
-    const rows = await query(`SELECT * FROM \`${tableName}\`${safeOrderColumn} LIMIT ${limit}`);
+    
+    let rows = [];
+    try {
+      if (tableName === "sub_categories") {
+        rows = await query(`
+          SELECT sc.*, c.name as category_name 
+          FROM sub_categories sc 
+          LEFT JOIN categories c ON sc.category_id = c.id 
+          ORDER BY sc.id DESC 
+          LIMIT ${limit}
+        `);
+      } else {
+        rows = await query(`SELECT * FROM \`${tableName}\`${safeOrderColumn} LIMIT ${limit}`);
+      }
+    } catch (queryError) {
+      console.error(`Query failed for table "${tableName}":`, queryError.message);
+      // Return empty rows instead of 500 to keep UI stable
+      rows = [];
+    }
 
     return res.json({
       table: {
@@ -209,5 +290,14 @@ export async function deleteRecord(req, res) {
     return res.json({ success: true, message: "Record deleted successfully." });
   } catch (error) {
     return res.status(500).json({ message: `Failed to delete record from "${tableName}".`, error: error.message });
+  }
+}
+
+export async function seedAdminData(req, res) {
+  try {
+    const result = await synchronizeAllAdminData(query);
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to seed admin data.", error: error.message });
   }
 }

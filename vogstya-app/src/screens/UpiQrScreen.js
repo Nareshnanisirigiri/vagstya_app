@@ -101,7 +101,7 @@ export default function UpiQrScreen() {
 
           <View style={styles.card}>
             <Image source={{ uri: qrUrl }} style={styles.qr} contentFit="contain" transition={200} />
-            <Text style={styles.amount}>Amount: ₹{Number(amount || 0).toFixed(2)}</Text>
+            <Text style={styles.amount}>Amount: Rs.{Number(amount || 0).toFixed(2)}</Text>
             <Text style={styles.meta}>Order: {displayOrderId || `ORD-${orderId}`}</Text>
             <Text style={styles.keyLine}>UPI ID: {upiHandle || "merchant@razorpay"}</Text>
           </View>

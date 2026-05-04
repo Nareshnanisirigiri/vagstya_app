@@ -201,9 +201,6 @@ export default function HomeScreen() {
           </View>
         ))}
 
-        <View style={{ padding: 20, backgroundColor: '#f0f0f0', alignItems: 'center' }}>
-          <Text style={{ fontSize: 12, color: '#666' }}>API URL: {API_BASE_URL}</Text>
-        </View>
         <Footer />
       </ScrollView>
     </View>

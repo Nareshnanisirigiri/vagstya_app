@@ -51,7 +51,7 @@ export default function CartScreen() {
   const grandTotal = discountedSubtotal + delivery;
 
   function formatPrice(amount) {
-    return `₹${Number(amount || 0).toFixed(2)}`;
+    return `Rs.${Number(amount || 0).toFixed(2)}`;
   }
 
   function applyCoupon() {

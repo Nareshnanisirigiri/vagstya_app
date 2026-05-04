@@ -704,9 +704,10 @@ export async function startCheckout(req, res) {
           admin_commission,
           created_at,
           updated_at
-        ) VALUES (?, 0, ?, ?, ?, NULL, 0, ?, ?, 0, 0, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())`,
+        ) VALUES (?, ?, ?, ?, ?, NULL, 0, ?, ?, 0, 0, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())`,
         [
           shopId,
+          req.body?.isPosOrder ? 1 : 0,
           customerId,
           orderCode,
           DEFAULT_ORDER_PREFIX,

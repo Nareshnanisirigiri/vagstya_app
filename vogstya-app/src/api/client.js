@@ -30,14 +30,43 @@ function resolveWebApiBaseUrl() {
   return "https://vagstya-app.onrender.com/api";
 }
 
+function normalizeConfiguredBaseUrl(rawBase) {
+  const base = String(rawBase || "").trim();
+  if (!base) return "";
+
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    try {
+      const parsed = new URL(base);
+      const currentHost = window.location.hostname;
+
+      if (
+        parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1" ||
+        parsed.hostname === "::1"
+      ) {
+        parsed.hostname = currentHost;
+        return parsed.toString().replace(/\/$/, "");
+      }
+    } catch {
+      return base;
+    }
+  }
+
+  return base;
+}
+
 const WEB_DEFAULT = resolveWebApiBaseUrl();
 const ANDROID_DEFAULT = "http://10.0.2.2:5000/api";
-const IOS_DEFAULT = "http://localhost:5000/api";
 
-const DEV_IP = "192.168.1.16"; // Your current computer IP
+const DEV_IP = "localhost"; // Your current computer IP
+
+let base = normalizeConfiguredBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL || "");
+if (base.includes("192.168.1.16")) {
+  base = base.replace("192.168.1.16", "localhost");
+}
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  base ||
   (Platform.OS === "web" 
     ? WEB_DEFAULT 
     : Platform.OS === "android" 
@@ -72,7 +101,7 @@ export async function apiRequest(path, { method = "GET", body, token } = {}) {
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
-  } catch (error) {
+  } catch (_error) {
     throw new Error(`Network error while calling ${fullUrl}. Make sure the backend is running and reachable.`);
   }
 
@@ -108,12 +137,12 @@ export function mapBackendProduct(row) {
     name: row.name || "Product",
     category,
     price,
-    priceLabel: `₹${price.toFixed(2)}`,
+    priceLabel: `Rs. ${price.toFixed(2)}`,
     image:
       row.image ||
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=80",
     sale: Boolean(oldPrice && oldPrice > price),
-    oldPriceLabel: oldPrice ? `₹${oldPrice.toFixed(2)}` : null,
+    oldPriceLabel: oldPrice ? `Rs. ${oldPrice.toFixed(2)}` : null,
     rating,
     reviews,
     description: row.description || row.short_description || "",

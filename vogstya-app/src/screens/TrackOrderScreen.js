@@ -10,10 +10,11 @@ import { apiRequest } from "../api/client";
 import { colors, spacing } from "../theme/theme";
 
 const STATUS_STAGES = [
-  { key: "packed", label: "Packed", sub: "Order is being prepared" },
-  { key: "shipped", label: "Shipped", sub: "Order has left the warehouse" },
-  { key: "out for delivery", label: "Out for Delivery", sub: "Arriving today" },
-  { key: "delivered", label: "Delivered", sub: "Successfully received" },
+  { key: "packed", label: "Packed", sub: "Order is being prepared", color: "#6366f1" },
+  { key: "shipped", label: "Shipped", sub: "Order has left the warehouse", color: "#8b5cf6" },
+  { key: "out for delivery", label: "Out for Delivery", sub: "Arriving today", color: "#f59e0b" },
+  { key: "delivered", label: "Delivered", sub: "Successfully received", color: "#10b981" },
+  { key: "return", label: "Return / Refund", sub: "Return processed", color: "#ef4444" },
 ];
 
 function extractRawOrderId(routeParams) {
@@ -163,8 +164,12 @@ export default function TrackOrderScreen() {
     );
   }
 
-  const currentStatus = String(order.orderStatus || "Pending").toLowerCase();
-  const isReturned = currentStatus.includes("return") || currentStatus.includes("refund");
+  let currentStatus = String(order.orderStatus || "Pending").toLowerCase();
+  if (currentStatus.includes("return") || currentStatus.includes("refund")) {
+    currentStatus = "return";
+  } else if (currentStatus === "out_for_delivery") {
+    currentStatus = "out for delivery";
+  }
   
   const activeIndex = STATUS_STAGES.findIndex(s => s.key === currentStatus);
 
@@ -181,57 +186,55 @@ export default function TrackOrderScreen() {
 
         <View style={styles.trackingCard}>
           <View style={styles.statusHeader}>
-            <Text style={styles.statusTitle}>
-              {isReturned ? "Return / Refund" : activeIndex >= 0 ? STATUS_STAGES[activeIndex].label : "In Transit : On Schedule"}
+            <Text style={[styles.statusTitle, activeIndex >= 0 && { color: STATUS_STAGES[activeIndex].color }]}>
+              {activeIndex >= 0 ? STATUS_STAGES[activeIndex].label : "In Transit : On Schedule"}
             </Text>
             <Text style={styles.expectedText}>
               Expected delivery: <Text style={{ color: '#008a00', fontWeight: '700' }}>{new Date(new Date(order.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000).toDateString()}</Text>
             </Text>
           </View>
 
-          {isReturned ? (
-            <View style={styles.returnSection}>
-               <Ionicons name="reload-circle" size={40} color="#b91c1c" />
-               <View style={{ marginLeft: 12 }}>
-                 <Text style={styles.returnTitle}>Return complete</Text>
-                 <Text style={styles.returnDesc}>Your return is complete. The refund has been processed to your original payment method.</Text>
-               </View>
-            </View>
-          ) : (
-            <View style={styles.horizontalTimelineWrapper}>
-              <View style={styles.horizontalTimeline}>
-                {STATUS_STAGES.map((stage, index) => {
-                  const isCompleted = index <= activeIndex;
-                  const isCurrent = index === activeIndex;
-                  const isLast = index === STATUS_STAGES.length - 1;
-                  const hasNextLine = !isLast;
-                  const isLineCompleted = index < activeIndex;
+          <View style={styles.horizontalTimelineWrapper}>
+            <View style={styles.horizontalTimeline}>
+              {STATUS_STAGES.map((stage, index) => {
+                let isActive = false;
+                let isCurrent = false;
 
-                  return (
-                    <View key={stage.key} style={[styles.timelineItem, { flex: isLast ? 0 : 1 }]}>
-                      {/* Line & Dot */}
-                      <View style={styles.dotLineRow}>
-                        <View style={[styles.dot, isCompleted && styles.dotCompleted]}>
-                           {isCompleted && <View style={styles.dotInner} />}
-                        </View>
-                        {hasNextLine && (
-                          <View style={[styles.horizontalLine, isLineCompleted && styles.lineCompleted]} />
-                        )}
+                if (currentStatus !== "cancelled") {
+                  isActive = activeIndex >= 0 && index <= activeIndex;
+                  isCurrent = index === activeIndex;
+                }
+
+                const isLast = index === STATUS_STAGES.length - 1;
+                const hasNextLine = !isLast;
+                const isLineCompleted = index < activeIndex;
+                const stepColor = isActive ? stage.color : "#d1d5db";
+                const lineColor = isLineCompleted ? STATUS_STAGES[index + 1].color : "#e5e7eb";
+
+                return (
+                  <View key={stage.key} style={[styles.timelineItem, { flex: isLast ? 0 : 1 }]}>
+                    {/* Line & Dot */}
+                    <View style={styles.dotLineRow}>
+                      <View style={[styles.dot, isActive && { backgroundColor: stepColor, borderColor: stepColor }, isCurrent && { transform: [{ scale: 1.1 }] }]}>
+                         {isActive && <View style={styles.dotInner} />}
                       </View>
-                      
-                      {/* Label */}
-                      <View style={styles.labelContainer}>
-                        <Text style={[styles.stageLabel, isCompleted && styles.stageLabelActive]}>
-                          {stage.label}
-                        </Text>
-                        {isCurrent && <Text style={styles.stageSub}>{stage.sub}</Text>}
-                      </View>
+                      {hasNextLine && (
+                        <View style={[styles.horizontalLine, { backgroundColor: lineColor }]} />
+                      )}
                     </View>
-                  );
-                })}
-              </View>
+                    
+                    {/* Label */}
+                    <View style={styles.labelContainer}>
+                      <Text style={[styles.stageLabel, isActive && { color: colors.ink, fontWeight: "800" }]}>
+                        {stage.label}
+                      </Text>
+                      {isCurrent && <Text style={[styles.stageSub, { color: stepColor }]}>{stage.sub}</Text>}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
-          )}
+          </View>
 
           <View style={styles.footerInfo}>
              <Ionicons name="location-outline" size={20} color={colors.subtleText} />

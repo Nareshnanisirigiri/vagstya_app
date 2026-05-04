@@ -147,9 +147,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: colors.white,
     fontWeight: "800",
-    textShadowColor: "rgba(0,0,0,0.3)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    ...Platform.select({
+      web: { textShadow: "0 2px 4px rgba(0,0,0,0.3)" },
+      default: {
+        textShadowColor: "rgba(0,0,0,0.3)",
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
+      }
+    }),
   },
   bannerSubtitle: {
     fontSize: 48,
@@ -162,8 +167,13 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "700",
     textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    ...Platform.select({
+      web: { textShadow: "0 1px 2px rgba(0,0,0,0.3)" },
+      default: {
+        textShadowColor: "rgba(0,0,0,0.3)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+      }
+    }),
   },
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -26,7 +26,11 @@ const NAV_BREAK = 920;
 const LINKS = [
   { screen: "Home", label: "Home" },
   { screen: "Shop", label: "Shop" },
-  { screen: "Collection", label: "Collection" },
+  { screen: "Shop", label: "Fashion Accessories", cat: "Fashion Accessories" },
+  { screen: "Shop", label: "Festive Vibes", cat: "Festive Vibes" },
+  { screen: "Shop", label: "Jewellery", cat: "Jewellery" },
+  { screen: "Shop", label: "Men's ware", cat: "Men" },
+  { screen: "Shop", label: "Women's ware", cat: ["Women", "Sarees"] },
   { screen: "BestDeals", label: "Best Sale" },
 ];
 
@@ -53,8 +57,50 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [history, setHistory] = useState([]);
-  
+  const [location, setLocation] = useState("Select your location");
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [pincode, setPincode] = useState("");
+
   const searchAnim = useRef(new Animated.Value(0)).current;
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+
+  const handleApplyPincode = () => {
+    if (!pincode || pincode.length < 6) {
+      alert("Please enter a valid 6-digit pincode.");
+      return;
+    }
+    setLocation(`Deliver to: ${pincode}`);
+    setLocationModalOpen(false);
+  };
+
+  const handleDetectLocation = () => {
+    if (Platform.OS === 'web' && navigator.geolocation) {
+      setLocation("Detecting...");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setTimeout(() => {
+            setLocation("Hyderabad 500001");
+            setLocationModalOpen(false);
+          }, 1000);
+        },
+        (err) => {
+          setLocation("Location Access Denied");
+          alert("Please enable location permissions in your browser.");
+        }
+      );
+    } else {
+      alert("Location detection is not supported on this device/browser.");
+    }
+  };
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation("Hyderabad 500001"),
+        () => setLocation("Set Location")
+      );
+    }
+  }, []);
 
   useEffect(() => {
     Animated.spring(searchAnim, {
@@ -65,24 +111,33 @@ export default function Header() {
     }).start();
   }, [searchOpen]);
 
-  // Load history
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(blinkAnim, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(blinkAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
         const saved = await AsyncStorage.getItem("@vogstya_search_history");
         if (saved) setHistory(JSON.parse(saved));
-      } catch (e) {}
+      } catch (e) { }
     })();
   }, []);
 
-  // Filter products
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return products.filter(p => 
-      p.name.toLowerCase().includes(q) || 
+    return products.filter(p =>
+      p.name.toLowerCase().includes(q) ||
       p.category.toLowerCase().includes(q)
-    ).slice(0, 8); // Show top 8
+    ).slice(0, 8);
   }, [query, products]);
 
   const saveHistory = async (q) => {
@@ -106,57 +161,65 @@ export default function Header() {
     }
   };
 
-  const go = (screen) => {
-    navigation.navigate(screen);
+  const go = (screen, cat, mode) => {
+    const params = {};
+    if (cat) {
+      params.selectedCategory = cat;
+      params.collectionTitle = Array.isArray(cat) ? cat[0] : cat;
+    }
+    if (mode) {
+      params.mode = mode;
+    }
+
+    navigation.navigate(screen, params);
     setMenuOpen(false);
     setSearchOpen(false);
   };
 
-  const searchWidth = searchAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, compact ? width * 0.5 : 300],
-  });
-
-  const searchOpacity = searchAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
   return (
     <View style={styles.wrapper}>
-      {/* Click-outside backdrop */}
       {searchOpen && (
-        <Pressable 
-          style={[styles.backdrop, { height: height * 2 }]} 
+        <Pressable
+          style={[styles.backdrop, { height: height * 2 }]}
           onPress={() => { setSearchOpen(false); setQuery(""); }}
         />
       )}
 
       <View style={styles.topBar}>
-        <Text style={styles.topText}>FREE SHIPPING ON ORDERS OVER ₹100 | USE CODE: VOGSTYA20</Text>
+        <Text style={styles.topText}>FREE SHIPPING ON ORDERS OVER Rs.100 | USE CODE: VOGSTYA20</Text>
       </View>
 
       <View style={styles.container}>
-        {/* Unified Row: Logo, Search, and Icons */}
         <View style={[styles.unifiedRow, { gap: compact ? 8 : 20 }]}>
           <Pressable onPress={() => go("Home")} style={[styles.logoWrapper, compact && { marginLeft: -5, marginRight: 5 }]}>
-            <Image 
-              source={require("../../assets/logo-.png")} 
-              style={[styles.logoImage, { width: compact ? 100 : 200, height: compact ? 30 : 60 }]} 
+            <Image
+              source={require("../../assets/logo-.png")}
+              style={[styles.logoImage, { width: compact ? 100 : 200, height: compact ? 30 : 60 }]}
               contentFit="contain"
             />
           </Pressable>
 
-          {/* Search Bar (Middle) */}
+          {!compact && (
+            <Pressable
+              style={styles.locationWrapper}
+              onPress={() => setLocationModalOpen(true)}
+            >
+              <Ionicons name="location-outline" size={18} color={colors.ink} />
+              <View style={styles.locationTextContainer}>
+                <Text style={styles.locationLabel}>Deliver to</Text>
+                <Text style={styles.locationValue} numberOfLines={1}>{location}</Text>
+              </View>
+            </Pressable>
+          )}
+
           <View style={styles.middleSection}>
-            <AmazonSearchBar 
+            <AmazonSearchBar
               onSearch={(q, cat) => {
                 navigation.navigate("Search", { q, selectedCategory: cat });
               }}
             />
           </View>
 
-          {/* Icons (Right) */}
           <View style={[styles.icons, compact && { gap: 8 }]}>
             <Pressable onPress={() => go("Wishlist")} style={styles.iconWithBadge}>
               <Ionicons name="heart-outline" size={compact ? 20 : 24} color={colors.ink} />
@@ -190,26 +253,68 @@ export default function Header() {
         </View>
       </View>
 
-      {/* Navigation Links Bar (Below Search) */}
+      {compact && (
+        <Pressable
+          style={styles.mobileLocationBar}
+          onPress={() => setLocationModalOpen(true)}
+        >
+          <View style={styles.mobileLocationContent}>
+            <Ionicons name="location-outline" size={14} color={colors.ink} />
+            <Text style={styles.mobileLocationText}>Deliver to {location}</Text>
+            <Ionicons name="chevron-down" size={12} color={colors.muted} />
+          </View>
+        </Pressable>
+      )}
+
       <View style={styles.navBar}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.navContent}
         >
-          {LINKS.map(({ screen, label }) => (
-            <Pressable 
-              key={screen} 
-              onPress={() => go(screen)} 
-              style={[styles.navItem, active === screen && styles.navItemActive]}
-            >
-              <Text style={[styles.navText, active === screen && styles.navTextActive]}>{label}</Text>
-            </Pressable>
-          ))}
+          {LINKS.map(({ screen, label, cat, mode }) => {
+            const isBestSale = label === "Best Sale";
+            const isActive = active === screen && (
+              mode 
+                ? route.params?.mode === mode
+                : (cat
+                  ? (Array.isArray(cat)
+                    ? JSON.stringify(route.params?.selectedCategory) === JSON.stringify(cat)
+                    : route.params?.selectedCategory === cat)
+                  : (!route.params?.selectedCategory && !route.params?.mode))
+            );
+
+            const itemContent = (
+              <Text style={[
+                styles.navText, 
+                isActive && styles.navTextActive,
+                isBestSale && { color: colors.highlight, fontWeight: "900" }
+              ]}>
+                {label}
+              </Text>
+            );
+
+            return (
+              <Pressable
+                key={label}
+                onPress={() => go(screen, cat, mode)}
+                style={[
+                  styles.navItem, 
+                  isActive && styles.navItemActive,
+                  isBestSale && { backgroundColor: "rgba(246, 181, 30, 0.1)", borderColor: colors.highlight, borderWidth: 1 }
+                ]}
+              >
+                {isBestSale ? (
+                  <Animated.View style={{ opacity: blinkAnim }}>
+                    {itemContent}
+                  </Animated.View>
+                ) : itemContent}
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 
-      {/* Dropdown Results */}
       {searchOpen && (
         <View style={styles.resultsDropdown}>
           <ScrollView style={styles.searchScroll} showsVerticalScrollIndicator={false}>
@@ -217,8 +322,8 @@ export default function Header() {
               <View style={styles.searchSection}>
                 <Text style={styles.searchSectionTitle}>Top Results</Text>
                 {searchResults.map(p => (
-                  <Pressable 
-                    key={p.id} 
+                  <Pressable
+                    key={p.id}
                     style={styles.resultItem}
                     onPress={() => {
                       saveHistory(query);
@@ -260,13 +365,13 @@ export default function Header() {
                     ))}
                   </View>
                 )}
-                
+
                 <View style={styles.searchSection}>
                   <Text style={styles.searchSectionTitle}>Popular Categories</Text>
                   <View style={styles.popCats}>
                     {POPULAR_CATS.map(item => (
-                      <Pressable 
-                        key={item.label} 
+                      <Pressable
+                        key={item.label}
                         style={styles.popCatChip}
                         onPress={() => {
                           navigation.navigate("Shop", { selectedCategory: item.cat, collectionTitle: item.label });
@@ -286,28 +391,109 @@ export default function Header() {
 
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setMenuOpen(false)}>
-          <Pressable style={styles.drawer} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={styles.drawer} onPress={(e) => { }}>
             <View style={styles.drawerHeader}>
               <Text style={styles.drawerTitle}>Menu</Text>
               <Pressable onPress={() => setMenuOpen(false)}>
                 <Ionicons name="close" size={28} color={colors.ink} />
               </Pressable>
             </View>
-            {LINKS.map(({ screen, label }) => (
-              <Pressable
-                key={screen}
-                onPress={() => go(screen)}
-                style={[styles.drawerLink, active === screen && styles.drawerLinkActive]}
-              >
-                <Text style={[styles.drawerLinkText, active === screen && styles.drawerLinkTextActive]}>
-                  {label}
-                </Text>
-              </Pressable>
-            ))}
-            <Pressable style={styles.drawerLink} onPress={() => go("Orders")}>
-              <Text style={styles.drawerLinkText}>Orders</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            {LINKS.map(({ screen, label, cat, mode }) => {
+              const isBestSale = label === "Best Sale";
+              const isActive = active === screen && (
+                mode 
+                  ? route.params?.mode === mode
+                  : (cat
+                    ? (Array.isArray(cat)
+                      ? JSON.stringify(route.params?.selectedCategory) === JSON.stringify(cat)
+                      : route.params?.selectedCategory === cat)
+                    : (!route.params?.selectedCategory && !route.params?.mode))
+              );
+
+              const itemContent = (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={[
+                    styles.drawerLinkText, 
+                    isActive && styles.drawerLinkTextActive,
+                    isBestSale && { color: colors.highlight }
+                  ]}>
+                    {label}
+                  </Text>
+                  {isBestSale && <Ionicons name="flash" size={16} color={colors.highlight} />}
+                </View>
+              );
+
+              return (
+                <Pressable
+                  key={label}
+                  onPress={() => go(screen, cat, mode)}
+                  style={[
+                    styles.drawerLink, 
+                    isActive && styles.drawerLinkActive,
+                    isBestSale && { borderLeftWidth: 4, borderLeftColor: colors.highlight }
+                  ]}
+                >
+                  {isBestSale ? (
+                    <Animated.View style={{ opacity: blinkAnim }}>
+                      {itemContent}
+                    </Animated.View>
+                  ) : itemContent}
+                </Pressable>
+              );
+            })}
+            <Pressable
+              style={[styles.drawerLink, active === "Orders" && styles.drawerLinkActive]}
+              onPress={() => go("Orders")}
+            >
+              <Text style={[styles.drawerLinkText, active === "Orders" && styles.drawerLinkTextActive]}>
+                Orders
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={active === "Orders" ? colors.accent : colors.muted} />
             </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={locationModalOpen} transparent animationType="slide" onRequestClose={() => setLocationModalOpen(false)}>
+        <Pressable style={[styles.modalBackdrop, { justifyContent: "center", paddingTop: 0 }]} onPress={() => setLocationModalOpen(false)}>
+          <Pressable style={[styles.locationModal, { width: compact ? "90%" : 400, marginTop: 0 }]} onPress={() => { }}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose your location</Text>
+              <Pressable onPress={() => setLocationModalOpen(false)}>
+                <Ionicons name="close" size={24} color={colors.ink} />
+              </Pressable>
+            </View>
+
+            <View style={styles.modalContent}>
+              <Text style={styles.modalDesc}>Select a delivery location to see product availability and delivery options.</Text>
+
+              <Pressable
+                style={({ pressed }) => [styles.detectBtn, pressed && { opacity: 0.8 }]}
+                onPress={handleDetectLocation}
+              >
+                <Ionicons name="navigate-outline" size={20} color={colors.accent} />
+                <Text style={styles.detectBtnText}>Detect live location</Text>
+              </Pressable>
+
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TextInput
+                style={styles.pincodeInput}
+                placeholder="Enter a pincode"
+                placeholderTextColor={colors.muted}
+                keyboardType="numeric"
+                value={pincode}
+                onChangeText={setPincode}
+                maxLength={6}
+              />
+              <Pressable style={styles.applyBtn} onPress={handleApplyPincode}>
+                <Text style={styles.applyBtnText}>Apply</Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -372,8 +558,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   logoWrapper: {
-    marginRight: 10,
-    marginLeft: -10,
+    marginRight: 0,
+    marginLeft: -20,
   },
   logoImage: {
     width: 200,
@@ -381,7 +567,7 @@ const styles = StyleSheet.create({
   },
   middleSection: {
     flex: 1,
-    maxWidth: 800,
+    maxWidth: 700,
   },
   mobileSearchRow: {
     marginTop: 4,
@@ -481,7 +667,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.surface,
   },
   drawerLinkActive: {
-    backgroundColor: "rgba(31, 122, 74, 0.1)", 
+    backgroundColor: "rgba(31, 122, 74, 0.1)",
     marginHorizontal: -spacing.lg,
     paddingHorizontal: spacing.lg,
     borderRadius: 10,
@@ -550,5 +736,144 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+  },
+  locationWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "transparent",
+    minWidth: 120,
+    marginLeft: -40,
+  },
+  locationTextContainer: {
+    marginLeft: 2,
+  },
+  locationLabel: {
+    fontSize: 11,
+    color: colors.muted,
+    fontWeight: "600",
+  },
+  locationValue: {
+    fontSize: 13,
+    color: colors.ink,
+    fontWeight: "800",
+    marginTop: -2,
+  },
+  mobileLocationBar: {
+    backgroundColor: "rgba(13, 87, 49, 0.04)",
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(13, 87, 49, 0.05)",
+  },
+  mobileLocationContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  mobileLocationText: {
+    fontSize: 12,
+    color: colors.ink,
+    fontWeight: "600",
+    flex: 1,
+  },
+  locationModal: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    alignSelf: "center",
+    overflow: "hidden",
+    maxHeight: "95%",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 20px 30px rgba(0,0,0,0.15)",
+      },
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.15,
+        shadowRadius: 30,
+        elevation: 20,
+      }
+    }),
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: spacing.md,
+    backgroundColor: "#f8faf9",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.ink,
+  },
+  modalContent: {
+    padding: spacing.xl,
+  },
+  modalDesc: {
+    fontSize: 14,
+    color: colors.subtleText,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  detectBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    backgroundColor: "#fff",
+  },
+  detectBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.accent,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#eee",
+  },
+  dividerText: {
+    fontSize: 12,
+    color: colors.muted,
+    textTransform: "uppercase",
+    fontWeight: "600",
+  },
+  pincodeInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
+    color: colors.ink,
+    marginBottom: 12,
+  },
+  applyBtn: {
+    backgroundColor: colors.accent,
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  applyBtnText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

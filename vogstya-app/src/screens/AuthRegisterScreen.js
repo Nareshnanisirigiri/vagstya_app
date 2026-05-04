@@ -229,7 +229,6 @@ export default function AuthRegisterScreen() {
             </View>
           </View>
         </View>
-        <Footer bleed={spacing.lg} />
       </Animated.ScrollView>
     </View>
   );

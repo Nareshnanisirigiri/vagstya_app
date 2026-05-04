@@ -131,7 +131,6 @@ export default function AuthForgotPasswordScreen() {
             </Pressable>
           </View>
         </View>
-        <Footer bleed={spacing.lg} />
       </Animated.ScrollView>
     </View>
   );

@@ -86,17 +86,6 @@ export default function ProductCard({ item, index = 0, compact }) {
               <Ionicons name="eye-outline" size={18} color={colors.ink} />
             </Pressable>
           </View>
-          <Pressable
-            onHoverIn={() => setHovered(true)}
-            onPress={(e) => {
-              if (e?.stopPropagation) e.stopPropagation();
-              addToCart(item.id, 1);
-              showMessage(`${item.name} added to cart`);
-            }}
-            style={[styles.addCart, !showAddCart && styles.addCartHiddenWeb]}
-          >
-            <Text style={styles.addCartText}>ADD TO CART</Text>
-          </Pressable>
         </View>
         <Pressable style={styles.infoBlock} onHoverIn={() => setHovered(true)} onPress={openDetails}>
           <Text style={styles.category}>{item.category.toUpperCase()}</Text>
@@ -129,6 +118,30 @@ export default function ProductCard({ item, index = 0, compact }) {
               </Text>
             </View>
           )}
+
+          {/* Action Buttons for Mobile/Always visible */}
+          <View style={styles.mobileActions}>
+            <Pressable 
+              style={styles.mobileAddCart} 
+              onPress={(e) => {
+                if (e?.stopPropagation) e.stopPropagation();
+                addToCart(item.id, 1);
+                showMessage(`${item.name} added to cart`);
+              }}
+            >
+              <Text style={styles.mobileAddCartText}>ADD TO CART</Text>
+            </Pressable>
+            <Pressable 
+              style={styles.mobileBuyBtn} 
+              onPress={(e) => {
+                if (e?.stopPropagation) e.stopPropagation();
+                addToCart(item.id, 1);
+                navigation.navigate("Cart");
+              }}
+            >
+              <Text style={styles.mobileBuyText}>BUY NOW</Text>
+            </Pressable>
+          </View>
         </Pressable>
       </Pressable>
     </Animated.View>
@@ -146,6 +159,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(13, 87, 49, 0.05)",
     overflow: "hidden",
+    minHeight: Platform.OS === 'web' ? 'auto' : 380,
     ...Platform.select({
       web: {
         boxShadow: "0 15px 40px rgba(13, 87, 49, 0.1), 0 4px 12px rgba(0, 0, 0, 0.02)",
@@ -161,6 +175,7 @@ const styles = StyleSheet.create({
   },
   cardCompact: {
     padding: 6,
+    minHeight: Platform.OS === 'web' ? 'auto' : 350,
   },
   imageBox: {
     position: "relative",
@@ -314,5 +329,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.muted,
     fontWeight: "600",
+  },
+  mobileActions: {
+    marginTop: 12,
+    width: "100%",
+    gap: 8,
+  },
+  mobileAddCart: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: colors.highlight,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  mobileAddCartText: {
+    color: colors.ink,
+    fontWeight: "700",
+    fontSize: 11,
+  },
+  mobileBuyBtn: {
+    backgroundColor: colors.highlight,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  mobileBuyText: {
+    color: colors.ink,
+    fontWeight: "800",
+    fontSize: 11,
   },
 });

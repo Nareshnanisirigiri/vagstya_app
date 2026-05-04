@@ -2,16 +2,19 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Modal, Pressable, Animated, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useStore } from "../context/StoreContext";
+import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../api/client";
 import { colors, spacing } from "../theme/theme";
 
-const TWO_MINUTES = 2 * 60 * 1000;
-const FIVE_MINUTES = 5 * 60 * 1000;
+const TEN_MINUTES = 10 * 60 * 1000;
+
+// Module-level flags to persist across HomeScreen re-mounts during the session
+let sessionInitialAdShown = false;
+let sessionPostLoginAdShown = false;
 
 export default function AdPopup() {
   const navigation = useNavigation();
-  const { user } = useStore();
+  const { user } = useAuth();
   const [visible, setVisible] = useState(false);
   const [ad, setAd] = useState(null);
   const blinkAnim = useRef(new Animated.Value(1)).current;
@@ -43,15 +46,33 @@ export default function AdPopup() {
     }
   }, [visible]);
 
-  // Interval Logic
+  // Logic: 
+  // 1. Show once on first load (link open)
+  // 2. Before login: Every 10 mins
+  // 3. After login: Show once then no more
   useEffect(() => {
-    const interval = user ? FIVE_MINUTES : TWO_MINUTES;
-    const timer = setInterval(() => {
-      fetchAd();
-      setVisible(true);
-    }, interval);
-
-    return () => clearInterval(timer);
+    if (!user) {
+      // Not logged in: Show once immediately if first time, then interval
+      if (!sessionInitialAdShown) {
+        fetchAd();
+        setVisible(true);
+        sessionInitialAdShown = true;
+      }
+      const timer = setInterval(() => {
+        fetchAd();
+        setVisible(true);
+      }, TEN_MINUTES);
+      return () => clearInterval(timer);
+    } else {
+      // Logged in: Show once if post-login ad hasn't been shown yet
+      if (!sessionPostLoginAdShown) {
+        fetchAd();
+        setVisible(true);
+        sessionPostLoginAdShown = true;
+        // Also mark initial as shown so it doesn't trigger if they logout later
+        sessionInitialAdShown = true; 
+      }
+    }
   }, [user]);
 
   if (!visible) return null;
