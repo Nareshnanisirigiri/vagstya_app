@@ -23,11 +23,11 @@ function resolveWebApiBaseUrl() {
     }
 
     if (protocol === "https:") {
-      return "https://vagstya-backend.onrender.com/api";
+      return "https://vagstya-app.onrender.com/api";
     }
   }
 
-  return "https://vagstya-backend.onrender.com/api";
+  return "https://vagstya-app.onrender.com/api";
 }
 
 function normalizeConfiguredBaseUrl(rawBase) {
@@ -64,6 +64,14 @@ const DEV_IP = "localhost"; // Your current computer IP
 let base = normalizeConfiguredBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL || "");
 if (base.includes("192.168.1.16")) {
   base = base.replace("192.168.1.16", "localhost");
+}
+
+// Security: If we are on a public production domain, do NOT allow base to be localhost
+if (typeof window !== "undefined" && window.location.hostname !== "localhost" && !isPrivateHost(window.location.hostname)) {
+  if (base.includes("localhost") || base.includes("127.0.0.1")) {
+    console.log("[AUTH] Public host detected, forcing fallback to production API");
+    base = ""; // Force fallback to production Render URL
+  }
 }
 
 export const API_BASE_URL =
