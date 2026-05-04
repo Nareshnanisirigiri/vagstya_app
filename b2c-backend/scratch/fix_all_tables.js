@@ -205,43 +205,65 @@ db.connect((err) => {
     for (const item of schema) {
       console.log(`Checking table: ${item.table}...`);
       
-      // Try to create table
+      // 1. Create table if not exists
       await new Promise((resolve) => {
         db.query(item.sql, (err) => {
-          if (err) console.error(`Error creating table ${item.table}:`, err.message);
+          if (err) console.error(`Error creating/checking table ${item.table}:`, err.message);
           resolve();
         });
       });
 
-      // After creation (or if it existed), check for missing columns
-      await new Promise((resolve) => {
-        db.query(`DESCRIBE ${item.table}`, (err, rows) => {
-          if (err) {
-            console.error(`Error describing ${item.table}:`, err.message);
-            resolve();
-            return;
-          }
+      // 2. Add missing columns explicitly
+      const columns = {
+        users: [
+          { name: "role", type: "VARCHAR(50) DEFAULT 'customer'" },
+          { name: "image_id", type: "BIGINT UNSIGNED NULL" },
+          { name: "phone", type: "VARCHAR(20) NULL" }
+        ],
+        products: [
+          { name: "is_ad", type: "TINYINT(1) DEFAULT 0" },
+          { name: "is_banner_main", type: "TINYINT(1) DEFAULT 0" },
+          { name: "is_popular_jewellery", type: "TINYINT(1) DEFAULT 0" },
+          { name: "is_premium_sarees", type: "TINYINT(1) DEFAULT 0" }
+        ],
+        orders: [
+          { name: "pos_order", type: "TINYINT(1) DEFAULT 0" },
+          { name: "delivery_charge", type: "DOUBLE DEFAULT 0" },
+          { name: "payment_status", type: "VARCHAR(50) DEFAULT 'Pending'" }
+        ],
+        categories: [
+          { name: "slug", type: "VARCHAR(255) NULL" }
+        ]
+      };
 
-          const existingColumns = rows.map(r => r.Field);
-          // Simple heuristic to find missing columns from the CREATE SQL
-          const columnMatches = item.sql.match(/\n\s+([a-z0-9_]+)\s+([A-Z\(\)0-9 ]+)/gi);
-          if (columnMatches) {
-            columnMatches.forEach(match => {
-              const parts = match.trim().split(/\s+/);
-              const colName = parts[0];
-              const colDef = parts.slice(1).join(" ");
-              
-              if (!existingColumns.includes(colName) && colName.toLowerCase() !== "primary" && colName.toLowerCase() !== "key") {
-                console.log(`Adding missing column ${colName} to ${item.table}...`);
-                db.query(`ALTER TABLE ${item.table} ADD COLUMN ${colName} ${colDef}`, (err) => {
-                  if (err) console.error(`Error adding ${colName} to ${item.table}:`, err.message);
-                });
-              }
+      if (columns[item.table]) {
+        await new Promise((resolve) => {
+          db.query(`DESCRIBE ${item.table}`, (err, rows) => {
+            if (err) {
+              resolve();
+              return;
+            }
+
+            const existing = rows.map(r => r.Field.toLowerCase());
+            const missing = columns[item.table].filter(c => !existing.includes(c.name.toLowerCase()));
+
+            if (missing.length === 0) {
+              resolve();
+              return;
+            }
+
+            let completed = 0;
+            missing.forEach(col => {
+              console.log(`Adding missing column ${col.name} to ${item.table}...`);
+              db.query(`ALTER TABLE ${item.table} ADD COLUMN ${col.name} ${col.type}`, (err) => {
+                if (err) console.error(`Error adding ${col.name} to ${item.table}:`, err.message);
+                completed++;
+                if (completed === missing.length) resolve();
+              });
             });
-          }
-          resolve();
+          });
         });
-      });
+      }
     }
 
     console.log("Database repair complete.");
