@@ -39,6 +39,10 @@ function createAuthResponse({ tokenData, message, user }) {
   };
 }
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
 function normalizeUser(role, user, extra = {}) {
   return {
     id: user.id,
@@ -252,13 +256,14 @@ export async function portalRegister(req, res) {
 export async function register(req, res) {
   const { name, email, password, passkey, phone = null } = req.body;
   const secret = passkey ?? password;
+  const normalizedEmail = normalizeEmail(email);
 
-  if (!name || !email || !secret) {
+  if (!name || !normalizedEmail || !secret) {
     return res.status(400).json({ message: "name, email, and passkey are required." });
   }
 
   try {
-    const existingUsers = await query("SELECT id FROM users WHERE email = ?", [email]);
+    const existingUsers = await query("SELECT id FROM users WHERE email = ?", [normalizedEmail]);
 
     if (existingUsers.length) {
       return res.status(409).json({ message: "User already exists." });
@@ -267,19 +272,23 @@ export async function register(req, res) {
     const hashedPassword = bcrypt.hashSync(secret, 10);
     const result = await query(
       "INSERT INTO users (name, email, password, phone) VALUES (?, ?, ?, ?)",
-      [name, email, hashedPassword, phone]
+      [name, normalizedEmail, hashedPassword, phone]
     );
 
-    const tokenData = signAuthToken({ id: result.insertId, email, role: "customer" });
+    const tokenData = signAuthToken({ id: result.insertId, email: normalizedEmail, role: "customer" });
 
     const htmlContent = welcomeTemplate(name);
 
-    sendMail(
-      email,
-      "Registered successfully - Welcome to VOGSTYA Store",
-      `Hi ${name},\n\nRegistered successfully. Welcome to VOGSTYA Store.`,
-      htmlContent
-    ).catch(err => console.error("Welcome email failed to send:", err));
+    try {
+      await sendMail(
+        normalizedEmail,
+        "Registered successfully - Welcome to VOGSTYA Store",
+        `Hi ${name},\n\nRegistered successfully. Welcome to VOGSTYA Store.`,
+        htmlContent
+      );
+    } catch (mailError) {
+      console.error("Welcome email failed to send:", mailError.message);
+    }
 
     return res.status(201).json(
       createAuthResponse({
@@ -288,7 +297,7 @@ export async function register(req, res) {
         user: {
           id: result.insertId,
           name,
-          email,
+          email: normalizedEmail,
           phone,
           role: "customer",
         },
@@ -302,13 +311,14 @@ export async function register(req, res) {
 export async function login(req, res) {
   const { email, password, passkey } = req.body;
   const secret = passkey ?? password;
+  const normalizedEmail = normalizeEmail(email);
 
-  if (!email || !secret) {
+  if (!normalizedEmail || !secret) {
     return res.status(400).json({ message: "email and passkey are required." });
   }
 
   try {
-    const users = await query("SELECT * FROM users WHERE email = ?", [email]);
+    const users = await query("SELECT * FROM users WHERE email = ?", [normalizedEmail]);
     const user = users[0];
 
     if (!user) {
@@ -387,13 +397,14 @@ export async function portalLogin(req, res) {
 }
 export async function forgotPassword(req, res) {
   const { email } = req.body;
+  const normalizedEmail = normalizeEmail(email);
 
-  if (!email) {
+  if (!normalizedEmail) {
     return res.status(400).json({ message: "Email is required." });
   }
 
   try {
-    const users = await query("SELECT * FROM users WHERE email = ? LIMIT 1", [email]);
+    const users = await query("SELECT * FROM users WHERE email = ? LIMIT 1", [normalizedEmail]);
     const user = users[0];
 
     if (!user) {
@@ -413,7 +424,7 @@ export async function forgotPassword(req, res) {
     const htmlContent = forgotPasswordTemplate(user.name || "Customer", resetLink);
 
     await sendMail(
-      email,
+      normalizedEmail,
       "Password Reset Request - VOGSTYA Store",
       `Hi, please use this link to reset your password: ${resetLink}`,
       htmlContent
