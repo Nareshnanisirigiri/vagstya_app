@@ -127,6 +127,20 @@ export async function apiRequest(path, { method = "GET", body, token } = {}) {
   return payload;
 }
 
+export function resolveImageUrl(src) {
+  if (!src || typeof src !== "string") return "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=80";
+  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:")) return src;
+  
+  // If it's a relative path starting with uploads/
+  if (src.startsWith("uploads/")) {
+    const backendRoot = API_BASE_URL.replace(/\/api$/, "");
+    return `${backendRoot}/${src}`;
+  }
+  
+  // Default fallback for other relative paths (e.g. from production data)
+  return `https://vogstya.com/storage/${src}`;
+}
+
 export function mapBackendProduct(row) {
   const isFlashSale = Boolean(row.is_flash_sale);
   const flashSalePrice = row.flash_sale_price ? Number(row.flash_sale_price) : null;
@@ -150,11 +164,7 @@ export function mapBackendProduct(row) {
     brand_id: row.brand_id,
     price,
     priceLabel: `Rs. ${price.toFixed(2)}`,
-    image:
-      row.media_src ||
-      row.image ||
-      row.image_url ||
-      "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=80",
+    image: resolveImageUrl(row.media_src || row.image || row.image_url),
     sale: Boolean(oldPrice && oldPrice > price),
     oldPriceLabel: oldPrice ? `Rs. ${oldPrice.toFixed(2)}` : null,
     rating,

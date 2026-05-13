@@ -27,7 +27,7 @@ import { useStore } from "../context/StoreContext";
 import { useSnackbar } from "../context/SnackbarContext";
 import { useProducts } from "../context/ProductsContext";
 import { colors, spacing } from "../theme/theme";
-import { apiRequest } from "../api/client";
+import { apiRequest, resolveImageUrl } from "../api/client";
 
 export default function ProductDetailsScreen() {
   const navigation = useNavigation();
@@ -184,7 +184,7 @@ export default function ProductDetailsScreen() {
             <View style={[styles.galleryContainer, isDesktop && styles.galleryDesktop]}>
               <Animated.View entering={ZoomIn.duration(600)} style={styles.imageCard}>
                 <RNAnimated.Image
-                  source={{ uri: product.image }}
+                  source={{ uri: resolveImageUrl(product.image) }}
                   style={[styles.heroImage, { transform: [{ scale: imageScale }] }]}
                   resizeMode="cover"
                 />

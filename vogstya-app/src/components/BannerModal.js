@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../theme/theme";
 import { Image } from "expo-image";
+import { resolveImageUrl } from "../api/client";
 
 const modalStyles = StyleSheet.create({
   overlay: {
@@ -228,16 +229,7 @@ export default function BannerModal({ visible, item, onClose, onSave }) {
     }
   };
 
-  const resolveImageUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith("data:") || path.startsWith("http")) return path;
-    
-    // Fallback for relative paths from the server
-    const serverRoot = "http://localhost:5000"; 
-    const cleaned = path.replace(/^\/+/, "");
-    if (cleaned.startsWith("uploads/")) return `${serverRoot}/${cleaned}`;
-    return `${serverRoot}/uploads/${cleaned}`;
-  };
+
 
   return (
     <View style={modalStyles.overlay}>

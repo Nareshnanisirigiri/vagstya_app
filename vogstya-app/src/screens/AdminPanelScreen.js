@@ -2228,7 +2228,7 @@ const AdminPanelScreen = () => {
                                         </View>
                                         <View style={[styles.cell, { width: 140 }]}>
                                           <View style={[styles.thumbnailContainer, { backgroundColor: '#f8fafc', borderRadius: 8, overflow: 'hidden' }]}>
-                                            <Image source={{ uri: row.image_url || "https://via.placeholder.com/60" }} style={styles.thumbnailImg} contentFit="contain" />
+                                            <Image source={{ uri: resolveImageUrl(row.image_url) }} style={styles.thumbnailImg} contentFit="contain" />
                                           </View>
                                         </View>
                                         <View style={[styles.cell, { width: 280 }]}>
@@ -2427,7 +2427,7 @@ const AdminPanelScreen = () => {
                                         </View>
                                         <View style={[styles.cell, { width: 140 }]}>
                                           <View style={[styles.thumbnailContainer, { backgroundColor: '#f8fafc', borderRadius: 8, overflow: 'hidden' }]}>
-                                            <Image source={{ uri: row.image_url || "https://via.placeholder.com/60" }} style={styles.thumbnailImg} contentFit="contain" />
+                                            <Image source={{ uri: resolveImageUrl(row.image_url) }} style={styles.thumbnailImg} contentFit="contain" />
                                           </View>
                                         </View>
                                          <View style={[styles.cell, { width: 180 }]}>
@@ -4659,7 +4659,7 @@ function CategoryModal({ visible, item, onClose, onSave }) {
 
             <View style={{ alignItems: 'center', marginBottom: 24 }}>
               <View style={{ width: 140, height: 140, borderRadius: 20, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', overflow: 'hidden' }}>
-                <Image source={{ uri: formData.image_url || "https://via.placeholder.com/140" }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
+                <Image source={{ uri: resolveImageUrl(formData.image_url) }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
               </View>
               <Pressable 
                 onPress={() => {
@@ -5786,7 +5786,7 @@ function SubCategoryModal({ visible, item, categories, onClose, onSave }) {
               <View style={{ flexDirection: 'row', gap: 20, alignItems: 'center', marginTop: 10 }}>
                 <View style={{ width: 120, height: 120, borderRadius: 16, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', overflow: 'hidden' }}>
                   {formData.image_url ? (
-                    <Image source={{ uri: formData.image_url }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
+                    <Image source={{ uri: resolveImageUrl(formData.image_url) }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
                   ) : (
                     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                       <Ionicons name="image-outline" size={32} color="#cbd5e1" />

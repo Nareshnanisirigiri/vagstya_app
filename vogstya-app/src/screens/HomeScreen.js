@@ -11,7 +11,7 @@ import ProductCard from "../components/ProductCard";
 import { useProducts } from "../context/ProductsContext";
 import { colors, spacing } from "../theme/theme";
 import { HOME_COLLECTIONS } from "../utils/shopCurations";
-import { API_BASE_URL } from "../api/client";
+import { API_BASE_URL, resolveImageUrl } from "../api/client";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -146,7 +146,7 @@ export default function HomeScreen() {
                 >
                   <View style={styles.catImageBox}>
                     <Image 
-                      source={{ uri: cat.image_url || "https://images.unsplash.com/photo-1599643478514-4a11011c00c8?auto=format&fit=crop&q=80&w=400&h=400" }} 
+                      source={{ uri: resolveImageUrl(cat.image_url) }} 
                       style={styles.catImage} 
                       contentFit="cover" 
                     />

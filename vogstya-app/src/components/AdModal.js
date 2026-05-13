@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { resolveImageUrl } from "../api/client";
 
 const { width } = Dimensions.get("window");
 
@@ -74,14 +75,7 @@ const AdModal = ({
     onSave(formData);
   };
 
-  const resolveImageUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith("data:") || path.startsWith("http")) return path;
-    const serverRoot = "http://localhost:5000"; 
-    const cleaned = path.replace(/^\/+/, "");
-    if (cleaned.startsWith("uploads/")) return `${serverRoot}/${cleaned}`;
-    return `${serverRoot}/uploads/${cleaned}`;
-  };
+
 
   return (
     <Modal

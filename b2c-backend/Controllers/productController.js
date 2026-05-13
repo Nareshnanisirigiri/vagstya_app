@@ -23,11 +23,17 @@ function resolveProductImage(mediaSrc) {
 
   if (typeof source !== "string") return null;
 
-  if (source.startsWith("http://") || source.startsWith("https://")) {
+  if (source.startsWith("http://") || source.startsWith("https://") || source.startsWith("data:")) {
     return source;
   }
 
   const cleaned = source.replace(/^\/+/, "");
+
+  // If it's a local upload, let the frontend handle the base URL or we can return it as is
+  if (cleaned.startsWith("uploads/")) {
+    return cleaned;
+  }
+
   // If it's a relative path and doesn't contain a folder, assume it's in products/
   if (!cleaned.includes("/")) {
     return `https://vogstya.com/storage/products/${cleaned}`;
