@@ -9,7 +9,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "echo 'No build step required for backend'",
     "generate:http-js": "node ./scripts/generateHttpJs.mjs",
-    "generate:http-js:inplace": "node ./scripts/generateHttpJs.mjs --in-place"
+    "generate:http-js:inplace": "node ./scripts/generateHttpJs.mjs --in-place",
+    "seed-specs": "node scratch/seed_spec_values.js",
+    "seed-admin": "node scripts/seed_admin.js"
   },
   "keywords": [],
   "author": "",

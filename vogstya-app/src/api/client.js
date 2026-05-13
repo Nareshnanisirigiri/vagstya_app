@@ -145,10 +145,15 @@ export function mapBackendProduct(row) {
     id: Number(row.id),
     name: row.name || "Product",
     category,
+    category_id: row.category_id,
+    sub_category_id: row.sub_category_id,
+    brand_id: row.brand_id,
     price,
     priceLabel: `Rs. ${price.toFixed(2)}`,
     image:
+      row.media_src ||
       row.image ||
+      row.image_url ||
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=80",
     sale: Boolean(oldPrice && oldPrice > price),
     oldPriceLabel: oldPrice ? `Rs. ${oldPrice.toFixed(2)}` : null,

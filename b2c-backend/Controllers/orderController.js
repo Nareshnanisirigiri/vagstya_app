@@ -417,6 +417,18 @@ const ORDER_MAIL_TOPICS = {
     subject: (orderCode) => `Return / Refund Update - ${orderCode}`,
     accent: "#dc2626",
   },
+  order_processing: {
+    badge: "Processing",
+    title: "Your order is being processed",
+    subject: (orderCode) => `Order Processing - ${orderCode}`,
+    accent: "#a855f7",
+  },
+  order_cancelled: {
+    badge: "Cancelled",
+    title: "Your order has been cancelled",
+    subject: (orderCode) => `Order Cancelled - ${orderCode}`,
+    accent: "#ef4444",
+  },
 };
 
 
@@ -542,9 +554,14 @@ export async function listOrders(req, res) {
            op.order_id,
            op.product_id,
            op.quantity,
-           p.name AS product_name
+           p.name AS product_name,
+           p.image,
+           p.image_url,
+           p.code,
+           m.src AS media_src
          FROM order_products op
          LEFT JOIN products p ON p.id = op.product_id
+         LEFT JOIN media m ON m.id = p.media_id
          WHERE op.order_id IN (${placeholders})`,
         orderIds
       );
@@ -759,11 +776,20 @@ export async function startCheckout(req, res) {
           transactionConnection
         );
 
-        await query(
-          "UPDATE products SET quantity = quantity - ?, updated_at = NOW() WHERE id = ?",
-          [line.quantity, line.productId],
-          transactionConnection
-        );
+        // DEBUG LOGGING
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const logMsg = `[${new Date().toISOString()}] UPDATING Product ID: ${line.productId}, Qty Change: -${line.quantity}, Sold Change: +${line.quantity}\n`;
+          fs.appendFileSync(path.join(process.cwd(), 'scratch', 'checkout_debug.log'), logMsg);
+        } catch (e) {}
+
+        // We use the executor (transactionConnection) but if that's tricky we can use db
+        // To be safe, for POS orders, we ensure it's written.
+        const stockUpdateSql = "UPDATE products SET quantity = GREATEST(0, quantity - ?), sold_quantity = sold_quantity + ?, updated_at = NOW() WHERE id = ?";
+        const stockUpdateParams = [line.quantity, line.quantity, line.productId];
+        
+        await query(stockUpdateSql, stockUpdateParams, transactionConnection);
       }
 
       if (paymentMethod !== "cod" && selectedGateway?.id === "razorpay") {
@@ -1137,7 +1163,11 @@ export async function getOrderDetails(req, res) {
 }
 
 const STATUS_EVENT_MAP = {
+  confirm: { orderStatus: "Confirm", topicKey: "order_confirmation", description: "Your order has been confirmed and is now being prepared." },
+  processing: { orderStatus: "Processing", topicKey: "order_processing", description: "We are currently processing your items." },
+  pickup: { orderStatus: "Pickup", topicKey: "order_packed", description: "Great news. Your order is ready for pickup or dispatch." },
   packed: { orderStatus: "Packed", topicKey: "order_packed", description: "Great news. Your order has been packed and is ready for shipment." },
+  on_the_way: { orderStatus: "On The Way", topicKey: "shipped", description: "Your package is on the way to your delivery address." },
   shipped: { orderStatus: "Shipped", topicKey: "shipped", description: "Your package has been shipped and is on the way." },
   out_for_delivery: {
     orderStatus: "Out for Delivery",
@@ -1145,6 +1175,7 @@ const STATUS_EVENT_MAP = {
     description: "Your package is out for delivery and should reach you soon.",
   },
   delivered: { orderStatus: "Delivered", topicKey: "delivered", description: "Your order was delivered successfully. We hope you love it." },
+  cancelled: { orderStatus: "Cancelled", topicKey: "order_cancelled", description: "Your order has been cancelled." },
   return_refund: {
     orderStatus: "Returned",
     topicKey: "return_refund",
@@ -1167,7 +1198,7 @@ export async function updateOrderLifecycleStatus(req, res) {
 
   if (!statusConfig) {
     return res.status(400).json({
-      message: "Invalid status. Allowed: packed, shipped, out_for_delivery, delivered, return_refund.",
+      message: "Invalid status. Allowed: confirm, processing, pickup, on_the_way, delivered, cancelled, return_refund.",
     });
   }
 
@@ -1176,10 +1207,18 @@ export async function updateOrderLifecycleStatus(req, res) {
   }
 
   try {
+    console.log(`[LIFECYCLE] Updating Order #${orderId} to status: ${statusKey}`);
+    console.log(`[LIFECYCLE] Found config:`, statusConfig);
+
     const result = await query("UPDATE orders SET order_status = ?, updated_at = NOW() WHERE id = ?", [
       statusConfig.orderStatus,
       orderId,
     ]);
+
+    console.log(`[LIFECYCLE] DB Update result:`, {
+      affectedRows: result?.affectedRows,
+      statusSet: statusConfig.orderStatus
+    });
 
     if (!result?.affectedRows) {
       return res.status(404).json({ message: "Order not found." });

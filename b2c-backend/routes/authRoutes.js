@@ -2,6 +2,7 @@ import express from "express";
 import { adminLogin, adminRegister, register, login, portalLogin, portalRegister, forgotPassword, resetPassword } from "../Controllers/authController.js";
 
 const router = express.Router();
+console.log("authRoutes Router initialized");
 
 router.post("/register", register);
 router.post("/login", login);
@@ -12,4 +13,4 @@ router.post("/portal-register", portalRegister);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 
-export { router as authRoutes };   // ✅ IMPORTANT
+export default router;

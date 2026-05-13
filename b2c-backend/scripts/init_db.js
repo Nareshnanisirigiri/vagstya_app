@@ -38,9 +38,13 @@ const createTables = [
     is_mens_shirts INT DEFAULT 0,
     is_womens_highlights INT DEFAULT 0,
     is_premium_sarees INT DEFAULT 0,
+    sub_category_id INT,
+    category_id INT,
     media_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (sub_category_id) REFERENCES sub_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
   )`,
   `CREATE TABLE IF NOT EXISTS product_categories (
     product_id INT,
@@ -51,6 +55,8 @@ const createTables = [
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255),
     discount INT,
+    description TEXT,
+    image_url LONGTEXT,
     status INT DEFAULT 1,
     start_time DATETIME,
     end_time DATETIME
@@ -80,12 +86,27 @@ const createTables = [
     rating INT,
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS sub_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    image_url TEXT,
+    is_active INT DEFAULT 1,
+    meta_title VARCHAR(255),
+    meta_description TEXT,
+    meta_keywords TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
   )`
 ];
 
 const seedData = [
   "INSERT IGNORE INTO categories (id, name, url_slug, type, image_url) VALUES (1, 'Jewellery', 'jewellery', 'category', 'https://images.unsplash.com/photo-1599643478514-4a11011c00c8?w=400')",
   "INSERT IGNORE INTO categories (id, name, url_slug, type, image_url) VALUES (2, 'Sarees', 'sarees', 'category', 'https://images.unsplash.com/photo-1610189013233-5c20202dcde0?w=400')",
+  "INSERT IGNORE INTO sub_categories (id, category_id, name) VALUES (1, 2, 'Silk Sarees')",
+  "INSERT IGNORE INTO sub_categories (id, category_id, name) VALUES (2, 2, 'Cotton Sarees')",
   "INSERT IGNORE INTO media (id, src) VALUES (1, 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600')",
   "INSERT IGNORE INTO products (id, name, slug, price, discount_price, description, quantity, is_featured, media_id) VALUES (1, 'Premium Gold Necklace', 'premium-gold-necklace', 25000, 22000, 'Handcrafted gold necklace', 10, 1, 1)",
   "INSERT IGNORE INTO product_categories (product_id, category_id) VALUES (1, 1)"

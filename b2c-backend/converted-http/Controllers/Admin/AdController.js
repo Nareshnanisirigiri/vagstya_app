@@ -1,4 +1,10 @@
 import { db } from "../../../config/db.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -33,13 +39,24 @@ export class AdController {
         [limit, offset]
       );
       const [{ total }] = await query("SELECT COUNT(*) AS total FROM ads");
+      console.log(`[AdController] Found ${ads.length} ads. Total: ${total}`);
 
       return res.json({
-        data: ads,
+        success: true,
+        table: { name: "ads", count: total },
+        columns: [
+          { name: "id", dataType: "int" },
+          { name: "thumbnail", dataType: "virtual" },
+          { name: "title", dataType: "varchar" },
+          { name: "status", dataType: "tinyint" },
+          { name: "action", dataType: "virtual" }
+        ],
+        rows: ads,
         pagination: {
           page,
           limit,
-          total
+          total,
+          pages: Math.ceil(total / limit)
         }
       });
     } catch (error) {
@@ -55,22 +72,46 @@ export class AdController {
   }
 
   async store(req, res) {
-    const { title = null, media_id = null, status = 1 } = req.body;
+    let { title = null, media_id = null, status = 1, image_url = null } = req.body;
 
     try {
+      // Handle base64 image upload
+      if (image_url && image_url.startsWith("data:")) {
+        const matches = image_url.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const extension = matches[1].split('/')[1] || 'png';
+          const base64Data = matches[2];
+          const fileName = `ad_${Date.now()}.${extension}`;
+          // Correct path: controller is in converted-http/Controllers/Admin/
+          const uploadsDir = path.join(__dirname, '../../../uploads');
+          if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+          const fullPath = path.join(uploadsDir, fileName);
+          
+          fs.writeFileSync(fullPath, base64Data, 'base64');
+          const mediaPath = `uploads/${fileName}`;
+          
+          const mediaRes = await query("INSERT INTO media (src) VALUES (?)", [mediaPath]);
+          media_id = mediaRes.insertId;
+        }
+      }
+
+      console.log("[AdController] Creating ad with media_id:", media_id);
       const result = await query(
         "INSERT INTO ads (title, media_id, status, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())",
         [title, media_id, Number(status) ? 1 : 0]
       );
+      console.log("[AdController] Ad created successfully, ID:", result.insertId);
 
       const [ad] = await query("SELECT * FROM ads WHERE id = ?", [result.insertId]);
 
       return res.status(201).json({
+        success: true,
         message: "Ad created successfully.",
         data: ad
       });
     } catch (error) {
-      return res.status(500).json({ message: "Failed to create ad.", error: error.message });
+      console.error("Ad Store Error:", error);
+      return res.status(500).json({ success: false, message: "Failed to create ad.", error: error.message });
     }
   }
 
@@ -92,7 +133,7 @@ export class AdController {
 
   async update(req, res) {
     const { id } = req.params;
-    const { title = null, media_id = null, status = 1 } = req.body;
+    let { title = null, media_id = null, status = 1, image_url = null } = req.body;
 
     try {
       const [existingAd] = await query("SELECT * FROM ads WHERE id = ?", [id]);
@@ -101,19 +142,40 @@ export class AdController {
         return notFound(res, "Ad not found.");
       }
 
+      // Handle base64 image upload
+      if (image_url && image_url.startsWith("data:")) {
+        const matches = image_url.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const extension = matches[1].split('/')[1] || 'png';
+          const base64Data = matches[2];
+          const fileName = `ad_${Date.now()}.${extension}`;
+          const uploadsDir = path.join(__dirname, '../../../uploads');
+          if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+          const fullPath = path.join(uploadsDir, fileName);
+          
+          fs.writeFileSync(fullPath, base64Data, 'base64');
+          const mediaPath = `uploads/${fileName}`;
+          
+          const mediaRes = await query("INSERT INTO media (src) VALUES (?)", [mediaPath]);
+          media_id = mediaRes.insertId;
+        }
+      }
+
       await query(
-        "UPDATE ads SET title = ?, media_id = ?, status = ?, updated_at = NOW() WHERE id = ?",
+        "UPDATE ads SET title = ?, media_id = IFNULL(?, media_id), status = ?, updated_at = NOW() WHERE id = ?",
         [title, media_id, Number(status) ? 1 : 0, id]
       );
 
       const [updatedAd] = await query("SELECT * FROM ads WHERE id = ?", [id]);
 
       return res.json({
+        success: true,
         message: "Ad updated successfully.",
         data: updatedAd
       });
     } catch (error) {
-      return res.status(500).json({ message: "Failed to update ad.", error: error.message });
+      console.error("Ad Update Error:", error);
+      return res.status(500).json({ success: false, message: "Failed to update ad.", error: error.message });
     }
   }
 
@@ -132,6 +194,7 @@ export class AdController {
       await query("UPDATE ads SET status = ?, updated_at = NOW() WHERE id = ?", [nextStatus, id]);
 
       return res.json({
+        success: true,
         message: "Ad status updated.",
         data: {
           id: Number(id),
@@ -139,7 +202,7 @@ export class AdController {
         }
       });
     } catch (error) {
-      return res.status(500).json({ message: "Failed to toggle ad status.", error: error.message });
+      return res.status(500).json({ success: false, message: "Failed to toggle ad status.", error: error.message });
     }
   }
 
@@ -156,10 +219,11 @@ export class AdController {
       await query("DELETE FROM ads WHERE id = ?", [id]);
 
       return res.json({
+        success: true,
         message: "Ad deleted successfully."
       });
     } catch (error) {
-      return res.status(500).json({ message: "Failed to delete ad.", error: error.message });
+      return res.status(500).json({ success: false, message: "Failed to delete ad.", error: error.message });
     }
   }
 }

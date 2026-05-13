@@ -68,7 +68,23 @@ export function OrdersProvider({ children }) {
       setOrders([]);
       return;
     }
+
+    // Initial fetch
     refreshOrders();
+
+    // Auto-refresh polling (every 10 seconds)
+    // We use a silent version to avoid showing loading spinners constantly
+    const pollInterval = setInterval(async () => {
+      try {
+        const payload = await apiRequest("/orders", { token });
+        const list = Array.isArray(payload?.orders) ? payload.orders.map(mapBackendOrder) : [];
+        setOrders(list);
+      } catch (err) {
+        console.log("[POLLING] Refresh failed:", err.message);
+      }
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
   }, [token, user, refreshOrders]);
 
   const value = useMemo(() => {

@@ -97,10 +97,10 @@ export default function AdminSidebar({
           label: "Shop Products", 
           icon: "basket-outline", 
           subItems: [
-             { name: "item_request", label: "Item Request", table: "products" },
-             { name: "update_request", label: "Update Request", table: "products" },
-             { name: "accepted_item", label: "Accepted Item", table: "products" },
-             { name: "rejected_item", label: "Rejected Item", table: "products" }
+             { name: "item_request", label: "Item Request", table: "item_requests" },
+             { name: "update_request", label: "Update Request", table: "update_requests" },
+             { name: "accepted_item", label: "Accepted Item", table: "accepted_items" },
+             { name: "rejected_item", label: "Rejected Item", table: "rejected_items" }
           ] 
         },
         { name: "flash_sales", label: "Flash Sales", icon: "flash-outline", table: "flash_sales" },
@@ -109,9 +109,11 @@ export default function AdminSidebar({
     {
       header: "USER SUPERVISION",
       items: [
-        { name: "riders", label: "Riders", icon: "bicycle-outline", table: "drivers" },
-        { name: "customers", label: "Customers", icon: "people-outline", table: "users" },
-        { name: "employees", label: "Employees", icon: "person-outline", table: "admin_users" },
+        { name: "customers", label: "Customers", icon: "people-outline", count: dashboardData?.businessOverview?.users || 0, countColor: "#10b981", table: "users" },
+        { name: "riders", label: "Riders", icon: "bicycle-outline", count: dashboardData?.businessOverview?.drivers || 0, countColor: "#6366f1", table: "riders" },
+        { name: "drivers", label: "Drivers", icon: "car-outline", count: 0, countColor: "#94a3b8", table: "drivers" },
+        { name: "delivery", label: "Delivery", icon: "cube-outline", count: 0, countColor: "#94a3b8", table: "delivery_man" },
+        { name: "employees", label: "Employees", icon: "person-outline", count: dashboardData?.businessOverview?.admins || 0, countColor: "#f59e0b", table: "admin_users" },
       ]
     },
     {
@@ -125,46 +127,7 @@ export default function AdminSidebar({
       ]
     },
     {
-      header: "ACCOUNTS",
-      items: [
-        { name: "withdraws", label: "Withdraws", icon: "cash-outline", table: "withdraws" },
-      ]
-    },
-    {
-      header: "DATABASE & REVIEWS",
-      items: [
-        { name: "reviews", label: "Reviews", icon: "star-half-outline", table: "reviews" },
-      ]
-    },
-    {
-      header: "ASSISTANCE/ SUPPORT",
-      items: [
-        { name: "help_requests", label: "Help Requests", icon: "help-buoy-outline", table: "support_tickets" },
-        { name: "enquires", label: "Enquires", icon: "chatbubble-ellipses-outline", table: "contact_us" },
-      ]
-    },
-    {
-      header: "LANGUAGE SETTINGS",
-      items: [
-        { name: "languages", label: "Languages", icon: "language-outline", table: "languages" },
-      ]
-    },
-    {
-      header: "STORE MANAGEMENT",
-      items: [
-        { name: "shop_profile", label: "Shop Profile", icon: "person-circle-outline", table: "shops" },
-      ]
-    },
-    {
-      header: "IMPORT / EXPORT",
-      items: [
-        { name: "bulk_export", label: "Bulk Export", icon: "download-outline", table: null },
-        { name: "bulk_import", label: "Bulk Import", icon: "push-outline", table: null },
-        { name: "gallery_import", label: "Gallery Import", icon: "images-outline", table: "galleries" },
-      ]
-    },
-    {
-      header: "BUSINESS ADMINISTRATION",
+      header: "BUSINESS SETTINGS",
       items: [
         { 
           name: "business_settings", 
@@ -196,19 +159,13 @@ export default function AdminSidebar({
             { name: "contact_us", label: "Contact Us", table: "contact_us" },
           ]
         },
-        { 
-          name: "3rd_party_config", 
-          label: "3rd Party Configuration", 
-          icon: "chatbubbles-outline", 
-          subItems: [
-            { name: "payment_gateway", label: "Payment Gateway", table: "payment_gateways" },
-            { name: "sms_gateway", label: "SMS Gateway", table: "s_m_s_configs" },
-            { name: "pusher_setup", label: "Pusher Setup", table: "generate_settings" },
-            { name: "mail_config", label: "Mail Config", table: "generate_settings" },
-            { name: "firebase_notification", label: "Firebase Notification", table: "generate_settings" },
-            { name: "google_recaptcha", label: "Google ReCaptcha", table: "google_re_captchas" },
-          ]
-        },
+      ]
+    },
+    {
+      header: "SUPPORT",
+      items: [
+        { name: "help_requests", label: "Help Requests", icon: "help-buoy-outline", table: "support_tickets" },
+        { name: "messages", label: "Messages", icon: "chatbubble-ellipses-outline", table: "contact_us" },
       ]
     }
   ];
@@ -283,13 +240,20 @@ export default function AdminSidebar({
                         ]}>
                           {item.label}
                         </Text>
-                        {hasSubItems && (
-                          <Ionicons 
-                            name={isExpanded ? "chevron-up" : "chevron-down"} 
-                            size={14} 
-                            color={(isActive || (hasSubItems && isExpanded)) ? colors.accent : colors.subtleText} 
-                          />
-                        )}
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          {item.count !== undefined && !hasSubItems && (
+                            <View style={[styles.subItemBadge, { backgroundColor: item.countColor || colors.accent }]}>
+                              <Text style={styles.subItemBadgeText}>{item.count}</Text>
+                            </View>
+                          )}
+                          {hasSubItems && (
+                            <Ionicons 
+                              name={isExpanded ? "chevron-up" : "chevron-down"} 
+                              size={14} 
+                              color={(isActive || (hasSubItems && isExpanded)) ? colors.accent : colors.subtleText} 
+                            />
+                          )}
+                        </View>
                       </View>
                     )}
                   </Pressable>

@@ -190,6 +190,50 @@ const schema = [
       status TINYINT(1) DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
+  },
+  {
+    table: "admin_users",
+    sql: `CREATE TABLE IF NOT EXISTS admin_users (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(191) NOT NULL,
+      email VARCHAR(191) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      phone VARCHAR(50) NULL,
+      role VARCHAR(50) DEFAULT 'staff',
+      gender VARCHAR(20) DEFAULT 'Other',
+      image LONGTEXT,
+      status TINYINT DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`
+  },
+  {
+    table: "riders",
+    sql: `CREATE TABLE IF NOT EXISTS riders (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(191) NOT NULL,
+      email VARCHAR(191) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      phone VARCHAR(50) NULL,
+      image LONGTEXT,
+      status TINYINT DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`
+  },
+  {
+    table: "banners",
+    sql: `CREATE TABLE IF NOT EXISTS banners (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NULL,
+      image_url LONGTEXT NOT NULL,
+      url VARCHAR(255) NULL,
+      is_active TINYINT DEFAULT 1,
+      is_for_own_shop TINYINT DEFAULT 0,
+      type VARCHAR(50) DEFAULT 'main',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`
   }
 ];
 
@@ -233,6 +277,28 @@ db.connect((err) => {
         ],
         categories: [
           { name: "slug", type: "VARCHAR(255) NULL" }
+        ],
+        admin_users: [
+          { name: "role", type: "VARCHAR(50) DEFAULT 'staff'" },
+          { name: "gender", type: "VARCHAR(20) DEFAULT 'Other'" },
+          { name: "image", type: "LONGTEXT" },
+          { name: "status", type: "TINYINT DEFAULT 1" }
+        ],
+        riders: [
+          { name: "name", type: "VARCHAR(255) NOT NULL" },
+          { name: "email", type: "VARCHAR(255) NOT NULL UNIQUE" },
+          { name: "password", type: "VARCHAR(255) NOT NULL" },
+          { name: "phone", type: "VARCHAR(20) NULL" },
+          { name: "image", type: "LONGTEXT" },
+          { name: "status", type: "TINYINT DEFAULT 1" }
+        ],
+        banners: [
+          { name: "title", type: "VARCHAR(255) NULL" },
+          { name: "image_url", type: "LONGTEXT NOT NULL" },
+          { name: "url", type: "VARCHAR(255) NULL" },
+          { name: "is_active", type: "TINYINT DEFAULT 1" },
+          { name: "is_for_own_shop", type: "TINYINT DEFAULT 0" },
+          { name: "type", type: "VARCHAR(50) DEFAULT 'main'" }
         ]
       };
 

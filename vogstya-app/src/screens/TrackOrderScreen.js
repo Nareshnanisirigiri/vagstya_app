@@ -10,11 +10,12 @@ import { apiRequest } from "../api/client";
 import { colors, spacing } from "../theme/theme";
 
 const STATUS_STAGES = [
-  { key: "packed", label: "Packed", sub: "Order is being prepared", color: "#6366f1" },
-  { key: "shipped", label: "Shipped", sub: "Order has left the warehouse", color: "#8b5cf6" },
+  { key: "confirm", label: "Confirmed", sub: "Order received & verified", color: "#38bdf8" },
+  { key: "processing", label: "Processing", sub: "Preparing your items", color: "#a855f7" },
+  { key: "pickup", label: "Packed", sub: "Order is ready for dispatch", color: "#6366f1" },
+  { key: "shipped", label: "Shipped", sub: "Order is in transit", color: "#8b5cf6" },
   { key: "out for delivery", label: "Out for Delivery", sub: "Arriving today", color: "#f59e0b" },
   { key: "delivered", label: "Delivered", sub: "Successfully received", color: "#10b981" },
-  { key: "return", label: "Return / Refund", sub: "Return processed", color: "#ef4444" },
 ];
 
 function extractRawOrderId(routeParams) {
@@ -164,11 +165,22 @@ export default function TrackOrderScreen() {
     );
   }
 
-  let currentStatus = String(order.orderStatus || "Pending").toLowerCase();
-  if (currentStatus.includes("return") || currentStatus.includes("refund")) {
-    currentStatus = "return";
-  } else if (currentStatus === "out_for_delivery") {
+  let currentStatus = String(order.orderStatus || "Pending").toLowerCase().replace(/ /g, '_');
+  
+  if (currentStatus === "confirm" || currentStatus === "confirmed") {
+    currentStatus = "confirm";
+  } else if (currentStatus === "processing") {
+    currentStatus = "processing";
+  } else if (currentStatus === "pickup" || currentStatus === "packed") {
+    currentStatus = "pickup";
+  } else if (currentStatus === "on_the_way" || currentStatus === "shipped") {
+    currentStatus = "shipped";
+  } else if (currentStatus === "out_for_delivery" || currentStatus === "out for delivery") {
     currentStatus = "out for delivery";
+  } else if (currentStatus === "delivered") {
+    currentStatus = "delivered";
+  } else if (currentStatus.includes("return") || currentStatus.includes("refund")) {
+    currentStatus = "return";
   }
   
   const activeIndex = STATUS_STAGES.findIndex(s => s.key === currentStatus);
@@ -243,8 +255,8 @@ export default function TrackOrderScreen() {
              </Text>
           </View>
         </View>
+        <Footer />
       </ScrollView>
-      <Footer />
     </View>
   );
 }

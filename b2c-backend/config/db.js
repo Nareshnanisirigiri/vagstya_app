@@ -11,7 +11,8 @@ export const db = mysql.createPool({
   database: process.env.DB_NAME || "railway", // Updated to match Railway if name missing
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  multipleStatements: true
 });
 
 console.log("MySQL Pool Created");

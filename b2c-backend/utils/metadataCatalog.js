@@ -17,8 +17,8 @@ export const APPROVED_UNIT_CATALOG = [
 ];
 
 export const APPROVED_CATEGORY_CATALOG = [
-  "Sarees", "Jewellery", "Fashion Accessories", "Kids Wear", "Tailoring Needs",
-  "Toys & Stationary", "Women's Wear", "Men's Wear", "Home & Living", "Festive Vibes"
+  "Women's Wear", "saree", "men's Wear", "Jewellery", "Fashion Accessories",
+  "Kids Wear", "Tailoring Needs", "Toys & Stationary", "Home & Living", "Festive Vibes"
 ];
 
 export const INDIAN_STATES = [

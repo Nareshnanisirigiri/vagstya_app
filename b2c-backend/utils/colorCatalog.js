@@ -19,16 +19,6 @@ export const APPROVED_COLOR_CATALOG = [
   { name: "Multi Colour", colorCode: "transparent" },
   { name: "Navy", colorCode: "#000080" },
   { name: "Nickel", colorCode: "#727472" },
-  { name: "Olive", colorCode: "#808000" },
-  { name: "Orange", colorCode: "#FFA500" },
-  { name: "PINK", colorCode: "#FFC0CB" },
-  { name: "Purple", colorCode: "#800080" },
-  { name: "Red", colorCode: "#FF0000" },
-  { name: "Rose gold", colorCode: "#B76E79" },
-  { name: "Silver", colorCode: "#C0C0C0" },
-  { name: "Teal", colorCode: "#008080" },
-  { name: "White", colorCode: "#FFFFFF" },
-  { name: "Yellow", colorCode: "#FFFF00" },
 ];
 
 export const APPROVED_COLOR_COLUMNS = [
@@ -49,47 +39,32 @@ function normalizeColorCode(colorCode) {
 }
 
 export async function synchronizeApprovedColors(query) {
-  const existingRows = await query(
-    `SELECT id, name, color_code, is_active
-     FROM colors
-     ORDER BY id ASC`
-  );
-
-  // Deactivate all colors first to ensure only the catalog items are active
-  await query(`UPDATE colors SET is_active = 0`);
-
-  const rowsByName = new Map();
-  for (const row of existingRows) {
-    const bucket = rowsByName.get(row.name) || [];
-    bucket.push(row);
-    rowsByName.set(row.name, bucket);
-  }
-
   for (const approvedColor of APPROVED_COLOR_CATALOG) {
-    const sameNameRows = rowsByName.get(approvedColor.name) || [];
-    const matchingRow = sameNameRows.shift();
+    try {
+      const [existing] = await query(
+        `SELECT id FROM colors WHERE name = ? LIMIT 1`,
+        [approvedColor.name]
+      );
 
-    if (matchingRow) {
-      const needsUpdate =
-        normalizeColorCode(matchingRow.color_code) !== normalizeColorCode(approvedColor.colorCode) ||
-        Number(matchingRow.is_active) !== 1;
-
-      if (needsUpdate) {
+      if (existing) {
+        // Force update existing color to match catalog and set active
         await query(
-          `UPDATE colors
-           SET color_code = ?, is_active = 1
+          `UPDATE colors 
+           SET color_code = ?, is_active = 1, shop_id = 1
            WHERE id = ?`,
-          [approvedColor.colorCode, matchingRow.id]
+          [approvedColor.colorCode, existing.id]
+        );
+      } else {
+        // Insert new approved color with all standard columns to avoid constraint issues
+        await query(
+          `INSERT INTO colors (name, name_ar, color_code, is_active, shop_id)
+           VALUES (?, NULL, ?, 1, 1)`,
+          [approvedColor.name, approvedColor.colorCode]
         );
       }
-      continue;
+    } catch (err) {
+      console.log(`Failed to sync color ${approvedColor.name}:`, err.message);
     }
-
-    await query(
-      `INSERT INTO colors (name, color_code, is_active)
-       VALUES (?, ?, 1)`,
-      [approvedColor.name, approvedColor.colorCode]
-    );
   }
 }
 

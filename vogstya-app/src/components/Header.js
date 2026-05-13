@@ -20,6 +20,7 @@ import { useStore } from "../context/StoreContext";
 import { useAuth } from "../context/AuthContext";
 import { useProducts } from "../context/ProductsContext";
 import AmazonSearchBar from "./AmazonSearchBar";
+import { apiRequest } from "../api/client";
 
 const NAV_BREAK = 920;
 
@@ -59,6 +60,9 @@ export default function Header() {
   const [history, setHistory] = useState([]);
   const [location, setLocation] = useState("Select your location");
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [pincode, setPincode] = useState("");
 
   const searchAnim = useRef(new Animated.Value(0)).current;
@@ -121,6 +125,42 @@ export default function Header() {
     animation.start();
     return () => animation.stop();
   }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [user]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await apiRequest("/notifications", { token: user?.token });
+      if (res && Array.isArray(res)) {
+        setNotifications(res);
+        setUnreadCount(res.filter(n => !n.is_read).length);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await apiRequest("/notifications/read-all", { method: "POST", token: user?.token });
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark read:", error);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      await apiRequest(`/notifications/${id}`, { method: "DELETE", token: user?.token });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      setUnreadCount(prev => prev > 0 ? prev - 1 : 0);
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -221,6 +261,18 @@ export default function Header() {
           </View>
 
           <View style={[styles.icons, compact && { gap: 8 }]}>
+            <Pressable 
+              onPress={() => setNotificationsOpen(true)} 
+              style={styles.iconWithBadge}
+            >
+              <Ionicons name="notifications-outline" size={compact ? 20 : 24} color={colors.ink} />
+              {unreadCount ? (
+                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                  <Text style={[styles.badgeText, { color: 'white' }]}>{unreadCount}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+
             <Pressable onPress={() => go("Wishlist")} style={styles.iconWithBadge}>
               <Ionicons name="heart-outline" size={compact ? 20 : 24} color={colors.ink} />
               {wishlistCount ? (
@@ -494,6 +546,65 @@ export default function Header() {
                 <Text style={styles.applyBtnText}>Apply</Text>
               </Pressable>
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={notificationsOpen} transparent animationType="fade" onRequestClose={() => setNotificationsOpen(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setNotificationsOpen(false)}>
+          <Pressable style={[styles.drawer, { width: compact ? "90%" : 400, alignSelf: 'center' }]} onPress={() => { }}>
+            <View style={styles.drawerHeader}>
+              <View>
+                <Text style={styles.drawerTitle}>Notifications</Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>Recent updates for you</Text>
+              </View>
+              <Pressable onPress={() => setNotificationsOpen(false)}>
+                <Ionicons name="close" size={24} color={colors.ink} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={{ maxHeight: 500 }} showsVerticalScrollIndicator={false}>
+              {notifications.length === 0 ? (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <Ionicons name="notifications-off-outline" size={48} color={colors.muted} />
+                  <Text style={{ marginTop: 16, color: colors.muted, fontWeight: '600' }}>No notifications yet</Text>
+                </View>
+              ) : (
+                notifications.map((n, index) => (
+                  <View key={n.id} style={[
+                    { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+                    !n.is_read && { backgroundColor: 'rgba(13, 87, 49, 0.05)' }
+                  ]}>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#f1f5f9' }}>
+                        <Ionicons name="megaphone-outline" size={20} color={colors.accent} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Text style={{ fontWeight: '700', color: colors.ink, fontSize: 14, flex: 1 }}>{n.title}</Text>
+                          <Pressable onPress={() => deleteNotification(n.id)} style={{ padding: 4 }}>
+                            <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                          </Pressable>
+                        </View>
+                        <Text style={{ fontSize: 13, color: colors.subtleText, marginTop: 4 }}>{n.message || n.content}</Text>
+                        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8 }}>
+                          {new Date(n.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+
+            {notifications.length > 0 && (
+              <Pressable 
+                onPress={markAllRead} 
+                style={{ marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: '#f1f5f9', alignItems: 'center' }}
+              >
+                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13 }}>Mark all as read</Text>
+              </Pressable>
+            )}
           </Pressable>
         </Pressable>
       </Modal>

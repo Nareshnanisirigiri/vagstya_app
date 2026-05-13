@@ -1,32 +1,30 @@
-import mysql from "mysql2";
-import dotenv from "dotenv";
+import { db } from "./config/db.js";
 
-dotenv.config();
-
-const db = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD ?? process.env.DB_PASS ?? "root",
-  database: process.env.DB_NAME || "sathyavogue_db"
-});
-
-const tables = ["colors", "sizes", "categories", "sub_categories"];
-
-async function check() {
-  for (const table of tables) {
-    console.log(`\n--- TABLE: ${table} ---`);
-    await new Promise((resolve) => {
-      db.query(`DESCRIBE \`${table}\``, (err, rows) => {
-        if (err) {
-          console.error(`Error describing ${table}:`, err.message);
-        } else {
-          console.table(rows);
-        }
-        resolve();
-      });
+async function query(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.query(sql, params, (error, results) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(results);
     });
-  }
-  db.end();
+  });
 }
 
-check();
+async function run() {
+  try {
+    const [dbResult] = await query("SELECT DATABASE() as dbName");
+    const databaseName = dbResult?.dbName || "sathyavogue_db";
+    const tables = await query(
+      `SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?`,
+      [databaseName]
+    );
+    console.log(tables.map(t => t.TABLE_NAME));
+    process.exit(0);
+  } catch(e) {
+    console.error(e);
+    process.exit(1);
+  }
+}
+run();

@@ -106,7 +106,7 @@ function getProductVariantOptions(product, type, fallbackRows) {
   return fallbackRows
     .map((row) => row?.name || row?.value || row?.title)
     .filter(Boolean)
-    .slice(0, 8);
+    .slice(0, 50);
 }
 
 function MetricCard({ label, value }) {
@@ -139,14 +139,57 @@ export default function POSView({ token, apiRequest }) {
   const [discount, setDiscount] = useState(0);
   const [coupon, setCoupon] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [cart, setCart] = useState([]);
+  const [cardDetails, setCardDetails] = useState({
+    number: "",
+    expiry: "",
+    cvv: "",
+  });
 
+  const validateCard = () => {
+    const { number, expiry, cvv } = cardDetails;
+    
+    // Luhn Algorithm for card number
+    const isLuhnValid = (num) => {
+      let sum = 0;
+      let shouldDouble = false;
+      for (let i = num.length - 1; i >= 0; i--) {
+        let digit = parseInt(num.charAt(i));
+        if (shouldDouble) {
+          if ((digit *= 2) > 9) digit -= 9;
+        }
+        sum += digit;
+        shouldDouble = !shouldDouble;
+      }
+      return (sum % 10) === 0;
+    };
+
+    if (!number || number.length < 13 || !isLuhnValid(number.replace(/\s/g, ""))) {
+      return "Invalid card number.";
+    }
+
+    // Expiry check (MM/YY)
+    const expiryRegex = /^(0[1-9]|1[0-2])\/?([0-9]{2})$/;
+    if (!expiry || !expiryRegex.test(expiry)) {
+      return "Invalid expiry date (MM/YY).";
+    }
+
+    // CVV check
+    if (!cvv || cvv.length < 3) {
+      return "Invalid CVV.";
+    }
+
+    return null;
+  };
+  const [cart, setCart] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const [receivedAmount, setReceivedAmount] = useState("");
+  const [orderSuccess, setOrderSuccess] = useState(null); // { id, total, code }
 
   const productSizes = useMemo(() => {
     return getProductVariantOptions(selectedProduct, "size", sizeOptions);
@@ -155,6 +198,7 @@ export default function POSView({ token, apiRequest }) {
   const productColors = useMemo(() => {
     return getProductVariantOptions(selectedProduct, "color", colorOptions);
   }, [selectedProduct, colorOptions]);
+
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     email: "",
@@ -164,6 +208,7 @@ export default function POSView({ token, apiRequest }) {
   const fetchInitialData = useCallback(async () => {
     try {
       setLoading(true);
+      // Adding a timestamp to bust cache and ensure we get the latest stock count
       const productData = await apiRequest("/products", { token });
       setProducts(Array.isArray(productData) ? productData : productData?.rows || []);
 
@@ -231,6 +276,7 @@ export default function POSView({ token, apiRequest }) {
       clearSharedPOS();
     }
   }, [fetchInitialData]);
+
 
   const availableBrands = useMemo(() => {
     if (!brands.length) {
@@ -315,29 +361,12 @@ export default function POSView({ token, apiRequest }) {
     [cart]
   );
   const total = Math.max(0, subtotal - Number(discount || 0));
-  const todayOrders = useMemo(() => {
-    const today = new Date();
-    return recentOrders.filter((order) => {
-      const created = new Date(order?.created_at);
-      return (
-        !Number.isNaN(created.getTime()) &&
-        created.getDate() === today.getDate() &&
-        created.getMonth() === today.getMonth() &&
-        created.getFullYear() === today.getFullYear()
-      );
-    });
-  }, [recentOrders]);
-  const todayRevenue = useMemo(
-    () =>
-      todayOrders.reduce(
-        (sum, order) =>
-          sum + Number(order?.total_amount || order?.grand_total || order?.price || 0),
-        0
-      ),
-    [todayOrders]
-  );
 
-
+  useEffect(() => {
+    if (isCheckoutModalOpen) {
+      setReceivedAmount(String(total));
+    }
+  }, [isCheckoutModalOpen, total]);
 
   const handleProductPress = (product) => {
     setSelectedProduct(product);
@@ -451,15 +480,17 @@ export default function POSView({ token, apiRequest }) {
             postalCode: "000000",
           },
           paymentMethod,
-          cartItems: cart.map((item) => ({
-            id: item.productId,
+          items: cart.map((item) => ({
+            productId: item.productId,
             quantity: item.quantity,
-            variant: [item.color, item.size].filter(Boolean).join(" / ") || "Default",
+            color: item.color || null,
+            size: item.size || null,
           })),
         },
       });
 
-      if (!checkoutStart?.orderId) {
+      const orderId = checkoutStart.order?.id || checkoutStart.orderId;
+      if (!orderId) {
         throw new Error("Checkout start response did not include an order id.");
       }
 
@@ -467,7 +498,7 @@ export default function POSView({ token, apiRequest }) {
         method: "POST",
         token,
         body: {
-          orderId: checkoutStart.orderId,
+          orderId: orderId,
           paymentDetails: {
             method: paymentMethod,
             transactionId: `POS-${Date.now()}`,
@@ -475,17 +506,37 @@ export default function POSView({ token, apiRequest }) {
         },
       });
 
+      const orderCode = checkoutStart.order?.orderCode || checkoutStart.orderCode || `#${orderId}`;
+      setOrderSuccess({ id: orderId, total, code: orderCode });
+      
       setCart([]);
       setDiscount(0);
       setCoupon("");
       setSelectedCustomer("");
+      setSelectedProduct(null);
+      setSelectedColor("");
+      setSelectedSize("");
+      setQuantity(1);
+      setReceivedAmount("");
       await fetchInitialData();
-      Alert.alert("Checkout Complete", `Order #${checkoutStart.orderId} placed.`);
     } catch (error) {
       Alert.alert("Checkout Failed", error?.message || "Unable to finish checkout.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConfirmOrder = async () => {
+    if (paymentMethod === 'card') {
+      const cardError = validateCard();
+      if (cardError) {
+        Alert.alert("Card Error", cardError);
+        return;
+      }
+    }
+    await processOrder();
+    setIsCheckoutModalOpen(false);
+    setCardDetails({ number: "", expiry: "", cvv: "" }); // Reset
   };
 
   const createCustomer = async () => {
@@ -527,12 +578,15 @@ export default function POSView({ token, apiRequest }) {
   }
 
   return (
-    <View style={styles.screen}>
-      <View style={{ flex: 1 }}>
+    <View style={[styles.screen, { height: Platform.OS === 'web' ? 'calc(100vh - 120px)' : '100%' }]}>
+      <View style={{ flex: 1, padding: 18 }}>
         <Text style={styles.pageTitle}>Point of Sale (POS)</Text>
-
         <View style={[styles.workspace, isCompact && styles.workspaceStack, { flex: 1 }]}>
-          <ScrollView style={[styles.catalogColumn, { flex: 1 }]} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+             style={styles.catalogColumn} 
+             contentContainerStyle={{ paddingBottom: 40 }}
+             showsVerticalScrollIndicator={true}
+          >
             <View style={styles.panel}>
               <Text style={styles.catalogTitle}>Products</Text>
               <View style={[styles.filterRow, isMobile && styles.filterRowMobile]}>
@@ -546,18 +600,18 @@ export default function POSView({ token, apiRequest }) {
                     </View>
                   </View>
                 ) : (
-                  <>
+                  <View style={{ flexDirection: 'row', gap: 12, flex: 1 }}>
                     <TextInput
                       style={[styles.textField, styles.mobileFilterField]}
-                      placeholder="Select Brand"
+                      placeholder="Brand"
                       placeholderTextColor="#9aa6b5"
                     />
                     <TextInput
                       style={[styles.textField, styles.mobileFilterField]}
-                      placeholder="Select Category"
+                      placeholder="Category"
                       placeholderTextColor="#9aa6b5"
                     />
-                  </>
+                  </View>
                 )}
 
                 <View style={styles.searchWrap}>
@@ -583,9 +637,9 @@ export default function POSView({ token, apiRequest }) {
               </View>
 
               <View style={styles.productGrid}>
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product, index) => (
                   <Pressable
-                    key={product.id}
+                    key={product.id || `prod-${index}`}
                     style={[styles.productCard, isMobile && styles.productCardMobile]}
                     onPress={() => handleProductPress(product)}
                   >
@@ -603,15 +657,17 @@ export default function POSView({ token, apiRequest }) {
                     </View>
 
                     <View style={styles.productInfo}>
-                      <Text style={styles.productName} numberOfLines={1}>
+                      <Text style={styles.productName} numberOfLines={2}>
                         {getProductName(product)}
                       </Text>
                       <Text style={styles.productPrice}>
                         {formatCurrency(getProductPrice(product))}
                       </Text>
-                      <Text style={styles.productMeta}>
-                        {getProductSold(product)} Sold {" | "} {getProductStock(product)} Left
-                      </Text>
+                      <View style={styles.productStockRow}>
+                         <Text style={styles.productMeta}>
+                           {getProductSold(product)} Sold {" | "} {getProductStock(product)} Left
+                         </Text>
+                      </View>
                     </View>
                   </Pressable>
                 ))}
@@ -854,7 +910,7 @@ export default function POSView({ token, apiRequest }) {
                     <Pressable style={styles.draftButton} onPress={saveDraft}>
                       <Text style={styles.draftButtonText}>Draft</Text>
                     </Pressable>
-                    <Pressable style={styles.totalButton} onPress={processOrder}>
+                    <Pressable style={styles.totalButton} onPress={() => setIsCheckoutModalOpen(true)}>
                       <Text style={styles.totalButtonText}>
                         Grand Total {formatCurrency(total)} →
                       </Text>
@@ -911,6 +967,138 @@ export default function POSView({ token, apiRequest }) {
           </View>
         </View>
       )}
+
+      {isCheckoutModalOpen && (
+        <View style={styles.checkoutOverlay}>
+          <View style={styles.checkoutSidebar}>
+            <View style={styles.checkoutHeader}>
+              <Text style={styles.checkoutTitle}>Checkout information</Text>
+              <Pressable onPress={() => setIsCheckoutModalOpen(false)} style={styles.checkoutCloseBtn}>
+                <Ionicons name="close" size={24} color="#6b7280" />
+              </Pressable>
+            </View>
+
+            <View style={styles.checkoutSummaryCard}>
+              <View style={styles.checkoutSummaryRow}>
+                <Text style={styles.checkoutSummaryLabel}>Total Product</Text>
+                <View style={styles.checkoutCountBadge}>
+                   <Text style={styles.checkoutCountText}>{itemCount}</Text>
+                </View>
+              </View>
+              <View style={styles.checkoutSummaryRow}>
+                <Text style={styles.checkoutSummaryLabel}>Total Amount</Text>
+                <Text style={styles.checkoutSummaryValue}>₹{total}</Text>
+              </View>
+            </View>
+
+            <View style={styles.checkoutSection}>
+               <Text style={styles.checkoutSectionTitle}>Payment Method</Text>
+               <View style={styles.checkoutPaymentRow}>
+                  <Pressable 
+                    style={[styles.checkoutPaymentBtn, paymentMethod === 'cash' && styles.checkoutPaymentBtnActive]}
+                    onPress={() => setPaymentMethod('cash')}
+                  >
+                     <View style={styles.checkoutPaymentIconBox}>
+                        <Ionicons name="cash" size={32} color="#10b981" />
+                        <View style={styles.checkoutPaymentCoins}>
+                           <View style={[styles.checkoutCoin, { backgroundColor: '#f59e0b' }]} />
+                           <View style={[styles.checkoutCoin, { backgroundColor: '#fbbf24', marginLeft: -4 }]} />
+                        </View>
+                     </View>
+                  </Pressable>
+                  <Pressable 
+                    style={[styles.checkoutPaymentBtn, (paymentMethod === 'card' || paymentMethod === 'upi') && styles.checkoutPaymentBtnActive]}
+                    onPress={() => setPaymentMethod('card')}
+                  >
+                     <Text style={styles.checkoutVisaText}>VISA</Text>
+                  </Pressable>
+               </View>
+            </View>
+
+            <View style={styles.checkoutSection}>
+               <Text style={styles.checkoutSectionTitle}>Revceived Amount</Text>
+               <View style={styles.checkoutReceivedBox}>
+                  <TextInput
+                    style={styles.checkoutReceivedInput}
+                    value={receivedAmount}
+                    onChangeText={setReceivedAmount}
+                    keyboardType="numeric"
+                  />
+                  <Text style={styles.checkoutReceivedSymbol}>₹</Text>
+               </View>
+            </View>
+
+            {paymentMethod === 'card' && (
+              <View style={styles.checkoutSection}>
+                <Text style={styles.checkoutSectionTitle}>Card Details</Text>
+                <TextInput
+                  style={[styles.textField, { marginBottom: 12 }]}
+                  placeholder="Card Number (0000 0000 0000 0000)"
+                  placeholderTextColor="#94a3b8"
+                  value={cardDetails.number}
+                  onChangeText={(val) => setCardDetails({...cardDetails, number: val})}
+                  maxLength={19}
+                />
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                   <TextInput
+                     style={[styles.textField, { flex: 1 }]}
+                     placeholder="MM/YY"
+                     placeholderTextColor="#94a3b8"
+                     value={cardDetails.expiry}
+                     onChangeText={(val) => setCardDetails({...cardDetails, expiry: val})}
+                     maxLength={5}
+                   />
+                   <TextInput
+                     style={[styles.textField, { flex: 1 }]}
+                     placeholder="CVV"
+                     placeholderTextColor="#94a3b8"
+                     value={cardDetails.cvv}
+                     onChangeText={(val) => setCardDetails({...cardDetails, cvv: val})}
+                     secureTextEntry
+                     maxLength={4}
+                   />
+                </View>
+              </View>
+            )}
+
+            <View style={{ flex: 1 }} />
+
+            <Pressable style={styles.checkoutConfirmBtn} onPress={handleConfirmOrder}>
+               <Text style={styles.checkoutConfirmBtnText}>Confirm</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+      {orderSuccess && (
+        <View style={styles.successOverlay}>
+           <View style={styles.successCard}>
+              <View style={styles.successIconBox}>
+                 <Ionicons name="checkmark-circle" size={80} color="#10b981" />
+              </View>
+              <Text style={styles.successTitle}>Order Successful!</Text>
+              <Text style={styles.successSubtitle}>The cart has been cleared and inventory stock has been synchronized.</Text>
+              
+              <View style={styles.successDetails}>
+                 <View style={styles.successRow}>
+                    <Text style={styles.successLabel}>Order Code</Text>
+                    <Text style={styles.successValue}>{orderSuccess.code}</Text>
+                 </View>
+                 <View style={styles.successRow}>
+                    <Text style={styles.successLabel}>Total Paid</Text>
+                    <Text style={styles.successValue}>₹{orderSuccess.total}</Text>
+                 </View>
+                 <View style={styles.successRow}>
+                    <Text style={styles.successLabel}>Payment</Text>
+                    <Text style={[styles.successValue, { textTransform: 'uppercase' }]}>{paymentMethod}</Text>
+                 </View>
+              </View>
+
+              <Pressable style={styles.successBtn} onPress={() => setOrderSuccess(null)}>
+                 <Text style={styles.successBtnText}>Done</Text>
+              </Pressable>
+           </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -919,6 +1107,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: BG,
+    overflow: 'hidden',
   },
   scroll: {
     flex: 1,
@@ -1046,25 +1235,28 @@ const styles = StyleSheet.create({
   productGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 16,
+    justifyContent: "space-between",
+    minHeight: 400,
   },
   productCard: {
-    width: 320,
-    maxWidth: "100%",
+    width: "49%",
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 8,
+    borderColor: "#f1f5f9",
+    borderRadius: 16,
     overflow: "hidden",
-    flexDirection: "row",
+    marginBottom: 20,
+    ...(Platform.OS === 'web' ? { 
+      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)',
+    } : { elevation: 3 }),
   },
   productCardMobile: {
     width: "100%",
   },
   productImageWrap: {
-    width: 150,
-    height: 165,
-    backgroundColor: "#eef2f6",
+    width: "100%",
+    height: 220,
+    backgroundColor: "#f8fafc",
   },
   productImage: {
     width: "100%",
@@ -1077,26 +1269,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   productInfo: {
+    padding: 16,
     flex: 1,
-    minWidth: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    justifyContent: "center",
   },
   productName: {
-    color: TEXT,
-    fontSize: 13,
+    color: "#1e293b",
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 20,
+    height: 40,
     marginBottom: 8,
   },
   productPrice: {
-    color: BRAND_BLUE,
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 10,
+    color: "#00441B",
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: 12,
   },
   productMeta: {
-    color: "#55657a",
-    fontSize: 12,
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  productStockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
   },
   catalogTitle: {
     color: TEXT,
@@ -1412,6 +1612,36 @@ const styles = StyleSheet.create({
     padding: 20,
     zIndex: 9999,
   },
+  modalCard: {
+    width: "100%",
+    maxWidth: 440,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: TEXT,
+  },
+  modalAddButton: {
+    marginTop: 24,
+    backgroundColor: BRAND_GREEN,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  modalAddButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   modalCardLarge: {
     position: "absolute",
     width: "100%",
@@ -1554,5 +1784,223 @@ const styles = StyleSheet.create({
   },
   modalInputGap: {
     marginTop: 12,
+  },
+  checkoutOverlay: {
+    position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    zIndex: 10000,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  checkoutSidebar: {
+    width: 400,
+    backgroundColor: '#fff',
+    height: '100%',
+    padding: 24,
+    ...(Platform.OS === 'web' ? { boxShadow: '-4px 0 20px rgba(0,0,0,0.1)' } : { elevation: 10 }),
+  },
+  checkoutHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  checkoutTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  checkoutCloseBtn: {
+    padding: 4,
+  },
+  checkoutSummaryCard: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 20,
+    gap: 16,
+    marginBottom: 32,
+  },
+  checkoutSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  checkoutSummaryLabel: {
+    fontSize: 15,
+    color: '#4b5563',
+    fontWeight: '500',
+  },
+  checkoutSummaryValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  checkoutCountBadge: {
+    backgroundColor: '#065f46',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkoutCountText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  checkoutSection: {
+    marginBottom: 32,
+  },
+  checkoutSectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  checkoutPaymentRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  checkoutPaymentBtn: {
+    flex: 1,
+    height: 80,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  checkoutPaymentBtnActive: {
+    borderColor: '#065f46',
+    borderWidth: 2,
+    backgroundColor: '#f0fdf4',
+  },
+  checkoutPaymentIconBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkoutPaymentCoins: {
+    flexDirection: 'row',
+  },
+  checkoutCoin: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  checkoutVisaText: {
+    fontSize: 18,
+    fontWeight: '800',
+    fontStyle: 'italic',
+    color: '#1e40af',
+  },
+  checkoutReceivedBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    paddingBottom: 12,
+  },
+  checkoutReceivedInput: {
+    flex: 1,
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1f2937',
+    textAlign: 'center',
+  },
+  checkoutReceivedSymbol: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1f2937',
+    position: 'absolute',
+    left: '25%',
+  },
+  checkoutConfirmBtn: {
+    backgroundColor: '#00441B',
+    borderRadius: 8,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkoutConfirmBtnText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  successOverlay: {
+    position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    zIndex: 20000,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  successCard: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    ...(Platform.OS === 'web' ? { boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' } : { elevation: 20 }),
+  },
+  successIconBox: {
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 15,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  successDetails: {
+    width: '100%',
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 32,
+    gap: 12,
+  },
+  successRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  successLabel: {
+    color: '#6b7280',
+    fontSize: 14,
+  },
+  successValue: {
+    color: '#1f2937',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  successBtn: {
+    width: '100%',
+    backgroundColor: '#00441B',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  successBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

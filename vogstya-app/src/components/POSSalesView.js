@@ -7,12 +7,17 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  Modal,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { generateInvoiceHtml } from "../utils/InvoiceUtility";
 
 export default function POSSalesView({ colors, token, apiRequest }) {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     fetchSales();
@@ -23,8 +28,11 @@ export default function POSSalesView({ colors, token, apiRequest }) {
       setLoading(true);
       const data = await apiRequest("/admin/data/tables/orders", { token });
       if (data && data.rows) {
-        // Filter for POS sales if possible, or just show all orders for now
-        setSales(data.rows);
+        // Sort by most recent first
+        const sortedData = [...data.rows].sort((a, b) => {
+          return new Date(b.created_at || b.id) - new Date(a.created_at || a.id);
+        });
+        setSales(sortedData);
       }
     } catch (error) {
       console.error("Failed to fetch sales data:", error);
@@ -33,11 +41,37 @@ export default function POSSalesView({ colors, token, apiRequest }) {
     }
   };
 
-  const handleViewInvoice = (order) => {
-    Alert.alert(
-      `Invoice #${order.order_id || order.id}`,
-      `Customer: ${order.customer_name || "Walk-in"}\nTotal: Rs ${order.total_amount || order.price}\nPayment: ${order.payment_method || "Cash"}`
-    );
+  const fetchOrderDetails = async (orderId) => {
+    try {
+      const data = await apiRequest(`/orders/${orderId}`, { token });
+      return data;
+    } catch (error) {
+      console.error("Failed to fetch order details:", error);
+      return null;
+    }
+  };
+
+  const handleViewInvoice = async (order) => {
+    setLoading(true);
+    const fullOrder = await fetchOrderDetails(order.order_id || order.id);
+    setLoading(false);
+    setSelectedOrder(fullOrder || order);
+    setModalVisible(true);
+  };
+
+  const handleDownloadInvoice = async (order) => {
+    setLoading(true);
+    const fullOrder = await fetchOrderDetails(order.order_id || order.id);
+    setLoading(false);
+    
+    if (Platform.OS === 'web') {
+      const printWindow = window.open('', '_blank');
+      const invoiceHtml = generateInvoiceHtml(fullOrder || order);
+      printWindow.document.write(invoiceHtml);
+      printWindow.document.close();
+    } else {
+      Alert.alert("Download", "Invoice download started for Order #" + (order.order_id || order.id));
+    }
   };
 
   if (loading) {
@@ -53,8 +87,15 @@ export default function POSSalesView({ colors, token, apiRequest }) {
     <View style={styles.container}>
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>POS Sales Summary</Text>
-          <Text style={styles.cardSubtitle}>Track all completed in-store transactions</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View>
+              <Text style={styles.cardTitle}>POS Sales Summary</Text>
+              <Text style={styles.cardSubtitle}>Track all completed in-store transactions</Text>
+            </View>
+            <Pressable style={styles.refreshButton} onPress={fetchSales}>
+              <Ionicons name="refresh-outline" size={20} color="#0d5731" />
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={true}>
@@ -79,8 +120,8 @@ export default function POSSalesView({ colors, token, apiRequest }) {
               <View style={[styles.cell, { width: 120 }]}>
                 <Text style={styles.columnName}>STATUS</Text>
               </View>
-              <View style={[styles.cell, { width: 100 }]}>
-                <Text style={styles.columnName}>ACTION</Text>
+              <View style={[styles.cell, { width: 120 }]}>
+                <Text style={styles.columnName}>ACTIONS</Text>
               </View>
             </View>
 
@@ -102,7 +143,11 @@ export default function POSSalesView({ colors, token, apiRequest }) {
                     <Text style={styles.cellText}>#{row.order_id || row.id}</Text>
                   </View>
                   <View style={[styles.cell, { width: 160 }]}>
-                    <Text style={styles.cellText}>{row.created_at || row.date || "N/A"}</Text>
+                    <Text style={styles.cellText}>
+                      {row.created_at 
+                        ? new Date(row.created_at).toLocaleDateString() + ' ' + new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : row.date || "N/A"}
+                    </Text>
                   </View>
                   <View style={[styles.cell, { width: 160 }]}>
                     <Text style={styles.cellText}>{row.customer_name || "Walk-in Customer"}</Text>
@@ -122,9 +167,12 @@ export default function POSSalesView({ colors, token, apiRequest }) {
                       </Text>
                     </View>
                   </View>
-                  <View style={[styles.cell, { width: 100 }]}>
-                    <Pressable onPress={() => handleViewInvoice(row)} hitSlop={8}>
+                  <View style={[styles.cell, { width: 120, flexDirection: "row", gap: 12 }]}>
+                    <Pressable onPress={() => handleViewInvoice(row)} hitSlop={8} style={styles.actionIcon}>
                       <Ionicons name="eye-outline" size={18} color="#0d5731" />
+                    </Pressable>
+                    <Pressable onPress={() => handleDownloadInvoice(row)} hitSlop={8} style={styles.actionIcon}>
+                      <Ionicons name="download-outline" size={18} color="#f6b51e" />
                     </Pressable>
                   </View>
                 </View>
@@ -133,9 +181,92 @@ export default function POSSalesView({ colors, token, apiRequest }) {
           </View>
         </ScrollView>
       </View>
+
+      {/* Invoice Details Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Order Details</Text>
+              <Pressable onPress={() => setModalVisible(false)} hitSlop={10}>
+                <Ionicons name="close" size={24} color="#64748b" />
+              </Pressable>
+            </View>
+
+            {selectedOrder && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.invoiceBox}>
+                  <View style={styles.invoiceHeaderRow}>
+                    <Text style={styles.invoiceTag}>INVOICE</Text>
+                    <Text style={styles.invoiceIdText}>#{selectedOrder.order_id || selectedOrder.id}</Text>
+                  </View>
+                  
+                  <View style={styles.divider} />
+                  
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoCol}>
+                      <Text style={styles.infoLabel}>DATE</Text>
+                      <Text style={styles.infoValue}>{new Date(selectedOrder.created_at || Date.now()).toLocaleDateString()}</Text>
+                    </View>
+                    <View style={styles.infoCol}>
+                      <Text style={styles.infoLabel}>STATUS</Text>
+                      <Text style={[styles.infoValue, { color: "#10b981" }]}>{selectedOrder.order_status || "Delivered"}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoCol}>
+                    <Text style={styles.infoLabel}>CUSTOMER</Text>
+                    <Text style={styles.infoValue}>{selectedOrder.customer_name || "Walk-in Customer"}</Text>
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.itemsHeader}>
+                    <Text style={styles.infoLabel}>ITEM DESCRIPTION</Text>
+                    <Text style={styles.infoLabel}>AMOUNT</Text>
+                  </View>
+
+                  <View style={styles.itemRowSimple}>
+                    <Text style={styles.itemNameSimple}>Jewellery Sale Transaction</Text>
+                    <Text style={styles.itemPriceSimple}>Rs {selectedOrder.total_amount || selectedOrder.price || 0}</Text>
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Grand Total</Text>
+                    <Text style={styles.totalAmount}>Rs {selectedOrder.total_amount || selectedOrder.price || 0}</Text>
+                  </View>
+
+                  <View style={styles.paymentBox}>
+                    <Text style={styles.paymentLabel}>Payment via {selectedOrder.payment_method || "Cash"}</Text>
+                  </View>
+                </View>
+
+                <Pressable 
+                  style={styles.downloadButton} 
+                  onPress={() => {
+                    handleDownloadInvoice(selectedOrder);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Ionicons name="download-outline" size={20} color="white" />
+                  <Text style={styles.downloadButtonText}>Download Invoice</Text>
+                </Pressable>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -229,5 +360,153 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#94a3b8",
     fontSize: 15,
+  },
+  refreshButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#f1f5f9",
+  },
+  actionIcon: {
+    padding: 4,
+    borderRadius: 4,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 500,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 24,
+    maxHeight: "90%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  invoiceBox: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    padding: 20,
+    backgroundColor: "#fafafa",
+  },
+  invoiceTag: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#0d5731",
+    backgroundColor: "#0d573110",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    letterSpacing: 1,
+  },
+  invoiceIdText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e2e8f0",
+    marginVertical: 16,
+  },
+  infoGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  infoCol: {
+    marginBottom: 12,
+  },
+  infoLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#94a3b8",
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1e293b",
+  },
+  itemsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  itemRowSimple: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  itemNameSimple: {
+    fontSize: 14,
+    color: "#334155",
+    flex: 1,
+  },
+  itemPriceSimple: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  totalAmount: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0d5731",
+  },
+  paymentBox: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  paymentLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  downloadButton: {
+    backgroundColor: "#0d5731",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 24,
+    gap: 8,
+  },
+  downloadButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

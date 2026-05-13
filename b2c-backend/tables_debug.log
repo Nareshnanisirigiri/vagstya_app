@@ -1,0 +1,602 @@
+[
+  {
+    "tableName": "addresses",
+    "tableRows": 45,
+    "createdAt": "2026-04-26T00:15:14.000Z",
+    "updatedAt": "2026-05-10T07:44:55.000Z"
+  },
+  {
+    "tableName": "admin_coupons",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:15:23.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "admin_users",
+    "tableRows": 3,
+    "createdAt": "2026-05-07T23:31:05.000Z",
+    "updatedAt": "2026-05-11T07:42:49.000Z"
+  },
+  {
+    "tableName": "ads",
+    "tableRows": 2,
+    "createdAt": "2026-04-26T00:15:33.000Z",
+    "updatedAt": "2026-04-26T00:15:35.000Z"
+  },
+  {
+    "tableName": "banners",
+    "tableRows": 13,
+    "createdAt": "2026-05-13T05:38:34.000Z",
+    "updatedAt": "2026-04-26T00:15:39.000Z"
+  },
+  {
+    "tableName": "base_metals",
+    "tableRows": 2,
+    "createdAt": "2026-04-26T00:15:41.000Z",
+    "updatedAt": "2026-04-26T00:15:45.000Z"
+  },
+  {
+    "tableName": "blog_tags",
+    "tableRows": 13,
+    "createdAt": "2026-04-26T00:15:54.000Z",
+    "updatedAt": "2026-04-26T00:16:04.000Z"
+  },
+  {
+    "tableName": "blog_views",
+    "tableRows": 15,
+    "createdAt": "2026-04-26T00:16:16.000Z",
+    "updatedAt": "2026-04-26T00:16:19.000Z"
+  },
+  {
+    "tableName": "blogs",
+    "tableRows": 2,
+    "createdAt": "2026-04-26T00:16:21.000Z",
+    "updatedAt": "2026-04-26T00:16:23.000Z"
+  },
+  {
+    "tableName": "brands",
+    "tableRows": 3,
+    "createdAt": "2026-04-26T00:16:25.000Z",
+    "updatedAt": "2026-05-11T05:52:36.000Z"
+  },
+  {
+    "tableName": "carts",
+    "tableRows": 22,
+    "createdAt": "2026-04-26T00:16:32.000Z",
+    "updatedAt": "2026-04-26T00:16:36.000Z"
+  },
+  {
+    "tableName": "categories",
+    "tableRows": 12,
+    "createdAt": "2026-05-05T00:14:46.000Z",
+    "updatedAt": "2026-05-11T23:24:21.000Z"
+  },
+  {
+    "tableName": "category_subcategories",
+    "tableRows": 77,
+    "createdAt": "2026-04-26T00:16:42.000Z",
+    "updatedAt": "2026-04-26T00:16:44.000Z"
+  },
+  {
+    "tableName": "city",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:16:46.000Z",
+    "updatedAt": "2026-04-26T00:16:47.000Z"
+  },
+  {
+    "tableName": "colors",
+    "tableRows": 36,
+    "createdAt": "2026-05-07T23:43:47.000Z",
+    "updatedAt": "2026-05-12T01:11:07.000Z"
+  },
+  {
+    "tableName": "contact_us",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:16:57.000Z",
+    "updatedAt": "2026-04-26T00:17:00.000Z"
+  },
+  {
+    "tableName": "county_origins",
+    "tableRows": 3,
+    "createdAt": "2026-04-26T00:17:02.000Z",
+    "updatedAt": "2026-04-26T00:17:03.000Z"
+  },
+  {
+    "tableName": "coupon_collects",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:17:05.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "coupons",
+    "tableRows": 2,
+    "createdAt": "2026-05-13T00:57:54.000Z",
+    "updatedAt": "2026-04-26T00:17:16.000Z"
+  },
+  {
+    "tableName": "currencies",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:17:20.000Z",
+    "updatedAt": "2026-04-26T00:17:22.000Z"
+  },
+  {
+    "tableName": "customers",
+    "tableRows": 27,
+    "createdAt": "2026-04-26T00:17:24.000Z",
+    "updatedAt": "2026-05-04T06:00:11.000Z"
+  },
+  {
+    "tableName": "delivery_charges",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:17:28.000Z",
+    "updatedAt": "2026-04-26T00:17:30.000Z"
+  },
+  {
+    "tableName": "device_keys",
+    "tableRows": 39,
+    "createdAt": "2026-04-26T00:17:32.000Z",
+    "updatedAt": "2026-04-26T00:17:33.000Z"
+  },
+  {
+    "tableName": "driver_orders",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:17:37.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "drivers",
+    "tableRows": 1,
+    "createdAt": "2026-05-07T05:43:07.000Z",
+    "updatedAt": "2026-05-07T05:43:13.000Z"
+  },
+  {
+    "tableName": "failed_jobs",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:17:47.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "favorites",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:17:50.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "flash_sale_products",
+    "tableRows": 7,
+    "createdAt": "2026-04-26T00:17:53.000Z",
+    "updatedAt": "2026-04-26T00:17:55.000Z"
+  },
+  {
+    "tableName": "flash_sales",
+    "tableRows": 2,
+    "createdAt": "2026-05-13T05:38:31.000Z",
+    "updatedAt": "2026-05-12T05:25:32.000Z"
+  },
+  {
+    "tableName": "galleries",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:18:04.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "generate_settings",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:18:08.000Z",
+    "updatedAt": "2026-04-26T00:18:09.000Z"
+  },
+  {
+    "tableName": "google_re_captchas",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:18:11.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "languages",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:18:14.000Z",
+    "updatedAt": "2026-04-26T00:18:16.000Z"
+  },
+  {
+    "tableName": "legal_pages",
+    "tableRows": 5,
+    "createdAt": "2026-04-26T00:18:18.000Z",
+    "updatedAt": "2026-04-26T00:18:20.000Z"
+  },
+  {
+    "tableName": "manufacturers",
+    "tableRows": 3,
+    "createdAt": "2026-04-26T00:18:22.000Z",
+    "updatedAt": "2026-04-26T00:18:26.000Z"
+  },
+  {
+    "tableName": "media",
+    "tableRows": 1464,
+    "createdAt": "2026-04-26T00:18:29.000Z",
+    "updatedAt": "2026-04-26T00:18:33.000Z"
+  },
+  {
+    "tableName": "migrations",
+    "tableRows": 136,
+    "createdAt": "2026-04-26T00:18:35.000Z",
+    "updatedAt": "2026-04-26T00:18:37.000Z"
+  },
+  {
+    "tableName": "model_has_permissions",
+    "tableRows": 164,
+    "createdAt": "2026-04-26T00:18:44.000Z",
+    "updatedAt": "2026-04-26T00:18:52.000Z"
+  },
+  {
+    "tableName": "model_has_roles",
+    "tableRows": 51,
+    "createdAt": "2026-04-26T00:19:00.000Z",
+    "updatedAt": "2026-04-26T00:19:02.000Z"
+  },
+  {
+    "tableName": "net_quantities",
+    "tableRows": 2,
+    "createdAt": "2026-04-26T00:19:05.000Z",
+    "updatedAt": "2026-04-26T00:19:06.000Z"
+  },
+  {
+    "tableName": "notifications",
+    "tableRows": 100,
+    "createdAt": "2026-05-13T01:12:32.000Z",
+    "updatedAt": "2026-04-26T00:19:10.000Z"
+  },
+  {
+    "tableName": "occasions",
+    "tableRows": 2,
+    "createdAt": "2026-04-26T00:19:13.000Z",
+    "updatedAt": "2026-04-26T00:19:14.000Z"
+  },
+  {
+    "tableName": "order_payments",
+    "tableRows": 51,
+    "createdAt": "2026-04-26T00:19:17.000Z",
+    "updatedAt": "2026-05-10T07:44:55.000Z"
+  },
+  {
+    "tableName": "order_products",
+    "tableRows": 53,
+    "createdAt": "2026-04-26T00:19:21.000Z",
+    "updatedAt": "2026-05-10T07:44:55.000Z"
+  },
+  {
+    "tableName": "orders",
+    "tableRows": 52,
+    "createdAt": "2026-04-26T00:19:25.000Z",
+    "updatedAt": "2026-05-10T10:06:55.000Z"
+  },
+  {
+    "tableName": "packers",
+    "tableRows": 3,
+    "createdAt": "2026-04-26T00:19:29.000Z",
+    "updatedAt": "2026-04-26T00:19:30.000Z"
+  },
+  {
+    "tableName": "payment_gateways",
+    "tableRows": 7,
+    "createdAt": "2026-04-26T00:19:32.000Z",
+    "updatedAt": "2026-04-26T00:19:34.000Z"
+  },
+  {
+    "tableName": "payments",
+    "tableRows": 162,
+    "createdAt": "2026-04-26T00:19:36.000Z",
+    "updatedAt": "2026-05-10T07:44:57.000Z"
+  },
+  {
+    "tableName": "permissions",
+    "tableRows": 284,
+    "createdAt": "2026-04-26T00:19:40.000Z",
+    "updatedAt": "2026-04-26T00:19:42.000Z"
+  },
+  {
+    "tableName": "personal_access_tokens",
+    "tableRows": 141,
+    "createdAt": "2026-04-26T00:19:44.000Z",
+    "updatedAt": "2026-04-26T00:19:45.000Z"
+  },
+  {
+    "tableName": "platings",
+    "tableRows": 4,
+    "createdAt": "2026-04-26T00:19:48.000Z",
+    "updatedAt": "2026-04-26T00:19:49.000Z"
+  },
+  {
+    "tableName": "pos_cart_products",
+    "tableRows": 4,
+    "createdAt": "2026-04-26T00:19:52.000Z",
+    "updatedAt": "2026-04-26T00:19:54.000Z"
+  },
+  {
+    "tableName": "pos_carts",
+    "tableRows": 7,
+    "createdAt": "2026-04-26T00:19:56.000Z",
+    "updatedAt": "2026-04-26T00:19:58.000Z"
+  },
+  {
+    "tableName": "pos_drafts",
+    "tableRows": 0,
+    "createdAt": "2026-05-04T01:45:47.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "product_categories",
+    "tableRows": 323,
+    "createdAt": "2026-04-26T00:20:00.000Z",
+    "updatedAt": "2026-05-11T05:46:49.000Z"
+  },
+  {
+    "tableName": "product_colors",
+    "tableRows": 130,
+    "createdAt": "2026-04-26T00:20:05.000Z",
+    "updatedAt": "2026-04-26T00:20:06.000Z"
+  },
+  {
+    "tableName": "product_reviews",
+    "tableRows": 2,
+    "createdAt": "2026-04-26T00:20:09.000Z",
+    "updatedAt": "2026-04-26T00:20:10.000Z"
+  },
+  {
+    "tableName": "product_sizes",
+    "tableRows": 119,
+    "createdAt": "2026-04-26T00:20:12.000Z",
+    "updatedAt": "2026-04-26T00:20:14.000Z"
+  },
+  {
+    "tableName": "product_subcategories",
+    "tableRows": 519,
+    "createdAt": "2026-04-26T00:20:16.000Z",
+    "updatedAt": "2026-04-26T00:20:18.000Z"
+  },
+  {
+    "tableName": "product_thumbnails",
+    "tableRows": 824,
+    "createdAt": "2026-04-26T00:20:20.000Z",
+    "updatedAt": "2026-04-26T00:20:22.000Z"
+  },
+  {
+    "tableName": "product_translations",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:20:25.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "product_units",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:20:28.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "product_vat_taxes",
+    "tableRows": 364,
+    "createdAt": "2026-04-26T00:20:31.000Z",
+    "updatedAt": "2026-04-26T00:20:33.000Z"
+  },
+  {
+    "tableName": "products",
+    "tableRows": 302,
+    "createdAt": "2026-05-13T05:38:32.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "recent_views",
+    "tableRows": 208,
+    "createdAt": "2026-04-26T00:20:43.000Z",
+    "updatedAt": "2026-04-26T00:20:45.000Z"
+  },
+  {
+    "tableName": "reviews",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:20:47.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "riders",
+    "tableRows": 1,
+    "createdAt": "2026-05-12T05:33:28.000Z",
+    "updatedAt": "2026-05-12T06:45:51.000Z"
+  },
+  {
+    "tableName": "role_has_permissions",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:20:51.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "roles",
+    "tableRows": 6,
+    "createdAt": "2026-04-26T00:20:55.000Z",
+    "updatedAt": "2026-04-26T00:20:57.000Z"
+  },
+  {
+    "tableName": "s_m_s_configs",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:20:59.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "shop_categories",
+    "tableRows": 10,
+    "createdAt": "2026-04-26T00:21:03.000Z",
+    "updatedAt": "2026-04-26T00:21:04.000Z"
+  },
+  {
+    "tableName": "shops",
+    "tableRows": 2,
+    "createdAt": "2026-05-07T00:39:45.000Z",
+    "updatedAt": "2026-05-12T07:13:53.000Z"
+  },
+  {
+    "tableName": "sizes",
+    "tableRows": 88,
+    "createdAt": "2026-05-07T23:31:05.000Z",
+    "updatedAt": "2026-05-12T01:17:56.000Z"
+  },
+  {
+    "tableName": "social_auths",
+    "tableRows": 3,
+    "createdAt": "2026-04-26T00:21:15.000Z",
+    "updatedAt": "2026-04-26T00:21:16.000Z"
+  },
+  {
+    "tableName": "social_links",
+    "tableRows": 8,
+    "createdAt": "2026-04-26T00:21:19.000Z",
+    "updatedAt": "2026-04-26T00:21:21.000Z"
+  },
+  {
+    "tableName": "specification_values",
+    "tableRows": 0,
+    "createdAt": "2026-05-11T06:57:31.000Z",
+    "updatedAt": "2026-05-12T00:32:16.000Z"
+  },
+  {
+    "tableName": "specifications",
+    "tableRows": 34,
+    "createdAt": "2026-04-26T00:21:23.000Z",
+    "updatedAt": "2026-05-11T06:15:45.000Z"
+  },
+  {
+    "tableName": "specificationvalues",
+    "tableRows": 221,
+    "createdAt": "2026-04-26T00:21:27.000Z",
+    "updatedAt": "2026-05-12T00:50:40.000Z"
+  },
+  {
+    "tableName": "state",
+    "tableRows": 2,
+    "createdAt": "2026-04-26T00:21:31.000Z",
+    "updatedAt": "2026-04-26T00:21:33.000Z"
+  },
+  {
+    "tableName": "stone_types",
+    "tableRows": 4,
+    "createdAt": "2026-04-26T00:21:35.000Z",
+    "updatedAt": "2026-04-26T00:21:38.000Z"
+  },
+  {
+    "tableName": "sub_categories",
+    "tableRows": 77,
+    "createdAt": "2026-05-04T23:33:38.000Z",
+    "updatedAt": "2026-05-11T02:50:54.000Z"
+  },
+  {
+    "tableName": "support_ticket_attachments",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:21:45.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "support_ticket_messages",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:21:49.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "support_tickets",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:21:54.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "supports",
+    "tableRows": 5,
+    "createdAt": "2026-04-26T00:21:58.000Z",
+    "updatedAt": "2026-04-26T00:22:00.000Z"
+  },
+  {
+    "tableName": "tags",
+    "tableRows": 9,
+    "createdAt": "2026-04-26T00:22:03.000Z",
+    "updatedAt": "2026-04-26T00:22:06.000Z"
+  },
+  {
+    "tableName": "theme_colors",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:22:09.000Z",
+    "updatedAt": "2026-04-26T00:22:12.000Z"
+  },
+  {
+    "tableName": "ticket_issue_types",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:22:14.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "transactions",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:22:18.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "translate_utilities",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:22:22.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "trends",
+    "tableRows": 3,
+    "createdAt": "2026-04-26T00:22:26.000Z",
+    "updatedAt": "2026-04-26T00:22:28.000Z"
+  },
+  {
+    "tableName": "types",
+    "tableRows": 4,
+    "createdAt": "2026-04-26T00:22:30.000Z",
+    "updatedAt": "2026-04-26T00:22:31.000Z"
+  },
+  {
+    "tableName": "units",
+    "tableRows": 31,
+    "createdAt": "2026-04-26T00:22:34.000Z",
+    "updatedAt": "2026-05-12T01:23:09.000Z"
+  },
+  {
+    "tableName": "user_non_permissions",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:22:39.000Z",
+    "updatedAt": null
+  },
+  {
+    "tableName": "users",
+    "tableRows": 34,
+    "createdAt": "2026-05-04T05:14:06.000Z",
+    "updatedAt": "2026-05-04T06:11:59.000Z"
+  },
+  {
+    "tableName": "vat_taxes",
+    "tableRows": 7,
+    "createdAt": "2026-04-26T00:23:02.000Z",
+    "updatedAt": "2026-04-26T00:23:06.000Z"
+  },
+  {
+    "tableName": "verify_manages",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:23:11.000Z",
+    "updatedAt": "2026-04-26T00:23:12.000Z"
+  },
+  {
+    "tableName": "verify_otps",
+    "tableRows": 16,
+    "createdAt": "2026-04-26T00:23:16.000Z",
+    "updatedAt": "2026-04-26T00:23:18.000Z"
+  },
+  {
+    "tableName": "wallets",
+    "tableRows": 22,
+    "createdAt": "2026-04-26T00:23:21.000Z",
+    "updatedAt": "2026-04-26T00:23:23.000Z"
+  },
+  {
+    "tableName": "withdraws",
+    "tableRows": 0,
+    "createdAt": "2026-04-26T00:23:26.000Z",
+    "updatedAt": null
+  }
+]

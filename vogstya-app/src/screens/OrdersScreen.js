@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useState } from "react";
-import { View, Text, StyleSheet, Platform, ScrollView, Pressable, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, Platform, ScrollView, Pressable, useWindowDimensions, Alert } from "react-native";
+import { generateInvoiceHtml } from "../utils/InvoiceUtility";
 import { Image } from "expo-image";
 import { useRoute, useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,12 +30,15 @@ function formatMoney(value) {
 
 function normalizeOrderStatus(status) {
   const value = String(status || "Pending").trim().toLowerCase();
+  if (value === "confirm" || value === "confirmed") return "Confirmed";
+  if (value === "processing") return "Processing";
+  if (value === "pickup" || value === "packed") return "Packed";
+  if (value === "on the way" || value === "on_the_way" || value === "shipped") return "Shipped";
   if (value === "out for delivery" || value === "out_for_delivery") return "Out for Delivery";
-  if (value === "return / refund" || value === "return_refund" || value === "returned") return "Return / Refund";
-  if (value === "shipped") return "Shipped";
-  if (value === "packed") return "Packed";
   if (value === "delivered") return "Delivered";
+  if (value === "return / refund" || value === "return_refund" || value === "returned") return "Return / Refund";
   if (value === "cancelled" || value === "canceled") return "Cancelled";
+  if (value === "placed") return "Placed";
   return "Pending";
 }
 
@@ -50,15 +54,16 @@ function statusStyle(status) {
 }
 
 const OrderTracker = ({ status }) => {
-  const allSteps = ["Packed", "Shipped", "Out for Delivery", "Delivered", "Return / Refund"];
+  const allSteps = ["Confirmed", "Processing", "Packed", "Shipped", "Out for Delivery", "Delivered"];
   
   const getActiveColor = (step) => {
     switch (step) {
+      case "Confirmed": return "#38bdf8"; // Light Blue
+      case "Processing": return "#a855f7"; // Purple
       case "Packed": return "#6366f1"; // Indigo
-      case "Shipped": return "#8b5cf6"; // Purple
+      case "Shipped": return "#8b5cf6"; // Violet
       case "Out for Delivery": return "#f59e0b"; // Amber
       case "Delivered": return "#10b981"; // Emerald
-      case "Return / Refund": return "#ef4444"; // Red
       default: return "#10b981";
     }
   };
@@ -237,12 +242,26 @@ export default function OrdersScreen() {
                     <View style={styles.headerActionsRight}>
                       <Text style={styles.headerOrderId}>ORDER # {ord.id}</Text>
                       <View style={styles.headerLinks}>
-                        <Text style={styles.headerLink}>View order details</Text>
+                        <Pressable onPress={() => navigation.navigate("TrackOrder", { orderId: ord.id })}>
+                          <Text style={styles.headerLink}>View order details</Text>
+                        </Pressable>
                         <View style={styles.vDivider} />
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Pressable 
+                          style={{ flexDirection: 'row', alignItems: 'center' }}
+                          onPress={() => {
+                            if (Platform.OS === 'web') {
+                              const printWindow = window.open('', '_blank');
+                              const invoiceHtml = generateInvoiceHtml(ord);
+                              printWindow.document.write(invoiceHtml);
+                              printWindow.document.close();
+                            } else {
+                              Alert.alert("Invoice", "Invoice download started for Order #" + ord.id);
+                            }
+                          }}
+                        >
                           <Text style={styles.headerLink}>Invoice</Text>
                           <Ionicons name="chevron-down" size={14} color="#007185" style={{ marginLeft: 2 }} />
-                        </View>
+                        </Pressable>
                       </View>
                     </View>
                   </View>
@@ -305,7 +324,10 @@ export default function OrdersScreen() {
                           <Text style={styles.primaryActionText}>Track package</Text>
                         </Pressable>
                       )}
-                      <Pressable style={styles.secondaryActionBtn}>
+                      <Pressable 
+                        style={styles.secondaryActionBtn}
+                        onPress={() => navigation.navigate("SellerFeedback", { orderId: ord.id })}
+                      >
                         <Text style={styles.secondaryActionText}>Leave seller feedback</Text>
                       </Pressable>
                       <Pressable 

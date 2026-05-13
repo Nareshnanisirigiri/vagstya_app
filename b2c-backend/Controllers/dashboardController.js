@@ -57,8 +57,8 @@ function normalizeOrderStatus(value) {
 function getOrderAnalyticsBucket(status) {
   const normalized = normalizeOrderStatus(status);
 
-  if (normalized === "pending") return "pending";
-  if (["confirm", "confirmed", "placed"].includes(normalized)) return "confirm";
+  if (["pending", "placed"].includes(normalized)) return "pending";
+  if (["confirm", "confirmed"].includes(normalized)) return "confirm";
   if (normalized === "processing") return "processing";
   if (["pickup", "picked up", "packed"].includes(normalized)) return "pickup";
   if (["on the way", "shipped", "out for delivery"].includes(normalized)) return "onTheWay";

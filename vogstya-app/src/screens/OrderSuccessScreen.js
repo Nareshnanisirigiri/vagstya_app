@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform, useWindowDimensions, Alert } from "react-native";
+import { generateInvoiceHtml } from "../utils/InvoiceUtility";
 import { Image } from "expo-image";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -146,6 +147,23 @@ export default function OrderSuccessScreen() {
            </Pressable>
            <Pressable style={styles.btnSecondary} onPress={() => navigation.replace("Orders", { focusOrderId: displayOrderId })}>
               <Text style={styles.btnSecondaryText}>Track My Order</Text>
+           </Pressable>
+           <Pressable 
+              style={[styles.btnSecondary, { borderColor: colors.accent }]} 
+              onPress={() => {
+                if (currentOrder) {
+                  if (Platform.OS === 'web') {
+                    const printWindow = window.open('', '_blank');
+                    const invoiceHtml = generateInvoiceHtml(currentOrder);
+                    printWindow.document.write(invoiceHtml);
+                    printWindow.document.close();
+                  } else {
+                    Alert.alert("Invoice", "Invoice download started for Order #" + (currentOrder.id || displayOrderId));
+                  }
+                }
+              }}
+           >
+              <Text style={[styles.btnSecondaryText, { color: colors.accent }]}>Download Invoice</Text>
            </Pressable>
         </View>
 
