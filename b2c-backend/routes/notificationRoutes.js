@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../config/db.js";
-import { verifyToken, attachUserIfToken } from "../middleware/auth.js";
+import { verifyToken, attachUserIfToken } from "../Middleware/auth.js";
 
 export const notificationRoutes = Router();
 
